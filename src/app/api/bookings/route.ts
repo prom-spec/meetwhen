@@ -1,6 +1,34 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import * as dateFns from "date-fns"
 import prisma from "@/lib/prisma"
+import { sendBookingEmails } from "@/lib/email"
+
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const bookings = await prisma.booking.findMany({
+      where: { hostId: session.user.id },
+      include: {
+        eventType: {
+          select: { title: true, duration: true, color: true },
+        },
+      },
+      orderBy: { startTime: "desc" },
+    })
+
+    return NextResponse.json(bookings)
+  } catch (error) {
+    console.error("Error fetching bookings:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,9 +97,31 @@ export async function POST(request: NextRequest) {
       },
       include: {
         eventType: true,
-        host: { select: { name: true, email: true } },
+        host: { select: { name: true, email: true, timezone: true } },
       },
     })
+
+    // Send confirmation emails (async, don't block response)
+    sendBookingEmails({
+      booking: {
+        id: booking.id,
+        guestName: booking.guestName,
+        guestEmail: booking.guestEmail,
+        guestTimezone: booking.guestTimezone,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        meetingUrl: booking.meetingUrl,
+      },
+      eventType: {
+        title: booking.eventType.title,
+        location: booking.eventType.location,
+      },
+      host: {
+        name: booking.host.name,
+        email: booking.host.email,
+        timezone: booking.host.timezone,
+      },
+    }).catch((err) => console.error("Email sending failed:", err))
 
     return NextResponse.json(booking, { status: 201 })
   } catch (error) {

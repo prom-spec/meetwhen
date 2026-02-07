@@ -389,6 +389,22 @@ const server = new Server(
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools }))
 
+// Type definitions for tool arguments
+type CreateBookingArgs = {
+  eventTypeId: string
+  date: string
+  time: string
+  name: string
+  email: string
+  notes?: string
+  timezone?: string
+}
+type ListAvailabilityArgs = { eventTypeId: string; date: string }
+type SetAvailabilityArgs = { dayOfWeek: number; startTime: string; endTime: string; enabled: boolean }
+type AddDateOverrideArgs = { date: string; isAvailable: boolean; startTime?: string; endTime?: string }
+type GetBookingsArgs = { status?: string; limit?: number }
+type CancelBookingArgs = { bookingId: string; reason?: string }
+
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params
 
@@ -397,25 +413,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     switch (name) {
       case "create_booking":
-        result = await createBooking(args as any)
+        result = await createBooking(args as CreateBookingArgs)
         break
       case "list_availability":
-        result = await listAvailability(args as any)
+        result = await listAvailability(args as ListAvailabilityArgs)
         break
       case "set_availability":
-        result = await setAvailability(args as any)
+        result = await setAvailability(args as SetAvailabilityArgs)
         break
       case "add_date_override":
-        result = await addDateOverride(args as any)
+        result = await addDateOverride(args as AddDateOverrideArgs)
         break
       case "get_event_types":
         result = await getEventTypes()
         break
       case "get_bookings":
-        result = await getBookings(args as any)
+        result = await getBookings(args as GetBookingsArgs)
         break
       case "cancel_booking":
-        result = await cancelBooking(args as any)
+        result = await cancelBooking(args as CancelBookingArgs)
         break
       default:
         throw new Error(`Unknown tool: ${name}`)

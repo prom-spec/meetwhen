@@ -15,6 +15,8 @@ interface EventType {
   color: string
   location: string | null
   isActive: boolean
+  bufferBefore: number
+  bufferAfter: number
   createdAt: string
 }
 
@@ -30,6 +32,8 @@ export default function EventTypesPage() {
     duration: "30",
     color: "#3B82F6",
     location: "",
+    bufferBefore: "0",
+    bufferAfter: "0",
   })
 
   useEffect(() => {
@@ -109,6 +113,8 @@ export default function EventTypesPage() {
       duration: "30",
       color: "#3B82F6",
       location: "",
+      bufferBefore: "0",
+      bufferAfter: "0",
     })
     setShowModal(true)
   }
@@ -122,6 +128,8 @@ export default function EventTypesPage() {
       duration: eventType.duration.toString(),
       color: eventType.color,
       location: eventType.location || "",
+      bufferBefore: eventType.bufferBefore.toString(),
+      bufferAfter: eventType.bufferAfter.toString(),
     })
     setShowModal(true)
   }
@@ -312,6 +320,36 @@ export default function EventTypesPage() {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
                   placeholder="Zoom, Google Meet, or custom URL"
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Buffer before</label>
+                  <select
+                    value={formData.bufferBefore}
+                    onChange={(e) => setFormData({ ...formData, bufferBefore: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                  >
+                    <option value="0">No buffer</option>
+                    <option value="5">5 minutes</option>
+                    <option value="10">10 minutes</option>
+                    <option value="15">15 minutes</option>
+                    <option value="30">30 minutes</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Buffer after</label>
+                  <select
+                    value={formData.bufferAfter}
+                    onChange={(e) => setFormData({ ...formData, bufferAfter: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                  >
+                    <option value="0">No buffer</option>
+                    <option value="5">5 minutes</option>
+                    <option value="10">10 minutes</option>
+                    <option value="15">15 minutes</option>
+                    <option value="30">30 minutes</option>
+                  </select>
+                </div>
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <button

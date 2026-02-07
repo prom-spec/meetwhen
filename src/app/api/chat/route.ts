@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
-import * as dateFns from "date-fns"
 
 const SYSTEM_PROMPT = `You are MeetWhen assistant. ONLY help with: scheduling meetings, managing availability, understanding bookings.
 For ANY other topic, respond: "I can only help with MeetWhen scheduling features."

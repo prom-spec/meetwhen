@@ -31,7 +31,7 @@ export function getAvailableSlots(
   bufferBefore: number = 0,
   bufferAfter: number = 0,
   minNotice: number = 0, // minutes in advance
-  userTimezone: string = "UTC"
+  _userTimezone: string = "UTC"
 ): TimeSlot[] {
   const slots: TimeSlot[] = []
   const dayOfWeek = date.getDay()

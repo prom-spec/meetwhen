@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import prisma from "@/lib/prisma"
-import { CheckCircle, Calendar, Clock, MapPin, User, Mail } from "lucide-react"
+import { CheckCircle, Calendar, Clock, MapPin, User, Mail, Globe } from "lucide-react"
 import type { Metadata } from "next"
 
 interface PageProps {
@@ -28,17 +28,22 @@ export default async function BookingConfirmationPage({ params }: PageProps) {
     notFound()
   }
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date, tz: string) => {
     return date.toLocaleDateString(undefined, {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
+      timeZone: tz,
     })
   }
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  const formatTime = (date: Date, tz: string) => {
+    return date.toLocaleTimeString([], { 
+      hour: "2-digit", 
+      minute: "2-digit",
+      timeZone: tz,
+    })
   }
 
   const generateGoogleCalendarUrl = () => {
@@ -76,7 +81,7 @@ export default async function BookingConfirmationPage({ params }: PageProps) {
             </div>
             <h1 className="text-2xl font-bold text-[#1a1a2e]">Confirmed!</h1>
             <p className="text-gray-500 mt-1">
-              You're scheduled with {booking.host.name || booking.host.email}
+              You&apos;re scheduled with {booking.host.name || booking.host.email}
             </p>
           </div>
 
@@ -89,11 +94,16 @@ export default async function BookingConfirmationPage({ params }: PageProps) {
             <div className="flex items-start gap-3 text-gray-600">
               <Calendar className="w-5 h-5 mt-0.5 text-[#0066FF]" />
               <div>
-                <p className="font-medium">{formatDate(booking.startTime)}</p>
+                <p className="font-medium">{formatDate(booking.startTime, booking.guestTimezone)}</p>
                 <p className="text-sm text-gray-500">
-                  {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                  {formatTime(booking.startTime, booking.guestTimezone)} - {formatTime(booking.endTime, booking.guestTimezone)}
                 </p>
               </div>
+            </div>
+
+            <div className="flex items-center gap-3 text-gray-600">
+              <Globe className="w-5 h-5 text-[#0066FF]" />
+              <span>{booking.guestTimezone.replace(/_/g, " ")}</span>
             </div>
 
             <div className="flex items-center gap-3 text-gray-600">

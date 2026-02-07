@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Globe } from "lucide-react"
 
 interface BookingCalendarProps {
   username: string
@@ -26,7 +26,7 @@ export default function BookingCalendar({
   username,
   eventSlug,
   eventTypeId,
-  duration,
+  duration: _duration,
   maxDaysAhead,
 }: BookingCalendarProps) {
   const router = useRouter()
@@ -45,15 +45,47 @@ export default function BookingCalendar({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
 
+  // Get all available timezones
+  const timezones = useMemo(() => {
+    try {
+      return Intl.supportedValuesOf("timeZone")
+    } catch {
+      // Fallback for browsers that don't support supportedValuesOf
+      return [
+        "UTC",
+        "America/New_York",
+        "America/Chicago",
+        "America/Denver",
+        "America/Los_Angeles",
+        "America/Toronto",
+        "America/Vancouver",
+        "America/Sao_Paulo",
+        "Europe/London",
+        "Europe/Paris",
+        "Europe/Berlin",
+        "Europe/Moscow",
+        "Asia/Dubai",
+        "Asia/Kolkata",
+        "Asia/Singapore",
+        "Asia/Tokyo",
+        "Asia/Shanghai",
+        "Asia/Jerusalem",
+        "Australia/Sydney",
+        "Pacific/Auckland",
+      ]
+    }
+  }, [])
+
   useEffect(() => {
     setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
   }, [])
 
   useEffect(() => {
-    if (selectedDate) {
+    if (selectedDate && timezone) {
       fetchSlots(selectedDate)
     }
-  }, [selectedDate])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, timezone])
 
   const fetchSlots = async (date: Date) => {
     setIsLoadingSlots(true)
@@ -68,8 +100,8 @@ export default function BookingCalendar({
       )
       const data = await res.json()
       setSlots(data.slots || [])
-    } catch (error) {
-      console.error("Error fetching slots:", error)
+    } catch (err) {
+      console.error("Error fetching slots:", err)
     } finally {
       setIsLoadingSlots(false)
     }
@@ -212,8 +244,9 @@ export default function BookingCalendar({
             />
           </div>
 
-          <div className="text-sm text-gray-500">
-            Timezone: {timezone}
+          <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 p-2 rounded-md">
+            <Globe className="w-4 h-4" />
+            <span>Times shown in {timezone.replace(/_/g, " ")}</span>
           </div>
 
           {error && (
@@ -238,6 +271,25 @@ export default function BookingCalendar({
     <div>
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Select a Date & Time</h2>
       
+      {/* Timezone Selector */}
+      <div className="mb-4">
+        <label className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+          <Globe className="w-4 h-4" />
+          Timezone
+        </label>
+        <select
+          value={timezone}
+          onChange={(e) => setTimezone(e.target.value)}
+          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm border p-2"
+        >
+          {timezones.map((tz) => (
+            <option key={tz} value={tz}>
+              {tz.replace(/_/g, " ")}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* Calendar Header */}
       <div className="flex items-center justify-between mb-4">
         <button

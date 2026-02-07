@@ -1,0 +1,169 @@
+import {
+  Body,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Link,
+  Preview,
+  Section,
+  Text,
+  Hr,
+  Button,
+} from "@react-email/components"
+import * as React from "react"
+
+interface BookingReminderProps {
+  recipientName: string
+  otherPartyName: string
+  eventTitle: string
+  startTime: string
+  endTime: string
+  timezone: string
+  meetingUrl?: string | null
+  location?: string | null
+  isHost: boolean
+  minutesUntil: number
+}
+
+export default function BookingReminder({
+  recipientName,
+  otherPartyName,
+  eventTitle,
+  startTime,
+  endTime,
+  timezone,
+  meetingUrl,
+  location,
+  isHost,
+  minutesUntil,
+}: BookingReminderProps) {
+  const timeLabel = minutesUntil < 60 
+    ? `${minutesUntil} minutes` 
+    : `${Math.round(minutesUntil / 60)} hour${minutesUntil >= 120 ? 's' : ''}`
+
+  return (
+    <Html>
+      <Head />
+      <Preview>Reminder: {eventTitle} starts in {timeLabel}</Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Heading style={h1}>⏰ Meeting Reminder</Heading>
+          
+          <Text style={text}>Hi {recipientName},</Text>
+          
+          <Text style={text}>
+            Your meeting {isHost ? "with" : "with"} <strong>{otherPartyName}</strong> starts in <strong>{timeLabel}</strong>.
+          </Text>
+
+          <Section style={eventBox}>
+            <Text style={eventTitle}>{eventTitle}</Text>
+            <Text style={eventDetails}>
+              📅 {startTime} - {endTime}
+            </Text>
+            <Text style={eventDetails}>
+              🌍 {timezone}
+            </Text>
+            {location && (
+              <Text style={eventDetails}>
+                📍 {location}
+              </Text>
+            )}
+          </Section>
+
+          {meetingUrl && (
+            <Section style={buttonContainer}>
+              <Button style={button} href={meetingUrl}>
+                Join Meeting
+              </Button>
+            </Section>
+          )}
+
+          <Hr style={hr} />
+
+          <Text style={footerText}>
+            — MeetWhen
+          </Text>
+        </Container>
+      </Body>
+    </Html>
+  )
+}
+
+const main = {
+  backgroundColor: "#f6f9fc",
+  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+}
+
+const container = {
+  backgroundColor: "#ffffff",
+  margin: "0 auto",
+  padding: "40px 20px",
+  borderRadius: "8px",
+  maxWidth: "560px",
+}
+
+const h1 = {
+  color: "#1a1a1a",
+  fontSize: "24px",
+  fontWeight: "600",
+  lineHeight: "40px",
+  margin: "0 0 20px",
+}
+
+const text = {
+  color: "#484848",
+  fontSize: "16px",
+  lineHeight: "24px",
+  margin: "0 0 16px",
+}
+
+const eventBox = {
+  backgroundColor: "#fff7ed",
+  border: "1px solid #fed7aa",
+  borderRadius: "8px",
+  padding: "20px",
+  margin: "24px 0",
+}
+
+const eventTitle = {
+  color: "#1a1a1a",
+  fontSize: "18px",
+  fontWeight: "600",
+  margin: "0 0 12px",
+}
+
+const eventDetails = {
+  color: "#484848",
+  fontSize: "14px",
+  lineHeight: "20px",
+  margin: "4px 0",
+}
+
+const buttonContainer = {
+  textAlign: "center" as const,
+  margin: "24px 0",
+}
+
+const button = {
+  backgroundColor: "#3B82F6",
+  borderRadius: "6px",
+  color: "#fff",
+  fontSize: "14px",
+  fontWeight: "600",
+  textDecoration: "none",
+  textAlign: "center" as const,
+  padding: "12px 24px",
+}
+
+const hr = {
+  borderColor: "#e5e7eb",
+  margin: "24px 0",
+}
+
+const footerText = {
+  color: "#6b7280",
+  fontSize: "14px",
+  lineHeight: "20px",
+  margin: "0 0 8px",
+}

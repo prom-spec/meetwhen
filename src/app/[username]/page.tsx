@@ -60,10 +60,12 @@ export default async function UserProfilePage({ params }: PageProps) {
         {/* User Profile Header */}
         <div className="text-center mb-10">
           {user.image && (
-            <img
+            <Image
               src={user.image}
               alt={user.name || username}
-              className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-white shadow-sm"
+              width={96}
+              height={96}
+              className="rounded-full mx-auto mb-4 object-cover border-4 border-white shadow-sm"
             />
           )}
           <h1 className="text-2xl font-bold text-[#1a1a2e]">

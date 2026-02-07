@@ -31,7 +31,7 @@ export default function BookingPage() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [slots, setSlots] = useState<string[]>([])
   const [eventType, setEventType] = useState<EventType | null>(null)
-  const [hostTimezone, setHostTimezone] = useState<string>("UTC")
+  const [, setHostTimezone] = useState<string>("UTC")
   const [isLoading, setIsLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [isBooked, setIsBooked] = useState(false)
@@ -72,6 +72,7 @@ export default function BookingPage() {
       setSelectedTime(null)
       setShowForm(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate])
 
   const handleBook = async (e: React.FormEvent) => {

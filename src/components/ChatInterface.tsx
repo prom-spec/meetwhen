@@ -49,7 +49,7 @@ export default function ChatInterface() {
       const assistantMessage: Message = { role: 'assistant', content: data.response }
       setMessages((prev) => [...prev, assistantMessage])
       setRemaining(data.remainingMessages)
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to send message')
     } finally {
       setIsLoading(false)
