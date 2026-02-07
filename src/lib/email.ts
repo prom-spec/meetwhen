@@ -1,17 +1,19 @@
-import { Resend } from "resend"
+import type { Resend } from "resend"
 import { formatInTimeZone } from "date-fns-tz"
 import BookingConfirmation from "@/emails/BookingConfirmation"
 import BookingNotification from "@/emails/BookingNotification"
 import BookingReminder from "@/emails/BookingReminder"
 
-// Lazy initialization to avoid build errors when API key is not set
-let resend: Resend | null = null
-function getResend(): Resend | null {
-  if (!process.env.RESEND_API_KEY) return null
-  if (!resend) {
-    resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy initialization with dynamic import to avoid build errors when env var is not set
+let resendInstance: Resend | null = null
+async function getResend(): Promise<Resend | null> {
+  const key = process.env.RESEND_API_KEY
+  if (!key) return null
+  if (!resendInstance) {
+    const { Resend: ResendClass } = await import("resend")
+    resendInstance = new ResendClass(key)
   }
-  return resend
+  return resendInstance
 }
 
 const FROM_EMAIL = process.env.EMAIL_FROM || "MeetWhen <noreply@meetwhen.app>"
@@ -54,7 +56,7 @@ function formatTimeRange(start: Date, end: Date, timezone: string): { startTime:
 export async function sendBookingConfirmation(data: BookingEmailData) {
   const { booking, eventType, host } = data
   
-  const client = getResend()
+  const client = await getResend()
   if (!client) {
     console.warn("RESEND_API_KEY not set, skipping email")
     return { success: false, error: "Email not configured" }
@@ -94,7 +96,7 @@ export async function sendBookingConfirmation(data: BookingEmailData) {
 export async function sendBookingNotification(data: BookingEmailData) {
   const { booking, eventType, host } = data
   
-  const client = getResend()
+  const client = await getResend()
   if (!client) {
     console.warn("RESEND_API_KEY not set, skipping email")
     return { success: false, error: "Email not configured" }
@@ -137,7 +139,7 @@ export async function sendBookingNotification(data: BookingEmailData) {
 export async function sendBookingReminder(data: BookingEmailData & { minutesUntil: number; toHost: boolean }) {
   const { booking, eventType, host, minutesUntil, toHost } = data
   
-  const client = getResend()
+  const client = await getResend()
   if (!client) {
     console.warn("RESEND_API_KEY not set, skipping email")
     return { success: false, error: "Email not configured" }

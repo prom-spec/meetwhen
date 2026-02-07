@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import * as dateFns from "date-fns"
 import prisma from "@/lib/prisma"
-import { sendBookingEmails } from "@/lib/email"
+import { createCalendarEvent, hasCalendarConflict, getGoogleAccessToken } from "@/lib/calendar"
 
 export async function GET() {
   try {
@@ -83,6 +83,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Time slot is no longer available" }, { status: 409 })
     }
 
+    // Check Google Calendar for conflicts
+    const hasGCalConflict = await hasCalendarConflict(eventType.userId, startTime, endTime)
+    if (hasGCalConflict) {
+      return NextResponse.json({ error: "Time slot conflicts with existing calendar event" }, { status: 409 })
+    }
+
     // Create the booking
     const booking = await prisma.booking.create({
       data: {
@@ -101,27 +107,34 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Send confirmation emails (async, don't block response)
-    sendBookingEmails({
-      booking: {
-        id: booking.id,
-        guestName: booking.guestName,
-        guestEmail: booking.guestEmail,
-        guestTimezone: booking.guestTimezone,
-        startTime: booking.startTime,
-        endTime: booking.endTime,
-        meetingUrl: booking.meetingUrl,
-      },
-      eventType: {
-        title: booking.eventType.title,
-        location: booking.eventType.location,
-      },
-      host: {
-        name: booking.host.name,
-        email: booking.host.email,
-        timezone: booking.host.timezone,
-      },
-    }).catch((err) => console.error("Email sending failed:", err))
+    // Create Google Calendar event (async, don't block response)
+    getGoogleAccessToken(eventType.userId).then(async (accessToken) => {
+      if (accessToken) {
+        const googleEventId = await createCalendarEvent(accessToken, {
+          id: booking.id,
+          guestName: booking.guestName,
+          guestEmail: booking.guestEmail,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          eventType: {
+            title: booking.eventType.title,
+            description: booking.eventType.description,
+            location: booking.eventType.location,
+          },
+          host: {
+            name: booking.host.name,
+            email: booking.host.email,
+          },
+        })
+        
+        if (googleEventId) {
+          await prisma.booking.update({
+            where: { id: booking.id },
+            data: { googleEventId },
+          })
+        }
+      }
+    }).catch((err) => console.error("Calendar event creation failed:", err))
 
     return NextResponse.json(booking, { status: 201 })
   } catch (error) {

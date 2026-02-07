@@ -79,8 +79,9 @@ export async function GET(request: NextRequest) {
       const slotWithBufferEnd = dateFns.addMinutes(slotEnd, bufferAfter)
 
       if (dateFns.isAfter(slotStart, minBookingDate)) {
-        const hasConflict = existingBookings.some((b) => slotWithBufferStart < new Date(b.endTime) && slotWithBufferEnd > new Date(b.startTime))
-        if (!hasConflict) slots.push(dateFns.format(slotStart, "HH:mm"))
+        const hasBookingConflict = existingBookings.some((b) => slotWithBufferStart < new Date(b.endTime) && slotWithBufferEnd > new Date(b.startTime))
+        const hasGoogleConflict = googleBusyTimes.some((b) => slotWithBufferStart < b.end && slotWithBufferEnd > b.start)
+        if (!hasBookingConflict && !hasGoogleConflict) slots.push(dateFns.format(slotStart, "HH:mm"))
       }
       slotStart = dateFns.addMinutes(slotStart, duration <= 30 ? 15 : 30)
     }
