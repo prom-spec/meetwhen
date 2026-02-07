@@ -118,7 +118,7 @@ const eventBox = {
   margin: "24px 0",
 }
 
-const eventTitle = {
+const eventTitleStyle = {
   color: "#1a1a1a",
   fontSize: "18px",
   fontWeight: "600",

@@ -56,7 +56,7 @@ async function main() {
   
   // Create a session for this user (expires in 1 day)
   const sessionToken = crypto.randomBytes(32).toString('hex')
-  const session = await prisma.session.create({
+  const _session = await prisma.session.create({
     data: {
       sessionToken,
       userId: user.id,

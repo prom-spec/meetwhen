@@ -135,7 +135,7 @@ export default function BookingCalendar({
         const data = await res.json()
         setError(data.error || "Failed to create booking")
       }
-    } catch (error) {
+    } catch {
       setError("Something went wrong. Please try again.")
     } finally {
       setIsSubmitting(false)

@@ -4,7 +4,6 @@ import {
   Head,
   Heading,
   Html,
-  Link,
   Preview,
   Section,
   Text,
@@ -57,7 +56,7 @@ export default function BookingReminder({
           </Text>
 
           <Section style={eventBox}>
-            <Text style={eventTitle}>{eventTitle}</Text>
+            <Text style={eventTitleStyle}>{eventTitle}</Text>
             <Text style={eventDetails}>
               📅 {startTime} - {endTime}
             </Text>
@@ -126,7 +125,7 @@ const eventBox = {
   margin: "24px 0",
 }
 
-const eventTitle = {
+const eventTitleStyle = {
   color: "#1a1a1a",
   fontSize: "18px",
   fontWeight: "600",
