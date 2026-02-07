@@ -9,9 +9,9 @@ interface Message {
 }
 
 // Parse markdown links [text](url) and render as clickable links
-function renderMessageContent(content: string, isUser: boolean) {
+function renderMessageContent(content: string, isUser: boolean): React.ReactNode {
   const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
-  const parts: (string | JSX.Element)[] = []
+  const parts: React.ReactNode[] = []
   let lastIndex = 0
   let match
 
