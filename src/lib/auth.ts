@@ -159,6 +159,63 @@ export const authOptions: NextAuthOptions = {
     },
     async createUser({ user }) {
       authLogger.info("New user created", { visitorId: user.id, email: user.email })
+      
+      // Generate a unique username for new users
+      try {
+        let baseUsername = ""
+        
+        // Try to generate from name first
+        if (user.name) {
+          baseUsername = user.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)/g, "")
+            .substring(0, 20)
+        }
+        
+        // Fall back to email prefix
+        if (!baseUsername && user.email) {
+          baseUsername = user.email
+            .split("@")[0]
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)/g, "")
+            .substring(0, 20)
+        }
+        
+        // Fall back to random string
+        if (!baseUsername) {
+          baseUsername = "user"
+        }
+        
+        // Check if username exists and add suffix if needed
+        let username = baseUsername
+        let suffix = 1
+        while (true) {
+          const existing = await prisma.user.findUnique({ 
+            where: { username },
+            select: { id: true }
+          })
+          if (!existing || existing.id === user.id) break
+          username = `${baseUsername}-${suffix}`
+          suffix++
+          if (suffix > 100) {
+            // Fallback to random suffix
+            username = `${baseUsername}-${Math.random().toString(36).substring(2, 8)}`
+            break
+          }
+        }
+        
+        // Update user with generated username
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { username }
+        })
+        
+        authLogger.info("Generated username for new user", { visitorId: user.id, username })
+      } catch (error) {
+        authLogger.error("Failed to generate username", error, { visitorId: user.id })
+      }
     },
     async linkAccount({ user, account }) {
       authLogger.info("Account linked", { visitorId: user.id, provider: account.provider })
