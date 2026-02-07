@@ -7,14 +7,13 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { CallToolRequestSchema, ListToolsRequestSchema, Tool } from "@modelcontextprotocol/sdk/types.js"
 import { PrismaClient } from "@prisma/client"
 import { PrismaNeon } from "@prisma/adapter-neon"
-import { Pool } from "@neondatabase/serverless"
 import * as dateFns from "date-fns"
 
 function createPrismaClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL
   if (!connectionString) throw new Error("DATABASE_URL not set")
-  const pool = new Pool({ connectionString })
-  const adapter = new PrismaNeon(pool)
+  // PrismaNeon v7+ accepts connectionString directly, creates pool internally
+  const adapter = new PrismaNeon({ connectionString })
   return new PrismaClient({ adapter })
 }
 const prisma = createPrismaClient()
