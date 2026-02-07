@@ -58,17 +58,24 @@ export default function BookingConfirmation({
             <Text style={eventDetails}>
               🌍 {timezone}
             </Text>
-            {location && (
+            {location && !meetingUrl && (
               <Text style={eventDetails}>
                 📍 {location}
               </Text>
             )}
-            {meetingUrl && (
-              <Text style={eventDetails}>
-                🔗 <Link href={meetingUrl} style={link}>Join Meeting</Link>
-              </Text>
-            )}
           </Section>
+
+          {meetingUrl && (
+            <Section style={meetingBox}>
+              <Text style={meetingTitle}>🎥 Join Your Meeting</Text>
+              <Link href={meetingUrl} style={meetingLink}>
+                {meetingUrl.startsWith("tel:") ? meetingUrl.replace("tel:", "📞 ") : meetingUrl}
+              </Link>
+              <Text style={meetingNote}>
+                Click the link above to join at the scheduled time
+              </Text>
+            </Section>
+          )}
 
           {bookingUrl && (
             <Section style={buttonContainer}>
@@ -151,6 +158,36 @@ const eventDetails = {
 const link = {
   color: "#3B82F6",
   textDecoration: "none",
+}
+
+const meetingBox = {
+  backgroundColor: "#ecfdf5",
+  border: "1px solid #10b981",
+  borderRadius: "8px",
+  padding: "20px",
+  margin: "24px 0",
+  textAlign: "center" as const,
+}
+
+const meetingTitle = {
+  color: "#065f46",
+  fontSize: "16px",
+  fontWeight: "600",
+  margin: "0 0 12px",
+}
+
+const meetingLink = {
+  color: "#059669",
+  fontSize: "14px",
+  fontWeight: "500",
+  textDecoration: "none",
+  wordBreak: "break-all" as const,
+}
+
+const meetingNote = {
+  color: "#6b7280",
+  fontSize: "12px",
+  margin: "12px 0 0",
 }
 
 const hr = {

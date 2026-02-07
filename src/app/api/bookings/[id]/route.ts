@@ -251,6 +251,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             title: updatedBooking.eventType.title,
             description: updatedBooking.eventType.description,
             location: updatedBooking.eventType.location,
+            locationType: updatedBooking.eventType.locationType,
+            locationValue: updatedBooking.eventType.locationValue,
           },
           host: {
             name: updatedBooking.host.name,
@@ -258,11 +260,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           },
         }
         
-        const newGoogleEventId = await createCalendarEvent(accessToken, bookingData)
-        if (newGoogleEventId) {
+        const calendarResult = await createCalendarEvent(accessToken, bookingData)
+        if (calendarResult.googleEventId) {
           await prisma.booking.update({
             where: { id },
-            data: { googleEventId: newGoogleEventId },
+            data: { 
+              googleEventId: calendarResult.googleEventId,
+              meetingUrl: calendarResult.meetingUrl,
+            },
           })
         }
       }

@@ -1,6 +1,6 @@
 import { createHmac } from "crypto"
 import prisma from "./prisma"
-import { DeliveryStatus } from "@prisma/client"
+import { DeliveryStatus, Prisma } from "@prisma/client"
 
 export type WebhookEvent = "booking.created" | "booking.cancelled" | "booking.rescheduled"
 
@@ -10,10 +10,12 @@ export const WEBHOOK_EVENTS: { value: WebhookEvent; label: string; description: 
   { value: "booking.rescheduled", label: "Booking Rescheduled", description: "Triggered when a booking is rescheduled" },
 ]
 
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
+
 interface WebhookPayload {
   event: WebhookEvent
   timestamp: string
-  data: Record<string, unknown>
+  data: JsonValue
 }
 
 const MAX_RETRY_ATTEMPTS = 3
@@ -119,7 +121,7 @@ async function deliverWebhook(
 export async function triggerWebhook(
   userId: string,
   event: WebhookEvent,
-  data: Record<string, unknown>
+  data: JsonValue
 ): Promise<void> {
   // Find all active webhooks for this user that subscribe to this event
   const webhooks = await prisma.webhook.findMany({
@@ -147,7 +149,7 @@ export async function triggerWebhook(
         data: {
           webhookId: webhook.id,
           event,
-          payload: data,
+          payload: data as Prisma.InputJsonValue,
           status: DeliveryStatus.PENDING,
         },
       })
@@ -197,7 +199,7 @@ export async function sendTestWebhook(webhookId: string): Promise<{ success: boo
     data: {
       webhookId: webhook.id,
       event: "booking.created",
-      payload: testPayload.data,
+      payload: testPayload.data as Prisma.InputJsonValue,
       status: DeliveryStatus.PENDING,
     },
   })

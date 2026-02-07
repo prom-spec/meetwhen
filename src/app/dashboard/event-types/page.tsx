@@ -44,6 +44,8 @@ export default function EventTypesPage() {
     duration: "30",
     color: "#3B82F6",
     location: "",
+    locationType: "GOOGLE_MEET" as LocationType,
+    locationValue: "",
     bufferBefore: "0",
     bufferAfter: "0",
   })
@@ -125,6 +127,8 @@ export default function EventTypesPage() {
       duration: "30",
       color: "#3B82F6",
       location: "",
+      locationType: "GOOGLE_MEET",
+      locationValue: "",
       bufferBefore: "0",
       bufferAfter: "0",
     })
@@ -140,6 +144,8 @@ export default function EventTypesPage() {
       duration: eventType.duration.toString(),
       color: eventType.color,
       location: eventType.location || "",
+      locationType: eventType.locationType || "GOOGLE_MEET",
+      locationValue: eventType.locationValue || "",
       bufferBefore: eventType.bufferBefore.toString(),
       bufferAfter: eventType.bufferAfter.toString(),
     })
@@ -324,14 +330,42 @@ export default function EventTypesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Location</label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
-                  placeholder="Zoom, Google Meet, or custom URL"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                <div className="grid grid-cols-5 gap-2 mb-3">
+                  {LOCATION_OPTIONS.map((option) => {
+                    const Icon = option.icon
+                    const isSelected = formData.locationType === option.value
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, locationType: option.value, locationValue: "" })}
+                        className={`flex flex-col items-center justify-center p-2 rounded-md border text-xs transition-colors ${
+                          isSelected
+                            ? "border-blue-500 bg-blue-50 text-blue-700"
+                            : "border-gray-200 hover:border-gray-300 text-gray-600"
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 mb-1" />
+                        <span className="text-center leading-tight">{option.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                {formData.locationType !== "GOOGLE_MEET" && (
+                  <input
+                    type="text"
+                    value={formData.locationValue}
+                    onChange={(e) => setFormData({ ...formData, locationValue: e.target.value })}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                    placeholder={LOCATION_OPTIONS.find(o => o.value === formData.locationType)?.placeholder}
+                  />
+                )}
+                {formData.locationType === "GOOGLE_MEET" && (
+                  <p className="text-sm text-gray-500 italic">
+                    A Google Meet link will be generated automatically when someone books
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

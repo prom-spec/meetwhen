@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import prisma from "@/lib/prisma"
-import { CheckCircle, Calendar, Clock, MapPin, User, Mail, Globe, XCircle, AlertTriangle } from "lucide-react"
+import { CheckCircle, Calendar, Clock, MapPin, User, Mail, Globe, XCircle, AlertTriangle, Video, Phone, ExternalLink } from "lucide-react"
 import type { Metadata } from "next"
 import BookingActions from "./BookingActions"
 
@@ -142,7 +142,38 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
               <span>{booking.eventType.duration} minutes</span>
             </div>
 
-            {booking.eventType.location && (
+            {/* Meeting Link - Displayed prominently */}
+            {booking.meetingUrl && !isCancelled && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Video className="w-5 h-5 text-blue-600" />
+                  <span className="font-medium text-blue-900">Meeting Link</span>
+                </div>
+                <a
+                  href={booking.meetingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium break-all"
+                >
+                  {booking.meetingUrl.startsWith("tel:") ? (
+                    <>
+                      <Phone className="w-4 h-4 flex-shrink-0" />
+                      {booking.meetingUrl.replace("tel:", "")}
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                      {booking.meetingUrl.length > 40 
+                        ? booking.meetingUrl.substring(0, 40) + "..." 
+                        : booking.meetingUrl}
+                    </>
+                  )}
+                </a>
+              </div>
+            )}
+
+            {/* Location for in-person meetings */}
+            {booking.eventType.location && !booking.meetingUrl && (
               <div className={`flex items-center gap-3 ${isCancelled ? 'text-gray-400' : 'text-gray-600'}`}>
                 <MapPin className={`w-5 h-5 ${isCancelled ? 'text-gray-400' : 'text-[#0066FF]'}`} />
                 <span>{booking.eventType.location}</span>
@@ -171,6 +202,30 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
           {/* Actions */}
           {!isCancelled && !isPast && (
             <div className="mt-6 space-y-3">
+              {/* Join Meeting button - prominent for video calls */}
+              {booking.meetingUrl && !booking.meetingUrl.startsWith("tel:") && (
+                <a
+                  href={booking.meetingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+                >
+                  <Video className="w-4 h-4" />
+                  Join Meeting
+                </a>
+              )}
+              
+              {/* Call button for phone meetings */}
+              {booking.meetingUrl && booking.meetingUrl.startsWith("tel:") && (
+                <a
+                  href={booking.meetingUrl}
+                  className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+                >
+                  <Phone className="w-4 h-4" />
+                  Call Now
+                </a>
+              )}
+              
               <a
                 href={generateGoogleCalendarUrl()}
                 target="_blank"

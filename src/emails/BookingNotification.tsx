@@ -22,6 +22,7 @@ interface BookingNotificationProps {
   endTime: string
   timezone: string
   dashboardUrl: string
+  meetingUrl?: string | null
 }
 
 export default function BookingNotification({
@@ -33,6 +34,7 @@ export default function BookingNotification({
   endTime,
   timezone,
   dashboardUrl,
+  meetingUrl,
 }: BookingNotificationProps) {
   return (
     <Html>
@@ -62,6 +64,13 @@ export default function BookingNotification({
             <Text style={eventDetails}>
               🌍 {timezone}
             </Text>
+            {meetingUrl && (
+              <Text style={eventDetails}>
+                🔗 <Link href={meetingUrl} style={link}>
+                  {meetingUrl.startsWith("tel:") ? meetingUrl.replace("tel:", "") : "Join Meeting"}
+                </Link>
+              </Text>
+            )}
           </Section>
 
           <Section style={buttonContainer}>
