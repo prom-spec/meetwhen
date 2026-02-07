@@ -62,6 +62,12 @@ export default async function DashboardLayout({
                 >
                   Bookings
                 </Link>
+                <Link
+                  href="/dashboard/settings"
+                  className="text-gray-500 hover:text-[#0066FF] inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-[#0066FF]/30 text-sm font-medium transition-colors"
+                >
+                  Settings
+                </Link>
               </div>
             </div>
             <div className="flex items-center gap-4">

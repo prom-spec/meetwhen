@@ -41,7 +41,17 @@ export async function POST(request: NextRequest) {
 
     const eventType = await prisma.eventType.findUnique({
       where: { id: eventTypeId },
-      include: { user: true },
+      include: { 
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            timezone: true,
+            calendarSyncEnabled: true,
+          },
+        },
+      },
     })
 
     if (!eventType || !eventType.isActive) {
@@ -107,35 +117,37 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create Google Calendar event (async, don't block response)
-    getGoogleAccessToken(eventType.userId).then(async (accessToken) => {
-      if (accessToken) {
-        const bookingData: BookingData = {
-          id: booking.id,
-          guestName: booking.guestName,
-          guestEmail: booking.guestEmail,
-          startTime: booking.startTime,
-          endTime: booking.endTime,
-          eventType: {
-            title: booking.eventType.title,
-            description: booking.eventType.description,
-            location: booking.eventType.location,
-          },
-          host: {
-            name: booking.host.name,
-            email: booking.host.email,
-          },
+    // Create Google Calendar event if enabled (async, don't block response)
+    if (eventType.user.calendarSyncEnabled) {
+      getGoogleAccessToken(eventType.userId).then(async (accessToken) => {
+        if (accessToken) {
+          const bookingData: BookingData = {
+            id: booking.id,
+            guestName: booking.guestName,
+            guestEmail: booking.guestEmail,
+            startTime: booking.startTime,
+            endTime: booking.endTime,
+            eventType: {
+              title: booking.eventType.title,
+              description: booking.eventType.description,
+              location: booking.eventType.location,
+            },
+            host: {
+              name: booking.host.name,
+              email: booking.host.email,
+            },
+          }
+          const googleEventId = await createCalendarEvent(accessToken, bookingData)
+          
+          if (googleEventId) {
+            await prisma.booking.update({
+              where: { id: booking.id },
+              data: { googleEventId },
+            })
+          }
         }
-        const googleEventId = await createCalendarEvent(accessToken, bookingData)
-        
-        if (googleEventId) {
-          await prisma.booking.update({
-            where: { id: booking.id },
-            data: { googleEventId },
-          })
-        }
-      }
-    }).catch((err) => console.error("Calendar event creation failed:", err))
+      }).catch((err) => console.error("Calendar event creation failed:", err))
+    }
 
     return NextResponse.json(booking, { status: 201 })
   } catch (error) {
