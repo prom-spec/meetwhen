@@ -253,7 +253,7 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
                 <AlertTriangle className="w-5 h-5 text-gray-500 mt-0.5" />
                 <div>
                   <p className="text-sm text-gray-600">
-                    This booking was cancelled. If you'd like to book another time, please visit the host's booking page.
+                    This booking was cancelled. If you&apos;d like to book another time, please visit the host&apos;s booking page.
                   </p>
                 </div>
               </div>
