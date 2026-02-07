@@ -131,6 +131,7 @@ export async function sendBookingNotification(data: BookingEmailData) {
         endTime,
         timezone: hostTimezone,
         dashboardUrl,
+        meetingUrl: booking.meetingUrl,
       }),
     })
 
