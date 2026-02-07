@@ -37,6 +37,7 @@ export default function EventTypesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingEventType, setEditingEventType] = useState<EventType | null>(null)
+  const [username, setUsername] = useState<string>("")
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
@@ -52,7 +53,20 @@ export default function EventTypesPage() {
 
   useEffect(() => {
     fetchEventTypes()
+    fetchUsername()
   }, [])
+
+  const fetchUsername = async () => {
+    try {
+      const res = await fetch("/api/user/profile")
+      if (res.ok) {
+        const data = await res.json()
+        setUsername(data.username || "")
+      }
+    } catch (error) {
+      console.error("Error fetching username:", error)
+    }
+  }
 
   const fetchEventTypes = async () => {
     try {
@@ -162,7 +176,10 @@ export default function EventTypesPage() {
   }
 
   const copyLink = (slug: string) => {
-    navigator.clipboard.writeText(`${window.location.origin}/${slug}`)
+    const bookingUrl = username 
+      ? `${window.location.origin}/${username}/${slug}`
+      : `${window.location.origin}/${slug}`
+    navigator.clipboard.writeText(bookingUrl)
     alert("Link copied!")
   }
 
@@ -232,7 +249,7 @@ export default function EventTypesPage() {
                   <Copy className="w-4 h-4" />
                 </button>
                 <a
-                  href={`/${eventType.slug}`}
+                  href={username ? `/${username}/${eventType.slug}` : `/${eventType.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 text-gray-400 hover:text-gray-600"
