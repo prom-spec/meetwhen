@@ -5,9 +5,9 @@ import prisma from "@/lib/prisma"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { eventTypeId, guestName, guestEmail, guestTimezone, date, time } = body
+    const { eventTypeId, guestName, guestEmail, guestTimezone, date, time, startTime: startTimeISO } = body
 
-    if (!eventTypeId || !guestName || !guestEmail || !date || !time) {
+    if (!eventTypeId || !guestName || !guestEmail || (!startTimeISO && (!date || !time))) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
@@ -20,12 +20,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Event type not found or inactive" }, { status: 404 })
     }
 
-    // Parse start time
-    const [hour, minute] = time.split(":").map(Number)
-    const startTime = dateFns.setMinutes(
-      dateFns.setHours(dateFns.parse(date, "yyyy-MM-dd", new Date()), hour),
-      minute
-    )
+    // Parse start time (supports both ISO string or date+time)
+    let startTime: Date
+    if (startTimeISO) {
+      startTime = new Date(startTimeISO)
+    } else {
+      const [hour, minute] = time.split(":").map(Number)
+      startTime = dateFns.setMinutes(
+        dateFns.setHours(dateFns.parse(date, "yyyy-MM-dd", new Date()), hour),
+        minute
+      )
+    }
     const endTime = dateFns.addMinutes(startTime, eventType.duration)
 
     // Validate booking time
