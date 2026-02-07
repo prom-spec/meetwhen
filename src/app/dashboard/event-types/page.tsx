@@ -201,10 +201,8 @@ export default function EventTypesPage() {
     return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
   }
 
-  const copyLink = (slug: string) => {
-    const bookingUrl = username 
-      ? `${window.location.origin}/${username}/${slug}`
-      : `${window.location.origin}/${slug}`
+  const copyLink = (id: string) => {
+    const bookingUrl = `${window.location.origin}/book/${id}`
     navigator.clipboard.writeText(bookingUrl)
     alert("Link copied!")
   }
@@ -216,9 +214,12 @@ export default function EventTypesPage() {
 
   const getFullUrl = () => {
     const base = getBaseUrl()
-    const user = username || "you"
+    // Show ID-based URL for existing events, or slug preview for new events
+    if (editingEventType?.id) {
+      return `${base}/book/${editingEventType.id}`
+    }
     const slug = formData.slug || "event"
-    return `${base}/${user}/${slug}`
+    return `${base}/book/[id] (${slug})`
   }
 
   if (isLoading) {
@@ -280,14 +281,14 @@ export default function EventTypesPage() {
               
               <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
                 <button
-                  onClick={() => copyLink(eventType.slug)}
+                  onClick={() => copyLink(eventType.id)}
                   className="p-2 text-gray-400 hover:text-gray-600"
                   title="Copy link"
                 >
                   <Copy className="w-4 h-4" />
                 </button>
                 <a
-                  href={username ? `/${username}/${eventType.slug}` : `/${eventType.slug}`}
+                  href={`/book/${eventType.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 text-gray-400 hover:text-gray-600"
