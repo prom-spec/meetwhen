@@ -82,13 +82,13 @@ export default function DashboardLayout({
                 </Link>
               </div>
               
-              {/* Desktop Navigation */}
-              <div className="hidden lg:ml-8 lg:flex lg:space-x-4">
+              {/* Desktop Navigation - visible from md (768px) */}
+              <div className="hidden md:ml-6 md:flex md:space-x-2 lg:ml-8 lg:space-x-4">
                 {navLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`inline-flex items-center px-2 pt-1 border-b-2 text-sm font-medium transition-colors ${
+                    className={`inline-flex items-center px-2 pt-1 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${
                       isActiveLink(link.href)
                         ? "border-[#0066FF] text-[#0066FF]"
                         : "border-transparent text-gray-500 hover:text-[#0066FF] hover:border-[#0066FF]/30"
@@ -100,9 +100,9 @@ export default function DashboardLayout({
               </div>
             </div>
 
-            {/* Desktop Right Side */}
-            <div className="hidden lg:flex lg:items-center lg:gap-4">
-              <span className="text-sm text-gray-500 truncate max-w-[200px]">
+            {/* Desktop Right Side - visible from md (768px) */}
+            <div className="hidden md:flex md:items-center md:gap-4">
+              <span className="text-sm text-gray-500 truncate max-w-[150px] lg:max-w-[200px]">
                 {session.user?.email}
               </span>
               <Link
@@ -113,8 +113,8 @@ export default function DashboardLayout({
               </Link>
             </div>
 
-            {/* Mobile menu button */}
-            <div className="flex items-center lg:hidden">
+            {/* Mobile menu button - visible below md (768px) */}
+            <div className="flex items-center md:hidden">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#0066FF]"
@@ -131,8 +131,8 @@ export default function DashboardLayout({
           </div>
         </div>
 
-        {/* Mobile menu */}
-        <div className={`lg:hidden ${mobileMenuOpen ? "block" : "hidden"}`}>
+        {/* Mobile menu - visible below md (768px) */}
+        <div className={`md:hidden ${mobileMenuOpen ? "block" : "hidden"}`}>
           <div className="pt-2 pb-3 space-y-1 bg-white border-b border-gray-200">
             {navLinks.map((link) => (
               <Link
