@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import Link from "next/link"
+import ChatInterface from "@/components/ChatInterface"
 
 export default async function DashboardLayout({
   children,
@@ -69,6 +70,7 @@ export default async function DashboardLayout({
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {children}
       </main>
+      <ChatInterface />
     </div>
   )
 }
