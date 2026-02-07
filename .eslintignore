@@ -2,3 +2,7 @@
 **/_w.cjs
 **/_write.cjs
 **/_append.cjs
+
+# Build artifacts
+.next
+.next.bak*
