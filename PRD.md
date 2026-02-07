@@ -1,4 +1,4 @@
-# CalClone - Product Requirements Document
+# MeetWhen - Product Requirements Document
 
 ## Overview
 A full-featured scheduling application similar to Calendly, allowing users to share their availability and let others book meetings with them.
