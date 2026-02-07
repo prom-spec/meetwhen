@@ -65,11 +65,8 @@ export async function GET(request: NextRequest) {
         intervalStart = startOfDay(interval)
         intervalEnd = endOfDay(interval)
         label = format(interval, "MMM d")
-      } else if (groupBy === "week") {
-        intervalStart = startOfWeek(interval, { weekStartsOn: 1 })
-        intervalEnd = endOfWeek(interval, { weekStartsOn: 1 })
-        label = format(interval, "MMM d")
       } else {
+        // month grouping
         intervalStart = startOfMonth(interval)
         intervalEnd = endOfMonth(interval)
         label = format(interval, "MMM yyyy")

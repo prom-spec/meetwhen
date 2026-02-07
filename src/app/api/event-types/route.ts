@@ -32,23 +32,48 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, slug, description, duration, color, location, locationType, locationValue, bufferBefore, bufferAfter, minNotice, maxDaysAhead } = body
+    const { 
+      title, slug, description, duration, color, location, locationType, locationValue, 
+      bufferBefore, bufferAfter, minNotice, maxDaysAhead,
+      teamId, schedulingType
+    } = body
 
     if (!title || !slug || !duration) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    const existingSlug = await prisma.eventType.findUnique({
-      where: {
-        userId_slug: {
-          userId: session.user.id,
-          slug,
-        },
-      },
-    })
+    // If teamId is provided, verify user is a team member with appropriate permissions
+    if (teamId) {
+      const membership = await prisma.teamMember.findUnique({
+        where: { teamId_userId: { teamId, userId: session.user.id } },
+      })
 
-    if (existingSlug) {
-      return NextResponse.json({ error: "Slug already exists" }, { status: 400 })
+      if (!membership || (membership.role !== "OWNER" && membership.role !== "ADMIN")) {
+        return NextResponse.json({ error: "Not authorized to create team event types" }, { status: 403 })
+      }
+
+      // Check for existing team slug
+      const existingTeamSlug = await prisma.eventType.findFirst({
+        where: { teamId, slug },
+      })
+
+      if (existingTeamSlug) {
+        return NextResponse.json({ error: "Slug already exists for this team" }, { status: 400 })
+      }
+    } else {
+      // Check for existing user slug
+      const existingSlug = await prisma.eventType.findUnique({
+        where: {
+          userId_slug: {
+            userId: session.user.id,
+            slug,
+          },
+        },
+      })
+
+      if (existingSlug) {
+        return NextResponse.json({ error: "Slug already exists" }, { status: 400 })
+      }
     }
 
     const eventType = await prisma.eventType.create({
@@ -66,6 +91,10 @@ export async function POST(request: NextRequest) {
         bufferAfter: bufferAfter ? parseInt(bufferAfter) : 0,
         minNotice: minNotice ? parseInt(minNotice) : 240,
         maxDaysAhead: maxDaysAhead ? parseInt(maxDaysAhead) : 60,
+        ...(teamId && { 
+          teamId,
+          schedulingType: schedulingType || "ROUND_ROBIN",
+        }),
       },
     })
 

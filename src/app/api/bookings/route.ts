@@ -126,6 +126,8 @@ export async function POST(request: NextRequest) {
                     title: eventType.title,
                     description: eventType.description,
                     location: eventType.location,
+                    locationType: eventType.locationType,
+                    locationValue: eventType.locationValue,
                   },
                   host: {
                     name: member.user.name,
@@ -195,18 +197,28 @@ export async function POST(request: NextRequest) {
                   title: booking.eventType.title,
                   description: booking.eventType.description,
                   location: booking.eventType.location,
+                  locationType: eventType.locationType,
+                  locationValue: eventType.locationValue,
                 },
                 host: {
                   name: booking.host.name,
                   email: booking.host.email,
                 },
               }
-              const googleEventId = await createCalendarEvent(accessToken, bookingData)
+              const result = await createCalendarEvent(accessToken, bookingData)
               
-              if (googleEventId) {
+              const updateData: { googleEventId?: string; meetingUrl?: string } = {}
+              if (result.googleEventId) {
+                updateData.googleEventId = result.googleEventId
+              }
+              if (result.meetingUrl) {
+                updateData.meetingUrl = result.meetingUrl
+              }
+              
+              if (Object.keys(updateData).length > 0) {
                 await prisma.booking.update({
                   where: { id: booking.id },
-                  data: { googleEventId },
+                  data: updateData,
                 })
               }
             }
@@ -234,8 +246,8 @@ export async function POST(request: NextRequest) {
           },
           host: {
             id: assignedMemberId,
-            name: assignedMember?.user.name,
-            email: assignedMember?.user.email,
+            name: assignedMember?.user.name || null,
+            email: assignedMember?.user.email || "",
           },
         }).catch((err) => console.error("Webhook trigger failed:", err))
 
