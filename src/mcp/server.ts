@@ -1,5 +1,5 @@
 /**
- * CalClone MCP Server
+ * MeetWhen MCP Server
  * Run with: npx tsx src/mcp/server.ts
  */
 import { Server } from "@modelcontextprotocol/sdk/server/index.js"
@@ -384,7 +384,7 @@ async function cancelBooking(params: { bookingId: string; reason?: string }) {
 
 // Main server setup
 const server = new Server(
-  { name: "calclone-mcp", version: "1.0.0" },
+  { name: "meetwhen-mcp", version: "1.0.0" },
   { capabilities: { tools: {} } }
 )
 
@@ -432,7 +432,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport()
   await server.connect(transport)
-  console.error("CalClone MCP Server running on stdio")
+  console.error("MeetWhen MCP Server running on stdio")
 }
 
 main().catch((error) => {

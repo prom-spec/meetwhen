@@ -74,7 +74,7 @@ export default async function UserProfilePage({ params }: PageProps) {
         {/* Footer */}
         <div className="text-center mt-10">
           <p className="text-sm text-gray-400">
-            Powered by <span className="font-semibold text-blue-600">CalClone</span>
+            Powered by <span className="font-semibold text-blue-600">MeetWhen</span>
           </p>
         </div>
       </div>

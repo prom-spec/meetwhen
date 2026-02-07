@@ -124,7 +124,7 @@ export default async function BookingConfirmationPage({ params }: PageProps) {
         {/* Footer */}
         <div className="mt-8 pt-6 border-t border-gray-200 text-center">
           <p className="text-sm text-gray-400">
-            Powered by <span className="font-semibold text-blue-600">CalClone</span>
+            Powered by <span className="font-semibold text-blue-600">MeetWhen</span>
           </p>
         </div>
       </div>
