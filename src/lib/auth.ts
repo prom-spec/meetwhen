@@ -112,18 +112,14 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      authorization: {
-        params: {
-          scope: "openid email profile https://www.googleapis.com/auth/calendar.events",
-          access_type: "offline",
-          prompt: "consent",
-        },
-      },
+      // Note: Calendar scope removed to allow login from Workspace accounts
+      // Calendar integration will be added as optional post-login
     }),
-    EmailProvider({
-      from: process.env.EMAIL_FROM || "MeetWhen <onboarding@resend.dev>",
-      sendVerificationRequest,
-    }),
+    // Email login temporarily disabled - needs verified domain in Resend
+    // EmailProvider({
+    //   from: process.env.EMAIL_FROM || "MeetWhen <onboarding@resend.dev>",
+    //   sendVerificationRequest,
+    // }),
   ],
   session: {
     strategy: "database",

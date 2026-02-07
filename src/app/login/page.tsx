@@ -131,47 +131,9 @@ function LoginForm() {
           )}
         </button>
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-gray-50 text-gray-500">or</span>
-          </div>
-        </div>
-
-        <form onSubmit={handleEmailSignIn} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="sr-only">
-              Email address
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading || isGoogleLoading}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0066FF] focus:border-transparent transition-shadow text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-              placeholder="Enter your email"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={isLoading || isGoogleLoading || !email.trim()}
-            className="w-full py-3 px-4 rounded-lg text-sm font-medium text-white bg-[#0066FF] hover:bg-[#0052cc] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0066FF] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                Sending link...
-              </>
-            ) : (
-              "Continue with email"
-            )}
-          </button>
-        </form>
+        <p className="text-center text-xs text-gray-400 mt-4">
+          Sign in with your Google account to get started
+        </p>
       </div>
     </>
   )
@@ -229,7 +191,7 @@ export default function LoginPage() {
             </span>
             <br />
             <span className="text-gray-400 mt-1 block">
-              (Just enter your email above)
+              (Just click Continue with Google)
             </span>
           </p>
         </div>
