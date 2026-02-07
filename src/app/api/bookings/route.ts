@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import * as dateFns from "date-fns"
 import prisma from "@/lib/prisma"
-import { createCalendarEvent, hasCalendarConflict, getGoogleAccessToken } from "@/lib/calendar"
+import { createCalendarEvent, hasCalendarConflict, getGoogleAccessToken, BookingData } from "@/lib/calendar"
 
 export async function GET() {
   try {
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     // Create Google Calendar event (async, don't block response)
     getGoogleAccessToken(eventType.userId).then(async (accessToken) => {
       if (accessToken) {
-        const googleEventId = await createCalendarEvent(accessToken, {
+        const bookingData: BookingData = {
           id: booking.id,
           guestName: booking.guestName,
           guestEmail: booking.guestEmail,
@@ -125,7 +125,8 @@ export async function POST(request: NextRequest) {
             name: booking.host.name,
             email: booking.host.email,
           },
-        })
+        }
+        const googleEventId = await createCalendarEvent(accessToken, bookingData)
         
         if (googleEventId) {
           await prisma.booking.update({

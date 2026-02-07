@@ -1,140 +1,108 @@
 import { google, calendar_v3 } from "googleapis"
-import { prisma } from "./prisma"
+import prisma from "./prisma"
 
-/**
- * Get the Google OAuth2 access token for a user from their account
- */
-export async function getGoogleAccessToken(userId: string): Promise<string | null> {
-  const account = await prisma.account.findFirst({
-    where: {
-      userId,
-      provider: "google",
-    },
-    select: {
-      access_token: true,
-      refresh_token: true,
-      expires_at: true,
-    },
-  })
-
-  if (!account?.access_token) {
-    return null
+export interface BookingData {
+  id: string
+  guestName: string
+  guestEmail: string
+  startTime: Date
+  endTime: Date
+  eventType: {
+    title: string
+    description: string | null
+    location: string | null
   }
-
-  // Check if token is expired and needs refresh
-  if (account.expires_at && account.refresh_token) {
-    const expiresAt = account.expires_at * 1000 // Convert to milliseconds
-    const now = Date.now()
-    
-    if (now >= expiresAt - 60000) { // Refresh if expires within 1 minute
-      const refreshedToken = await refreshAccessToken(userId, account.refresh_token)
-      return refreshedToken
-    }
+  host: {
+    name: string | null
+    email: string | null
   }
-
-  return account.access_token
 }
 
 /**
- * Refresh the access token using the refresh token
+ * Creates a Google Calendar API client with the given access token
  */
-async function refreshAccessToken(userId: string, refreshToken: string): Promise<string | null> {
+export function getGoogleCalendarClient(accessToken: string): calendar_v3.Calendar {
+  const auth = new google.auth.OAuth2()
+  auth.setCredentials({ access_token: accessToken })
+  return google.calendar({ version: "v3", auth })
+}
+
+/**
+ * Retrieves the Google access token for a user from the database
+ * Handles token refresh if needed
+ */
+export async function getGoogleAccessToken(userId: string): Promise<string | null> {
   try {
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET
-    )
-    
-    oauth2Client.setCredentials({ refresh_token: refreshToken })
-    
-    const { credentials } = await oauth2Client.refreshAccessToken()
-    
-    if (credentials.access_token) {
-      // Update the stored token
-      await prisma.account.updateMany({
-        where: {
-          userId,
-          provider: "google",
-        },
+    const account = await prisma.account.findFirst({
+      where: {
+        userId,
+        provider: "google",
+      },
+    })
+
+    if (!account?.access_token) {
+      return null
+    }
+
+    // Check if token is expired and needs refresh
+    const isExpired = account.expires_at && account.expires_at * 1000 < Date.now()
+
+    if (isExpired && account.refresh_token) {
+      const oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET
+      )
+      oauth2Client.setCredentials({ refresh_token: account.refresh_token })
+
+      const { credentials } = await oauth2Client.refreshAccessToken()
+
+      // Update the stored tokens
+      await prisma.account.update({
+        where: { id: account.id },
         data: {
           access_token: credentials.access_token,
-          expires_at: credentials.expiry_date 
-            ? Math.floor(credentials.expiry_date / 1000) 
+          expires_at: credentials.expiry_date
+            ? Math.floor(credentials.expiry_date / 1000)
             : undefined,
         },
       })
-      
-      return credentials.access_token
+
+      return credentials.access_token || null
     }
-    
-    return null
+
+    return account.access_token
   } catch (error) {
-    console.error("Failed to refresh access token:", error)
+    console.error("Error getting Google access token:", error)
     return null
   }
 }
 
 /**
- * Create a Google Calendar client with the user's access token
- */
-export function getGoogleCalendarClient(accessToken: string): calendar_v3.Calendar {
-  const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET
-  )
-  
-  oauth2Client.setCredentials({ access_token: accessToken })
-  
-  return google.calendar({ version: "v3", auth: oauth2Client })
-}
-
-/**
- * Booking data for calendar event creation
- */
-export interface BookingForCalendar {
-  id: string
-  title: string
-  description?: string | null
-  startTime: Date
-  endTime: Date
-  guestName: string
-  guestEmail: string
-  location?: string | null
-  hostTimezone?: string | null
-}
-
-/**
- * Create a Google Calendar event for a booking
- * @param userId - The host's user ID
- * @param booking - Booking details
+ * Creates a Google Calendar event for a booking
+ * Returns the Google Calendar event ID if successful, null otherwise
  */
 export async function createCalendarEvent(
-  userId: string,
-  booking: BookingForCalendar
+  accessToken: string,
+  booking: BookingData
 ): Promise<string | null> {
   try {
-    const accessToken = await getGoogleAccessToken(userId)
-    if (!accessToken) {
-      console.log("No Google access token found for user, skipping calendar event")
-      return null
-    }
-    
     const calendar = getGoogleCalendarClient(accessToken)
-    
+
     const event: calendar_v3.Schema$Event = {
-      summary: `${booking.title} with ${booking.guestName}`,
-      description: booking.description || undefined,
-      location: booking.location || undefined,
+      summary: `${booking.eventType.title} with ${booking.guestName}`,
+      description: booking.eventType.description || undefined,
+      location: booking.eventType.location || undefined,
       start: {
         dateTime: booking.startTime.toISOString(),
-        timeZone: booking.hostTimezone || "UTC",
+        timeZone: "UTC",
       },
       end: {
         dateTime: booking.endTime.toISOString(),
-        timeZone: booking.hostTimezone || "UTC",
+        timeZone: "UTC",
       },
       attendees: [
         { email: booking.guestEmail, displayName: booking.guestName },
+        ...(booking.host.email ? [{ email: booking.host.email, displayName: booking.host.name || undefined }] : []),
       ],
       reminders: {
         useDefault: false,
@@ -143,112 +111,117 @@ export async function createCalendarEvent(
           { method: "popup", minutes: 15 },
         ],
       },
+      // Add conferencing if Google Meet is desired
+      // conferenceData: { createRequest: { requestId: booking.id } },
     }
-    
+
     const response = await calendar.events.insert({
       calendarId: "primary",
       requestBody: event,
-      sendUpdates: "all", // Send invitation emails to attendees
+      sendUpdates: "all", // Send email notifications to attendees
     })
-    
-    const googleEventId = response.data.id || null
-    
-    // Update booking with Google event ID
-    if (googleEventId) {
-      await prisma.booking.update({
-        where: { id: booking.id },
-        data: { googleEventId },
-      })
-    }
-    
-    return googleEventId
+
+    console.log(`Created Google Calendar event: ${response.data.id}`)
+    return response.data.id || null
   } catch (error) {
-    console.error("Failed to create calendar event:", error)
+    console.error("Error creating Google Calendar event:", error)
     return null
   }
 }
 
 /**
- * Get free/busy times from Google Calendar
- * @param userId - The user ID to fetch calendar for
- * @param timeMin - Start of time range
- * @param timeMax - End of time range
+ * Gets free/busy information for a time range using access token
+ * Returns busy time periods from the user's calendar
  */
-export async function getFreeBusyTimes(
-  userId: string,
-  timeMin: Date,
-  timeMax: Date
-): Promise<Array<{ start: Date; end: Date }>> {
+export async function getFreeBusyTimesWithToken(
+  accessToken: string,
+  start: Date,
+  end: Date
+): Promise<{ start: Date; end: Date }[]> {
   try {
-    const accessToken = await getGoogleAccessToken(userId)
-    if (!accessToken) {
-      return []
-    }
-    
     const calendar = getGoogleCalendarClient(accessToken)
-    
+
     const response = await calendar.freebusy.query({
       requestBody: {
-        timeMin: timeMin.toISOString(),
-        timeMax: timeMax.toISOString(),
+        timeMin: start.toISOString(),
+        timeMax: end.toISOString(),
         items: [{ id: "primary" }],
       },
     })
-    
+
     const busyTimes = response.data.calendars?.primary?.busy || []
-    
     return busyTimes
-      .filter((slot): slot is { start: string; end: string } => 
-        !!slot.start && !!slot.end
-      )
-      .map((slot) => ({
-        start: new Date(slot.start),
-        end: new Date(slot.end),
+      .filter((period) => period.start && period.end)
+      .map((period) => ({
+        start: new Date(period.start!),
+        end: new Date(period.end!),
       }))
   } catch (error) {
-    console.error("Failed to get free/busy times:", error)
+    console.error("Error getting free/busy times:", error)
     return []
   }
 }
 
 /**
- * Check if there's a calendar conflict for the given time range
+ * Gets free/busy information for a user (by userId)
+ * Returns busy time periods from the user's calendar
  */
-export async function hasCalendarConflict(
+export async function getFreeBusyTimes(
   userId: string,
-  startTime: Date,
-  endTime: Date
-): Promise<boolean> {
-  const busyTimes = await getFreeBusyTimes(userId, startTime, endTime)
-  return busyTimes.some(
-    (busy) => startTime < busy.end && endTime > busy.start
-  )
-}
-
-/**
- * Delete a calendar event
- */
-export async function deleteCalendarEvent(
-  userId: string,
-  eventId: string
-): Promise<boolean> {
+  start: Date,
+  end: Date
+): Promise<{ start: Date; end: Date }[]> {
   try {
     const accessToken = await getGoogleAccessToken(userId)
     if (!accessToken) {
-      return false
+      // No calendar connected
+      return []
     }
-    
+    return getFreeBusyTimesWithToken(accessToken, start, end)
+  } catch (error) {
+    console.error("Error getting free/busy times:", error)
+    return []
+  }
+}
+
+/**
+ * Checks if there's a calendar conflict for a given time range
+ */
+export async function hasCalendarConflict(
+  userId: string,
+  start: Date,
+  end: Date
+): Promise<boolean> {
+  try {
+    const busyTimes = await getFreeBusyTimes(userId, start, end)
+    return busyTimes.length > 0
+  } catch (error) {
+    console.error("Error checking calendar conflict:", error)
+    // On error, don't block booking
+    return false
+  }
+}
+
+/**
+ * Deletes a Google Calendar event
+ */
+export async function deleteCalendarEvent(
+  accessToken: string,
+  eventId: string
+): Promise<boolean> {
+  try {
     const calendar = getGoogleCalendarClient(accessToken)
-    
+
     await calendar.events.delete({
       calendarId: "primary",
       eventId,
       sendUpdates: "all",
     })
-    
+
+    console.log(`Deleted Google Calendar event: ${eventId}`)
     return true
   } catch (error) {
-    console.error("Failed to delete calendar event:", error)
+    console.error("Error deleting Google Calendar event:", error)
     return false
   }
 }
