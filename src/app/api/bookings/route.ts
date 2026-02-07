@@ -5,15 +5,19 @@ import * as dateFns from "date-fns"
 import prisma from "@/lib/prisma"
 import { createCalendarEvent, hasCalendarConflict, getGoogleAccessToken, BookingData } from "@/lib/calendar"
 import { triggerWebhook } from "@/lib/webhooks"
-import { getNextRoundRobinMember, updateLastAssignedMember, createCollectiveBooking, isMemberAvailableAtSlot } from "@/lib/team-scheduling"
+import { getNextRoundRobinMember, updateLastAssignedMember, createCollectiveBooking } from "@/lib/team-scheduling"
+import { bookingLogger, apiLogger } from "@/lib/logger"
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.id) {
+      apiLogger.warn("Unauthorized access attempt to bookings list")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    apiLogger.debug("Fetching bookings", { visitorId: session.user.id })
 
     const bookings = await prisma.booking.findMany({
       where: { hostId: session.user.id },
@@ -25,19 +29,32 @@ export async function GET() {
       orderBy: { startTime: "desc" },
     })
 
+    apiLogger.debug("Bookings fetched", { visitorId: session.user.id, count: bookings.length })
     return NextResponse.json(bookings)
   } catch (error) {
-    console.error("Error fetching bookings:", error)
+    apiLogger.error("Error fetching bookings", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
+  const requestId = Math.random().toString(36).substring(7)
+  
   try {
     const body = await request.json()
     const { eventTypeId, guestName, guestEmail, guestTimezone, date, time, startTime: startTimeISO } = body
 
+    bookingLogger.info("Booking request received", { 
+      requestId,
+      eventTypeId, 
+      guestEmail, 
+      date, 
+      time,
+      hasStartTimeISO: !!startTimeISO 
+    })
+
     if (!eventTypeId || !guestName || !guestEmail || (!startTimeISO && (!date || !time))) {
+      bookingLogger.warn("Missing required fields", { requestId, eventTypeId, guestName: !!guestName, guestEmail: !!guestEmail })
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
@@ -74,6 +91,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!eventType || !eventType.isActive) {
+      bookingLogger.warn("Event type not found or inactive", { requestId, eventTypeId })
       return NextResponse.json({ error: "Event type not found or inactive" }, { status: 404 })
     }
 
@@ -90,15 +108,24 @@ export async function POST(request: NextRequest) {
     }
     const endTime = dateFns.addMinutes(startTime, eventType.duration)
 
+    bookingLogger.debug("Parsed booking time", { 
+      requestId, 
+      startTime: startTime.toISOString(), 
+      endTime: endTime.toISOString() 
+    })
+
     // Validate booking time
     const now = new Date()
     const minBookingTime = dateFns.addMinutes(now, eventType.minNotice)
     if (dateFns.isBefore(startTime, minBookingTime)) {
-      return NextResponse.json({ error: "Time slot is too soon" }, { status: 400 })
+      bookingLogger.warn("Booking time too soon", { requestId, startTime: startTime.toISOString(), minNotice: eventType.minNotice })
+      return NextResponse.json({ error: "This time slot is no longer available. Please select a later time." }, { status: 400 })
     }
 
     // Handle team bookings
     if (eventType.teamId && eventType.team) {
+      bookingLogger.info("Processing team booking", { requestId, teamId: eventType.teamId, schedulingType: eventType.schedulingType })
+      
       if (eventType.schedulingType === "COLLECTIVE") {
         // Collective: create bookings for all team members
         const bookingIds = await createCollectiveBooking(
@@ -110,6 +137,8 @@ export async function POST(request: NextRequest) {
           startTime,
           endTime
         )
+
+        bookingLogger.info("Collective booking created", { requestId, bookingIds, teamName: eventType.team.name })
 
         // Create calendar events for all team members asynchronously
         for (const member of eventType.team.members) {
@@ -135,8 +164,11 @@ export async function POST(request: NextRequest) {
                   },
                 }
                 await createCalendarEvent(accessToken, bookingData)
+                bookingLogger.debug("Calendar event created for team member", { bookingId: bookingIds[0], memberId: member.userId })
               }
-            }).catch((err) => console.error("Calendar event creation failed:", err))
+            }).catch((err) => {
+              bookingLogger.error("Calendar event creation failed for team member", err, { bookingId: bookingIds[0], memberId: member.userId })
+            })
           }
         }
 
@@ -157,7 +189,8 @@ export async function POST(request: NextRequest) {
         )
 
         if (!assignedMemberId) {
-          return NextResponse.json({ error: "No team members available at this time" }, { status: 409 })
+          bookingLogger.warn("No team members available for round-robin", { requestId, teamId: eventType.teamId })
+          return NextResponse.json({ error: "No team members available at this time. Please try a different slot." }, { status: 409 })
         }
 
         // Create booking for the assigned member
@@ -178,6 +211,13 @@ export async function POST(request: NextRequest) {
             eventType: true,
             host: { select: { name: true, email: true, timezone: true } },
           },
+        })
+
+        bookingLogger.info("Round-robin booking created", { 
+          requestId, 
+          bookingId: booking.id, 
+          assignedMemberId,
+          teamName: eventType.team.name 
         })
 
         // Update round-robin tracker
@@ -220,9 +260,12 @@ export async function POST(request: NextRequest) {
                   where: { id: booking.id },
                   data: updateData,
                 })
+                bookingLogger.debug("Calendar event created", { bookingId: booking.id, googleEventId: result.googleEventId })
               }
             }
-          }).catch((err) => console.error("Calendar event creation failed:", err))
+          }).catch((err) => {
+            bookingLogger.error("Calendar event creation failed", err, { bookingId: booking.id })
+          })
         }
 
         // Trigger webhook for round-robin booking
@@ -249,7 +292,9 @@ export async function POST(request: NextRequest) {
             name: assignedMember?.user.name || null,
             email: assignedMember?.user.email || "",
           },
-        }).catch((err) => console.error("Webhook trigger failed:", err))
+        }).catch((err) => {
+          bookingLogger.error("Webhook trigger failed", err, { bookingId: booking.id })
+        })
 
         return NextResponse.json({
           ...booking,
@@ -260,6 +305,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Standard individual booking
+    bookingLogger.debug("Processing individual booking", { requestId, hostId: eventType.userId })
+    
     // Check for conflicts
     const conflictingBooking = await prisma.booking.findFirst({
       where: {
@@ -272,13 +319,15 @@ export async function POST(request: NextRequest) {
     })
 
     if (conflictingBooking) {
-      return NextResponse.json({ error: "Time slot is no longer available" }, { status: 409 })
+      bookingLogger.warn("Time slot conflict detected", { requestId, conflictingBookingId: conflictingBooking.id })
+      return NextResponse.json({ error: "This time slot is no longer available. Please select a different time." }, { status: 409 })
     }
 
     // Check Google Calendar for conflicts
     const hasGCalConflict = await hasCalendarConflict(eventType.userId, startTime, endTime)
     if (hasGCalConflict) {
-      return NextResponse.json({ error: "Time slot conflicts with existing calendar event" }, { status: 409 })
+      bookingLogger.warn("Google Calendar conflict detected", { requestId })
+      return NextResponse.json({ error: "This time conflicts with an existing calendar event. Please select a different time." }, { status: 409 })
     }
 
     // Create the booking
@@ -297,6 +346,13 @@ export async function POST(request: NextRequest) {
         eventType: true,
         host: { select: { name: true, email: true, timezone: true } },
       },
+    })
+
+    bookingLogger.info("Booking created successfully", { 
+      requestId, 
+      bookingId: booking.id, 
+      guestEmail,
+      startTime: startTime.toISOString() 
     })
 
     // Determine meeting URL based on location type
@@ -357,9 +413,12 @@ export async function POST(request: NextRequest) {
               where: { id: booking.id },
               data: updateData,
             })
+            bookingLogger.debug("Calendar event created", { bookingId: booking.id, googleEventId: result.googleEventId })
           }
         }
-      }).catch((err) => console.error("Calendar event creation failed:", err))
+      }).catch((err) => {
+        bookingLogger.error("Calendar event creation failed", err, { bookingId: booking.id })
+      })
     }
 
     // Trigger webhook for booking.created event
@@ -384,11 +443,13 @@ export async function POST(request: NextRequest) {
         name: eventType.user.name,
         email: eventType.user.email,
       },
-    }).catch((err) => console.error("Webhook trigger failed:", err))
+    }).catch((err) => {
+      bookingLogger.error("Webhook trigger failed", err, { bookingId: booking.id })
+    })
 
     return NextResponse.json(booking, { status: 201 })
   } catch (error) {
-    console.error("Error creating booking:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    bookingLogger.error("Error creating booking", error, { requestId })
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 })
   }
 }

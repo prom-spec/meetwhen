@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { apiLogger } from "@/lib/logger"
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      apiLogger.warn("Unauthorized access to event types")
+      return NextResponse.json({ error: "Please sign in to continue" }, { status: 401 })
     }
 
     const eventTypes = await prisma.eventType.findMany({
@@ -18,8 +20,8 @@ export async function GET() {
 
     return NextResponse.json(eventTypes)
   } catch (error) {
-    console.error("Error fetching event types:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    apiLogger.error("Error fetching event types", error)
+    return NextResponse.json({ error: "Unable to load event types. Please try again." }, { status: 500 })
   }
 }
 
@@ -28,8 +30,11 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      apiLogger.warn("Unauthorized attempt to create event type")
+      return NextResponse.json({ error: "Please sign in to continue" }, { status: 401 })
     }
+    
+    apiLogger.info("Creating event type", { visitorId: session.user.id })
 
     const body = await request.json()
     const { 
@@ -100,7 +105,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(eventType, { status: 201 })
   } catch (error) {
-    console.error("Error creating event type:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    apiLogger.error("Error creating event type", error)
+    return NextResponse.json({ error: "Unable to create event type. Please try again." }, { status: 500 })
   }
 }

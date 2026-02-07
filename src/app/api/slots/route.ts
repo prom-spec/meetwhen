@@ -3,6 +3,7 @@ import * as dateFns from "date-fns"
 import prisma from "@/lib/prisma"
 import { getFreeBusyTimes } from "@/lib/calendar"
 import { getRoundRobinSlots, getCollectiveSlots } from "@/lib/team-scheduling"
+import { apiLogger } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +13,10 @@ export async function GET(request: NextRequest) {
     const eventSlug = searchParams.get("eventSlug")
     const dateStr = searchParams.get("date")
 
+    apiLogger.debug("Slots request", { username, teamSlug, eventSlug, date: dateStr })
+
     if (!eventSlug || !dateStr) {
+      apiLogger.warn("Missing required parameters for slots", { eventSlug, dateStr })
       return NextResponse.json({ error: "Missing required parameters" }, { status: 400 })
     }
 
@@ -36,8 +40,9 @@ export async function GET(request: NextRequest) {
   })
 
     if (!user || user.eventTypes.length === 0) {
-    return NextResponse.json({ error: "Event type not found" }, { status: 404 })
-  }
+      apiLogger.warn("Event type not found", { username, eventSlug })
+      return NextResponse.json({ error: "Event type not found" }, { status: 404 })
+    }
 
     const eventType = user.eventTypes[0]
     const requestedDate = dateFns.parse(dateStr, "yyyy-MM-dd", new Date())
@@ -106,8 +111,8 @@ export async function GET(request: NextRequest) {
       hostTimezone: user.timezone,
     })
   } catch (error) {
-    console.error("Error fetching slots:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    apiLogger.error("Error fetching slots", error)
+    return NextResponse.json({ error: "Unable to load available times. Please try again." }, { status: 500 })
   }
 }
 
@@ -136,7 +141,8 @@ async function handleTeamSlots(teamSlug: string, eventSlug: string, dateStr: str
     })
 
     if (!team || team.eventTypes.length === 0) {
-      return NextResponse.json({ error: "Team event type not found" }, { status: 404 })
+      apiLogger.warn("Team event type not found", { teamSlug, eventSlug })
+      return NextResponse.json({ error: "Event type not found" }, { status: 404 })
     }
 
     const eventType = team.eventTypes[0]
@@ -184,7 +190,7 @@ async function handleTeamSlots(teamSlug: string, eventSlug: string, dateStr: str
       hostTimezone: teamTimezone,
     })
   } catch (error) {
-    console.error("Error fetching team slots:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    apiLogger.error("Error fetching team slots", error, { teamSlug })
+    return NextResponse.json({ error: "Unable to load available times. Please try again." }, { status: 500 })
   }
 }

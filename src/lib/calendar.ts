@@ -1,5 +1,6 @@
 import { google, calendar_v3 } from "googleapis"
 import prisma from "./prisma"
+import { calendarLogger } from "./logger"
 
 export type LocationType = "IN_PERSON" | "GOOGLE_MEET" | "ZOOM" | "PHONE" | "CUSTOM"
 
@@ -81,7 +82,7 @@ export async function getGoogleAccessToken(userId: string): Promise<string | nul
 
     return account.access_token
   } catch (error) {
-    console.error("Error getting Google access token:", error)
+    calendarLogger.error("Error getting Google access token", error, { visitorId: userId })
     return null
   }
 }
@@ -180,10 +181,10 @@ export async function createCalendarEvent(
       meetingUrl = booking.eventType.locationValue || null
     }
 
-    console.log(`Created Google Calendar event: ${googleEventId}, meetingUrl: ${meetingUrl}`)
+    calendarLogger.info("Created Google Calendar event", { googleEventId, hasMeetingUrl: !!meetingUrl, bookingId: booking.id })
     return { googleEventId, meetingUrl }
   } catch (error) {
-    console.error("Error creating Google Calendar event:", error)
+    calendarLogger.error("Error creating Google Calendar event", error, { bookingId: booking.id })
     return { googleEventId: null, meetingUrl: null }
   }
 }
@@ -216,7 +217,7 @@ export async function getFreeBusyTimesWithToken(
         end: new Date(period.end!),
       }))
   } catch (error) {
-    console.error("Error getting free/busy times:", error)
+    calendarLogger.error("Error getting free/busy times", error)
     return []
   }
 }
@@ -238,7 +239,7 @@ export async function getFreeBusyTimes(
     }
     return getFreeBusyTimesWithToken(accessToken, start, end)
   } catch (error) {
-    console.error("Error getting free/busy times:", error)
+    calendarLogger.error("Error getting free/busy times for user", error, { visitorId: userId })
     return []
   }
 }
@@ -255,7 +256,7 @@ export async function hasCalendarConflict(
     const busyTimes = await getFreeBusyTimes(userId, start, end)
     return busyTimes.length > 0
   } catch (error) {
-    console.error("Error checking calendar conflict:", error)
+    calendarLogger.error("Error checking calendar conflict", error, { visitorId: userId })
     // On error, don't block booking
     return false
   }
@@ -277,10 +278,10 @@ export async function deleteCalendarEvent(
       sendUpdates: "all",
     })
 
-    console.log(`Deleted Google Calendar event: ${eventId}`)
+    calendarLogger.info("Deleted Google Calendar event", { eventId })
     return true
   } catch (error) {
-    console.error("Error deleting Google Calendar event:", error)
+    calendarLogger.error("Error deleting Google Calendar event", error, { eventId })
     return false
   }
 }

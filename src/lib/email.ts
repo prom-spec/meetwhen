@@ -5,20 +5,25 @@ import BookingNotification from "@/emails/BookingNotification"
 import BookingReminder from "@/emails/BookingReminder"
 import BookingCancellation from "@/emails/BookingCancellation"
 import BookingReschedule from "@/emails/BookingReschedule"
+import { emailLogger } from "./logger"
 
 // Lazy initialization with dynamic import to avoid build errors when env var is not set
 let resendInstance: Resend | null = null
 async function getResend(): Promise<Resend | null> {
   const key = process.env.RESEND_API_KEY
-  if (!key) return null
+  if (!key) {
+    emailLogger.warn("RESEND_API_KEY not set, email sending disabled")
+    return null
+  }
   if (!resendInstance) {
     const { Resend: ResendClass } = await import("resend")
     resendInstance = new ResendClass(key)
+    emailLogger.info("Resend client initialized")
   }
   return resendInstance
 }
 
-const FROM_EMAIL = process.env.EMAIL_FROM || "MeetWhen <noreply@meetwhen.app>"
+const FROM_EMAIL = process.env.EMAIL_FROM || "MeetWhen <onboarding@resend.dev>"
 
 interface BookingEmailData {
   booking: {
@@ -58,9 +63,15 @@ function formatTimeRange(start: Date, end: Date, timezone: string): { startTime:
 export async function sendBookingConfirmation(data: BookingEmailData) {
   const { booking, eventType, host } = data
   
+  emailLogger.info("Sending booking confirmation", { 
+    bookingId: booking.id, 
+    guestEmail: booking.guestEmail,
+    eventType: eventType.title 
+  })
+  
   const client = await getResend()
   if (!client) {
-    console.warn("RESEND_API_KEY not set, skipping email")
+    emailLogger.warn("Email client not available, skipping confirmation email", { bookingId: booking.id })
     return { success: false, error: "Email not configured" }
   }
 
@@ -91,10 +102,17 @@ export async function sendBookingConfirmation(data: BookingEmailData) {
       }),
     })
 
-    console.log("Booking confirmation email sent:", result)
+    emailLogger.info("Booking confirmation email sent", { 
+      bookingId: booking.id, 
+      messageId: result.data?.id,
+      guestEmail: booking.guestEmail 
+    })
     return { success: true, id: result.data?.id }
   } catch (error) {
-    console.error("Failed to send booking confirmation:", error)
+    emailLogger.error("Failed to send booking confirmation", error, { 
+      bookingId: booking.id,
+      guestEmail: booking.guestEmail 
+    })
     return { success: false, error }
   }
 }
@@ -102,9 +120,14 @@ export async function sendBookingConfirmation(data: BookingEmailData) {
 export async function sendBookingNotification(data: BookingEmailData) {
   const { booking, eventType, host } = data
   
+  emailLogger.info("Sending booking notification to host", { 
+    bookingId: booking.id, 
+    hostEmail: host.email 
+  })
+  
   const client = await getResend()
   if (!client) {
-    console.warn("RESEND_API_KEY not set, skipping email")
+    emailLogger.warn("Email client not available, skipping notification email", { bookingId: booking.id })
     return { success: false, error: "Email not configured" }
   }
 
@@ -135,10 +158,17 @@ export async function sendBookingNotification(data: BookingEmailData) {
       }),
     })
 
-    console.log("Booking notification email sent:", result)
+    emailLogger.info("Booking notification email sent", { 
+      bookingId: booking.id, 
+      messageId: result.data?.id,
+      hostEmail: host.email 
+    })
     return { success: true, id: result.data?.id }
   } catch (error) {
-    console.error("Failed to send booking notification:", error)
+    emailLogger.error("Failed to send booking notification", error, { 
+      bookingId: booking.id,
+      hostEmail: host.email 
+    })
     return { success: false, error }
   }
 }
@@ -146,16 +176,23 @@ export async function sendBookingNotification(data: BookingEmailData) {
 export async function sendBookingReminder(data: BookingEmailData & { minutesUntil: number; toHost: boolean }) {
   const { booking, eventType, host, minutesUntil, toHost } = data
   
-  const client = await getResend()
-  if (!client) {
-    console.warn("RESEND_API_KEY not set, skipping email")
-    return { success: false, error: "Email not configured" }
-  }
-
   const recipientEmail = toHost ? host.email : booking.guestEmail
   const recipientName = toHost ? (host.name || "Host") : booking.guestName
   const recipientTimezone = toHost ? (host.timezone || "UTC") : booking.guestTimezone
   const otherPartyName = toHost ? booking.guestName : (host.name || "Host")
+
+  emailLogger.info("Sending booking reminder", { 
+    bookingId: booking.id, 
+    recipientEmail,
+    minutesUntil,
+    toHost 
+  })
+  
+  const client = await getResend()
+  if (!client) {
+    emailLogger.warn("Email client not available, skipping reminder email", { bookingId: booking.id })
+    return { success: false, error: "Email not configured" }
+  }
 
   const { startTime, endTime } = formatTimeRange(
     booking.startTime,
@@ -182,25 +219,42 @@ export async function sendBookingReminder(data: BookingEmailData & { minutesUnti
       }),
     })
 
-    console.log("Booking reminder email sent:", result)
+    emailLogger.info("Booking reminder email sent", { 
+      bookingId: booking.id, 
+      messageId: result.data?.id,
+      recipientEmail 
+    })
     return { success: true, id: result.data?.id }
   } catch (error) {
-    console.error("Failed to send booking reminder:", error)
+    emailLogger.error("Failed to send booking reminder", error, { 
+      bookingId: booking.id,
+      recipientEmail 
+    })
     return { success: false, error }
   }
 }
 
 export async function sendBookingEmails(data: BookingEmailData) {
+  emailLogger.info("Sending booking emails", { bookingId: data.booking.id })
+  
   // Send both emails in parallel, don't fail the booking if emails fail
   const results = await Promise.allSettled([
     sendBookingConfirmation(data),
     sendBookingNotification(data),
   ])
 
-  return {
+  const summary = {
     confirmation: results[0].status === "fulfilled" ? results[0].value : { success: false, error: results[0].reason },
     notification: results[1].status === "fulfilled" ? results[1].value : { success: false, error: results[1].reason },
   }
+  
+  emailLogger.info("Booking emails completed", { 
+    bookingId: data.booking.id,
+    confirmationSuccess: summary.confirmation.success,
+    notificationSuccess: summary.notification.success 
+  })
+
+  return summary
 }
 
 interface CancellationEmailData extends BookingEmailData {
@@ -210,13 +264,16 @@ interface CancellationEmailData extends BookingEmailData {
 export async function sendBookingCancellation(data: CancellationEmailData) {
   const { booking, eventType, host, cancelledBy } = data
   
+  emailLogger.info("Sending cancellation emails", { 
+    bookingId: booking.id, 
+    cancelledBy 
+  })
+  
   const client = await getResend()
   if (!client) {
-    console.warn("RESEND_API_KEY not set, skipping email")
+    emailLogger.warn("Email client not available, skipping cancellation emails", { bookingId: booking.id })
     return { success: false, error: "Email not configured" }
   }
-
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
 
   // Send to guest
   const guestTime = formatTimeRange(booking.startTime, booking.endTime, booking.guestTimezone)
@@ -234,7 +291,10 @@ export async function sendBookingCancellation(data: CancellationEmailData) {
       cancelledBy,
       isHost: false,
     }),
-  }).catch((err) => ({ error: err }))
+  }).catch((err) => {
+    emailLogger.error("Failed to send guest cancellation email", err, { bookingId: booking.id })
+    return { error: err }
+  })
 
   // Send to host
   const hostTimezone = host.timezone || "UTC"
@@ -253,9 +313,12 @@ export async function sendBookingCancellation(data: CancellationEmailData) {
       cancelledBy,
       isHost: true,
     }),
-  }).catch((err) => ({ error: err }))
+  }).catch((err) => {
+    emailLogger.error("Failed to send host cancellation email", err, { bookingId: booking.id })
+    return { error: err }
+  })
 
-  console.log("Cancellation emails sent:", { guestResult, hostResult })
+  emailLogger.info("Cancellation emails sent", { bookingId: booking.id })
   return { success: true, guestResult, hostResult }
 }
 
@@ -268,9 +331,14 @@ interface RescheduleEmailData extends BookingEmailData {
 export async function sendBookingReschedule(data: RescheduleEmailData) {
   const { booking, eventType, host, oldStartTime, oldEndTime, rescheduledBy } = data
   
+  emailLogger.info("Sending reschedule emails", { 
+    bookingId: booking.id, 
+    rescheduledBy 
+  })
+  
   const client = await getResend()
   if (!client) {
-    console.warn("RESEND_API_KEY not set, skipping email")
+    emailLogger.warn("Email client not available, skipping reschedule emails", { bookingId: booking.id })
     return { success: false, error: "Email not configured" }
   }
 
@@ -299,7 +367,10 @@ export async function sendBookingReschedule(data: RescheduleEmailData) {
       meetingUrl: booking.meetingUrl,
       location: eventType.location,
     }),
-  }).catch((err) => ({ error: err }))
+  }).catch((err) => {
+    emailLogger.error("Failed to send guest reschedule email", err, { bookingId: booking.id })
+    return { error: err }
+  })
 
   // Send to host
   const hostTimezone = host.timezone || "UTC"
@@ -324,8 +395,11 @@ export async function sendBookingReschedule(data: RescheduleEmailData) {
       meetingUrl: booking.meetingUrl,
       location: eventType.location,
     }),
-  }).catch((err) => ({ error: err }))
+  }).catch((err) => {
+    emailLogger.error("Failed to send host reschedule email", err, { bookingId: booking.id })
+    return { error: err }
+  })
 
-  console.log("Reschedule emails sent:", { guestResult, hostResult })
+  emailLogger.info("Reschedule emails sent", { bookingId: booking.id })
   return { success: true, guestResult, hostResult }
 }

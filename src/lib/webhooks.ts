@@ -1,6 +1,7 @@
 import { createHmac } from "crypto"
 import prisma from "./prisma"
 import { DeliveryStatus, Prisma } from "@prisma/client"
+import { webhookLogger } from "./logger"
 
 export type WebhookEvent = "booking.created" | "booking.cancelled" | "booking.rescheduled"
 
@@ -156,10 +157,10 @@ export async function triggerWebhook(
 
       // Trigger delivery asynchronously (don't await)
       deliverWebhook(delivery.id, webhook.url, payload, webhook.secret).catch((err) => {
-        console.error(`Webhook delivery failed for ${webhook.id}:`, err)
+        webhookLogger.error("Webhook delivery failed", err, { webhookId: webhook.id, event })
       })
     } catch (err) {
-      console.error(`Failed to create webhook delivery for ${webhook.id}:`, err)
+      webhookLogger.error("Failed to create webhook delivery", err, { webhookId: webhook.id, event })
     }
   }
 }

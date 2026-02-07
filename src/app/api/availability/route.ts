@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { apiLogger } from "@/lib/logger"
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      apiLogger.warn("Unauthorized access to availability")
+      return NextResponse.json({ error: "Please sign in to continue" }, { status: 401 })
     }
 
     const availability = await prisma.availability.findMany({
@@ -18,8 +20,8 @@ export async function GET() {
 
     return NextResponse.json(availability)
   } catch (error) {
-    console.error("Error fetching availability:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    apiLogger.error("Error fetching availability", error)
+    return NextResponse.json({ error: "Unable to load availability. Please try again." }, { status: 500 })
   }
 }
 
@@ -28,8 +30,11 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      apiLogger.warn("Unauthorized attempt to update availability")
+      return NextResponse.json({ error: "Please sign in to continue" }, { status: 401 })
     }
+    
+    apiLogger.info("Updating availability", { visitorId: session.user.id })
 
     const body = await request.json()
     const { schedules } = body
@@ -62,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(newAvailability)
   } catch (error) {
-    console.error("Error saving availability:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    apiLogger.error("Error saving availability", error)
+    return NextResponse.json({ error: "Unable to save availability. Please try again." }, { status: 500 })
   }
 }

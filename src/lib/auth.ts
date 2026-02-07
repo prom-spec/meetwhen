@@ -159,7 +159,7 @@ export const authOptions: NextAuthOptions = {
       })
     },
     async signOut({ session }) {
-      authLogger.info("User signed out", { visitorId: session?.userId })
+      authLogger.info("User signed out", { visitorId: (session as { userId?: string })?.userId })
     },
     async createUser({ user }) {
       authLogger.info("New user created", { visitorId: user.id, email: user.email })
