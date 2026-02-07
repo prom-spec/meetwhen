@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import * as dateFns from "date-fns"
 import prisma from "@/lib/prisma"
+import { getFreeBusyTimes } from "@/lib/calendar"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -55,6 +56,13 @@ export async function GET(request: NextRequest) {
     where: { hostId: user.id, status: { not: "CANCELLED" }, startTime: { gte: dateFns.startOfDay(requestedDate), lte: dateFns.endOfDay(requestedDate) } },
     select: { startTime: true, endTime: true },
   })
+
+  // Fetch busy times from Google Calendar
+  const googleBusyTimes = await getFreeBusyTimes(
+    user.id,
+    dateFns.startOfDay(requestedDate),
+    dateFns.endOfDay(requestedDate)
+  )
 
   const slots: string[] = []
   const { duration, bufferBefore, bufferAfter } = eventType

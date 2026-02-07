@@ -4,7 +4,15 @@ import BookingConfirmation from "@/emails/BookingConfirmation"
 import BookingNotification from "@/emails/BookingNotification"
 import BookingReminder from "@/emails/BookingReminder"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy initialization to avoid build errors when API key is not set
+let resend: Resend | null = null
+function getResend(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY)
+  }
+  return resend
+}
 
 const FROM_EMAIL = process.env.EMAIL_FROM || "MeetWhen <noreply@meetwhen.app>"
 
@@ -46,7 +54,8 @@ function formatTimeRange(start: Date, end: Date, timezone: string): { startTime:
 export async function sendBookingConfirmation(data: BookingEmailData) {
   const { booking, eventType, host } = data
   
-  if (!process.env.RESEND_API_KEY) {
+  const client = getResend()
+  if (!client) {
     console.warn("RESEND_API_KEY not set, skipping email")
     return { success: false, error: "Email not configured" }
   }
@@ -58,7 +67,7 @@ export async function sendBookingConfirmation(data: BookingEmailData) {
   )
 
   try {
-    const result = await resend.emails.send({
+    const result = await client.emails.send({
       from: FROM_EMAIL,
       to: booking.guestEmail,
       subject: `Booking Confirmed: ${eventType.title} with ${host.name || "Host"}`,
@@ -85,7 +94,8 @@ export async function sendBookingConfirmation(data: BookingEmailData) {
 export async function sendBookingNotification(data: BookingEmailData) {
   const { booking, eventType, host } = data
   
-  if (!process.env.RESEND_API_KEY) {
+  const client = getResend()
+  if (!client) {
     console.warn("RESEND_API_KEY not set, skipping email")
     return { success: false, error: "Email not configured" }
   }
@@ -100,7 +110,7 @@ export async function sendBookingNotification(data: BookingEmailData) {
   const dashboardUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/dashboard/bookings`
 
   try {
-    const result = await resend.emails.send({
+    const result = await client.emails.send({
       from: FROM_EMAIL,
       to: host.email,
       subject: `New Booking: ${booking.guestName} booked ${eventType.title}`,
@@ -127,7 +137,8 @@ export async function sendBookingNotification(data: BookingEmailData) {
 export async function sendBookingReminder(data: BookingEmailData & { minutesUntil: number; toHost: boolean }) {
   const { booking, eventType, host, minutesUntil, toHost } = data
   
-  if (!process.env.RESEND_API_KEY) {
+  const client = getResend()
+  if (!client) {
     console.warn("RESEND_API_KEY not set, skipping email")
     return { success: false, error: "Email not configured" }
   }
@@ -144,7 +155,7 @@ export async function sendBookingReminder(data: BookingEmailData & { minutesUnti
   )
 
   try {
-    const result = await resend.emails.send({
+    const result = await client.emails.send({
       from: FROM_EMAIL,
       to: recipientEmail,
       subject: `Reminder: ${eventType.title} starts soon`,
