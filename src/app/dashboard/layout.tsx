@@ -2,7 +2,12 @@ import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import Link from "next/link"
+import Image from "next/image"
 import ChatInterface from "@/components/ChatInterface"
+
+export const metadata = {
+  title: "Dashboard",
+}
 
 export default async function DashboardLayout({
   children,
@@ -22,44 +27,50 @@ export default async function DashboardLayout({
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <Link href="/dashboard" className="text-xl font-bold text-blue-600">
-                  MeetWhen
+                <Link href="/dashboard">
+                  <Image
+                    src="/logo-full.svg"
+                    alt="MeetWhen"
+                    width={130}
+                    height={32}
+                    priority
+                  />
                 </Link>
               </div>
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              <div className="hidden sm:ml-8 sm:flex sm:space-x-6">
                 <Link
                   href="/dashboard"
-                  className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  className="text-gray-500 hover:text-[#0066FF] inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-[#0066FF]/30 text-sm font-medium transition-colors"
                 >
                   Dashboard
                 </Link>
                 <Link
                   href="/dashboard/event-types"
-                  className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  className="text-gray-500 hover:text-[#0066FF] inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-[#0066FF]/30 text-sm font-medium transition-colors"
                 >
                   Event Types
                 </Link>
                 <Link
                   href="/dashboard/availability"
-                  className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  className="text-gray-500 hover:text-[#0066FF] inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-[#0066FF]/30 text-sm font-medium transition-colors"
                 >
                   Availability
                 </Link>
                 <Link
                   href="/dashboard/bookings"
-                  className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  className="text-gray-500 hover:text-[#0066FF] inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-[#0066FF]/30 text-sm font-medium transition-colors"
                 >
                   Bookings
                 </Link>
               </div>
             </div>
-            <div className="flex items-center">
-              <span className="text-sm text-gray-500 mr-4">
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-500">
                 {session.user?.email}
               </span>
               <Link
                 href="/api/auth/signout"
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="text-sm text-gray-500 hover:text-gray-700 font-medium"
               >
                 Sign out
               </Link>

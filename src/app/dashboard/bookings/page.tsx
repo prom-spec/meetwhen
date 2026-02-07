@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react"
 import { Calendar, Clock, User, Mail, MoreHorizontal } from "lucide-react"
 
+// Note: metadata must be in a separate layout.tsx for client components
+// Title is set in the dashboard layout
+
 interface Booking {
   id: string
   guestName: string

@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react"
 import { Plus, Edit, Trash2, Copy, ExternalLink } from "lucide-react"
 
+// Note: metadata must be in a separate layout.tsx for client components
+// Title is set in the dashboard layout
+
 interface EventType {
   id: string
   title: string

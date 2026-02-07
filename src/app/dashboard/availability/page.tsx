@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react"
 import { Save, Plus, Trash2, Calendar, X } from "lucide-react"
 
+// Note: metadata must be in a separate layout.tsx for client components
+// Title is set in the dashboard layout
+
 const DAYS = [
   { value: 0, label: "Sunday" },
   { value: 1, label: "Monday" },

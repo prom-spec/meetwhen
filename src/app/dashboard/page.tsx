@@ -4,6 +4,10 @@ import prisma from "@/lib/prisma"
 import Link from "next/link"
 import { Calendar, Clock, Users } from "lucide-react"
 
+export const metadata = {
+  title: "Dashboard",
+}
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
   
