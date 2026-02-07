@@ -3,6 +3,7 @@ import Link from "next/link"
 import Image from "next/image"
 import prisma from "@/lib/prisma"
 import type { Metadata } from "next"
+import type { EventType } from "@prisma/client"
 
 interface PageProps {
   params: Promise<{ username: string }>
@@ -81,7 +82,7 @@ export default async function UserProfilePage({ params }: PageProps) {
           </div>
         ) : (
           <div className="space-y-3">
-            {user.eventTypes.map((eventType) => (
+            {user.eventTypes.map((eventType: EventType) => (
               <Link
                 key={eventType.id}
                 href={`/${username}/${eventType.slug}`}
