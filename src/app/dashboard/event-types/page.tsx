@@ -1,10 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Edit, Trash2, Copy, ExternalLink, Video, MapPin, Phone, Link2 } from "lucide-react"
-
-// Note: metadata must be in a separate layout.tsx for client components
-// Title is set in the dashboard layout
+import { Plus, Edit, Trash2, Copy, ExternalLink, Video, MapPin, Phone, Link2, Check, ChevronRight, X } from "lucide-react"
 
 type LocationType = "IN_PERSON" | "GOOGLE_MEET" | "ZOOM" | "PHONE" | "CUSTOM"
 
@@ -24,12 +21,40 @@ interface EventType {
   createdAt: string
 }
 
-const LOCATION_OPTIONS: { value: LocationType; label: string; icon: typeof Video; placeholder: string }[] = [
-  { value: "GOOGLE_MEET", label: "Google Meet", icon: Video, placeholder: "Link generated automatically" },
-  { value: "ZOOM", label: "Zoom", icon: Video, placeholder: "https://zoom.us/j/..." },
-  { value: "IN_PERSON", label: "In Person", icon: MapPin, placeholder: "123 Main St, City, Country" },
-  { value: "PHONE", label: "Phone Call", icon: Phone, placeholder: "+1 (555) 123-4567" },
-  { value: "CUSTOM", label: "Custom Link", icon: Link2, placeholder: "https://..." },
+const LOCATION_OPTIONS: { value: LocationType; label: string; icon: typeof Video; description?: string }[] = [
+  { value: "GOOGLE_MEET", label: "Google Meet", icon: Video, description: "Video conference link generated automatically" },
+  { value: "ZOOM", label: "Zoom", icon: Video, description: "Connect your Zoom account" },
+  { value: "IN_PERSON", label: "In-person Meeting", icon: MapPin, description: "Enter a physical address" },
+  { value: "PHONE", label: "Phone Call", icon: Phone, description: "You'll call the invitee" },
+  { value: "CUSTOM", label: "Custom Link", icon: Link2, description: "Add your own meeting link" },
+]
+
+const COLOR_PRESETS = [
+  "#EF4444", // red
+  "#F97316", // orange
+  "#EAB308", // yellow
+  "#22C55E", // green
+  "#06B6D4", // cyan
+  "#3B82F6", // blue
+  "#8B5CF6", // purple
+  "#334155", // slate
+]
+
+const DURATION_OPTIONS = [
+  { value: "15", label: "15 minutes" },
+  { value: "30", label: "30 minutes" },
+  { value: "45", label: "45 minutes" },
+  { value: "60", label: "60 minutes" },
+  { value: "90", label: "90 minutes" },
+  { value: "120", label: "120 minutes" },
+]
+
+const BUFFER_OPTIONS = [
+  { value: "0", label: "None" },
+  { value: "5", label: "5 min" },
+  { value: "10", label: "10 min" },
+  { value: "15", label: "15 min" },
+  { value: "30", label: "30 min" },
 ]
 
 export default function EventTypesPage() {
@@ -183,6 +208,18 @@ export default function EventTypesPage() {
     alert("Link copied!")
   }
 
+  const getBaseUrl = () => {
+    if (typeof window === "undefined") return "meetwhen.com"
+    return window.location.host
+  }
+
+  const getFullUrl = () => {
+    const base = getBaseUrl()
+    const user = username || "you"
+    const slug = formData.slug || "event"
+    return `${base}/${user}/${slug}`
+  }
+
   if (isLoading) {
     return <div className="text-center py-10">Loading...</div>
   }
@@ -277,159 +314,256 @@ export default function EventTypesPage() {
         </div>
       )}
 
+      {/* Modal - Responsive: Full screen on mobile, centered card on desktop */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold mb-4">
-              {editingEventType ? "Edit Event Type" : "New Event Type"}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Title</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.title}
-                  onChange={(e) => {
-                    setFormData({
-                      ...formData,
-                      title: e.target.value,
-                      slug: editingEventType ? formData.slug : generateSlug(e.target.value),
-                    })
-                  }}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
-                  placeholder="30 Minute Meeting"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">URL Slug</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
-                  placeholder="30-minute-meeting"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Duration (minutes)</label>
-                <select
-                  value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
-                >
-                  <option value="15">15 minutes</option>
-                  <option value="30">30 minutes</option>
-                  <option value="45">45 minutes</option>
-                  <option value="60">60 minutes</option>
-                  <option value="90">90 minutes</option>
-                  <option value="120">120 minutes</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
-                  placeholder="A quick chat to discuss..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Color</label>
-                <input
-                  type="color"
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  className="mt-1 h-10 w-full rounded-md border-gray-300"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                <div className="grid grid-cols-5 gap-2 mb-3">
-                  {LOCATION_OPTIONS.map((option) => {
-                    const Icon = option.icon
-                    const isSelected = formData.locationType === option.value
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, locationType: option.value, locationValue: "" })}
-                        className={`flex flex-col items-center justify-center p-2 rounded-md border text-xs transition-colors ${
-                          isSelected
-                            ? "border-blue-500 bg-blue-50 text-blue-700"
-                            : "border-gray-200 hover:border-gray-300 text-gray-600"
-                        }`}
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
+          <div className="bg-white w-full sm:max-w-2xl sm:rounded-xl sm:mx-4 max-h-[90vh] overflow-hidden flex flex-col rounded-t-xl sm:rounded-xl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50/50">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="text-blue-600 hover:text-blue-700 font-medium text-sm sm:hidden"
+              >
+                Cancel
+              </button>
+              <h2 className="text-lg font-semibold text-gray-900 text-center flex-1 sm:flex-none sm:text-left">
+                {editingEventType ? "Edit Event Type" : "New Event Type"}
+              </h2>
+              <button
+                type="submit"
+                form="event-type-form"
+                className="text-white bg-blue-600 hover:bg-blue-700 px-4 py-1.5 rounded-lg text-sm font-medium sm:hidden"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={closeModal}
+                className="hidden sm:block p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto">
+              <form id="event-type-form" onSubmit={handleSubmit} className="p-4 sm:p-6">
+                {/* Desktop: 2-column layout, Mobile: single column */}
+                <div className="grid sm:grid-cols-2 gap-6">
+                  {/* Left Column */}
+                  <div className="space-y-5">
+                    {/* Event Name */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Event Name
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.title}
+                        onChange={(e) => {
+                          setFormData({
+                            ...formData,
+                            title: e.target.value,
+                            slug: editingEventType ? formData.slug : generateSlug(e.target.value),
+                          })
+                        }}
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm"
+                        placeholder="e.g. 15 Minute Meeting"
+                      />
+                    </div>
+
+                    {/* URL Slug */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        URL Slug
+                      </label>
+                      <div className="flex rounded-lg border border-gray-300 overflow-hidden focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+                        <span className="inline-flex items-center px-3 bg-gray-50 text-gray-500 text-sm border-r border-gray-300">
+                          {getBaseUrl()}/{username || "you"}/
+                        </span>
+                        <input
+                          type="text"
+                          required
+                          value={formData.slug}
+                          onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                          className="flex-1 px-3 py-2.5 text-gray-900 placeholder-gray-400 sm:text-sm focus:outline-none"
+                          placeholder="quick-chat"
+                        />
+                      </div>
+                      <p className="mt-1.5 text-xs text-gray-500">
+                        Your link: {getFullUrl()}
+                      </p>
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Description
+                      </label>
+                      <textarea
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        rows={3}
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm resize-none"
+                        placeholder="Briefly describe what this meeting is about..."
+                      />
+                    </div>
+
+                    {/* Event Color */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Event Color
+                      </label>
+                      <div className="flex gap-2 flex-wrap">
+                        {COLOR_PRESETS.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, color })}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform ${
+                              formData.color === color ? "ring-2 ring-offset-2 ring-gray-400 scale-110" : "hover:scale-105"
+                            }`}
+                            style={{ backgroundColor: color }}
+                          >
+                            {formData.color === color && (
+                              <Check className="w-4 h-4 text-white" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column */}
+                  <div className="space-y-5">
+                    {/* Location */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Location
+                      </label>
+                      <div className="space-y-2">
+                        {LOCATION_OPTIONS.map((option) => {
+                          const Icon = option.icon
+                          const isSelected = formData.locationType === option.value
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, locationType: option.value, locationValue: "" })}
+                              className={`w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-colors ${
+                                isSelected
+                                  ? "border-blue-500 bg-blue-50"
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
+                            >
+                              <div className={`p-2 rounded-lg ${isSelected ? "bg-blue-100" : "bg-gray-100"}`}>
+                                <Icon className={`w-4 h-4 ${isSelected ? "text-blue-600" : "text-gray-500"}`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm font-medium ${isSelected ? "text-blue-900" : "text-gray-900"}`}>
+                                  {option.label}
+                                </p>
+                                {option.description && (
+                                  <p className={`text-xs ${isSelected ? "text-blue-600" : "text-gray-500"} truncate`}>
+                                    {option.description}
+                                  </p>
+                                )}
+                              </div>
+                              {isSelected ? (
+                                <Check className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                              ) : (
+                                <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      {formData.locationType !== "GOOGLE_MEET" && (
+                        <input
+                          type="text"
+                          value={formData.locationValue}
+                          onChange={(e) => setFormData({ ...formData, locationValue: e.target.value })}
+                          className="mt-3 block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm"
+                          placeholder={
+                            formData.locationType === "ZOOM" ? "https://zoom.us/j/..." :
+                            formData.locationType === "IN_PERSON" ? "123 Main St, City" :
+                            formData.locationType === "PHONE" ? "+1 (555) 123-4567" :
+                            "https://..."
+                          }
+                        />
+                      )}
+                    </div>
+
+                    {/* Duration */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Duration
+                      </label>
+                      <select
+                        value={formData.duration}
+                        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm bg-white"
                       >
-                        <Icon className="w-4 h-4 mb-1" />
-                        <span className="text-center leading-tight">{option.label}</span>
-                      </button>
-                    )
-                  })}
+                        {DURATION_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Buffer Times */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          Buffer Before
+                        </label>
+                        <select
+                          value={formData.bufferBefore}
+                          onChange={(e) => setFormData({ ...formData, bufferBefore: e.target.value })}
+                          className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm bg-white"
+                        >
+                          {BUFFER_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          Buffer After
+                        </label>
+                        <select
+                          value={formData.bufferAfter}
+                          onChange={(e) => setFormData({ ...formData, bufferAfter: e.target.value })}
+                          className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm bg-white"
+                        >
+                          {BUFFER_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                {formData.locationType !== "GOOGLE_MEET" && (
-                  <input
-                    type="text"
-                    value={formData.locationValue}
-                    onChange={(e) => setFormData({ ...formData, locationValue: e.target.value })}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
-                    placeholder={LOCATION_OPTIONS.find(o => o.value === formData.locationType)?.placeholder}
-                  />
-                )}
-                {formData.locationType === "GOOGLE_MEET" && (
-                  <p className="text-sm text-gray-500 italic">
-                    A Google Meet link will be generated automatically when someone books
-                  </p>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Buffer before</label>
-                  <select
-                    value={formData.bufferBefore}
-                    onChange={(e) => setFormData({ ...formData, bufferBefore: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+
+                {/* Desktop Footer */}
+                <div className="hidden sm:flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
-                    <option value="0">No buffer</option>
-                    <option value="5">5 minutes</option>
-                    <option value="10">10 minutes</option>
-                    <option value="15">15 minutes</option>
-                    <option value="30">30 minutes</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Buffer after</label>
-                  <select
-                    value={formData.bufferAfter}
-                    onChange={(e) => setFormData({ ...formData, bufferAfter: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                   >
-                    <option value="0">No buffer</option>
-                    <option value="5">5 minutes</option>
-                    <option value="10">10 minutes</option>
-                    <option value="15">15 minutes</option>
-                    <option value="30">30 minutes</option>
-                  </select>
+                    {editingEventType ? "Save Changes" : "Create Event Type"}
+                  </button>
                 </div>
-              </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                >
-                  {editingEventType ? "Save Changes" : "Create"}
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       )}
