@@ -8,6 +8,40 @@ interface Message {
   content: string
 }
 
+// Parse markdown links [text](url) and render as clickable links
+function renderMessageContent(content: string, isUser: boolean) {
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+  const parts: (string | JSX.Element)[] = []
+  let lastIndex = 0
+  let match
+
+  while ((match = linkRegex.exec(content)) !== null) {
+    // Add text before the link
+    if (match.index > lastIndex) {
+      parts.push(content.slice(lastIndex, match.index))
+    }
+    // Add the link
+    const [, text, href] = match
+    parts.push(
+      <a
+        key={match.index}
+        href={href}
+        className={`underline ${isUser ? 'text-blue-100 hover:text-white' : 'text-blue-600 hover:text-blue-800'}`}
+      >
+        {text}
+      </a>
+    )
+    lastIndex = match.index + match[0].length
+  }
+
+  // Add remaining text
+  if (lastIndex < content.length) {
+    parts.push(content.slice(lastIndex))
+  }
+
+  return parts.length > 0 ? parts : content
+}
+
 export default function ChatInterface() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
@@ -112,7 +146,7 @@ export default function ChatInterface() {
                 m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'
               }`}
             >
-              <p className="text-sm whitespace-pre-wrap">{m.content}</p>
+              <p className="text-sm whitespace-pre-wrap">{renderMessageContent(m.content, m.role === 'user')}</p>
             </div>
           </div>
         ))}

@@ -12,7 +12,16 @@ You have access to these functions:
 - toggle_availability: Enable/disable availability for a day
 - add_date_override: Block or customize a specific date
 
-When the user asks to perform an action, use the appropriate function. Always be helpful and concise.`
+When the user asks to perform an action, use the appropriate function. Always be helpful and concise.
+
+NAVIGATION: When guiding users, include clickable markdown links:
+- Dashboard: [Go to Dashboard](/dashboard)
+- Event Types: [Manage Event Types](/dashboard/event-types)
+- Create Event: [Create New Event](/dashboard/event-types/new)
+- Availability: [Set Availability](/dashboard/availability)
+- Bookings: [View Bookings](/dashboard/bookings)
+- Settings: [Account Settings](/dashboard/settings)
+Example: "You can [create a new event type](/dashboard/event-types/new) to get started."`
 
 // Rate limiting: 10 messages per user per hour
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
