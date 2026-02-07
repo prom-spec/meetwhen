@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Plus, Edit, Trash2, Copy, ExternalLink, Video, MapPin, Phone, Link2, Check, ChevronRight, X } from "lucide-react"
 
 type LocationType = "IN_PERSON" | "GOOGLE_MEET" | "ZOOM" | "PHONE" | "CUSTOM"
@@ -233,13 +234,13 @@ export default function EventTypesPage() {
             Create events that people can book on your calendar
           </p>
         </div>
-        <button
-          onClick={openCreateModal}
+        <Link
+          href="/dashboard/event-types/new"
           className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
         >
           <Plus className="w-4 h-4 mr-2" />
           New Event Type
-        </button>
+        </Link>
       </div>
 
       {eventTypes.length === 0 ? (
