@@ -2,19 +2,22 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import prisma from "@/lib/prisma"
-import { CheckCircle, Calendar, Clock, MapPin, User, Mail, Globe } from "lucide-react"
+import { CheckCircle, Calendar, Clock, MapPin, User, Mail, Globe, XCircle, AlertTriangle } from "lucide-react"
 import type { Metadata } from "next"
+import BookingActions from "./BookingActions"
 
 interface PageProps {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ email?: string }>
 }
 
 export const metadata: Metadata = {
-  title: "Booking Confirmed",
+  title: "Booking Details",
 }
 
-export default async function BookingConfirmationPage({ params }: PageProps) {
+export default async function BookingConfirmationPage({ params, searchParams }: PageProps) {
   const { id } = await params
+  const { email } = await searchParams
   
   const booking = await prisma.booking.findUnique({
     where: { id },
@@ -27,6 +30,8 @@ export default async function BookingConfirmationPage({ params }: PageProps) {
   if (!booking) {
     notFound()
   }
+
+  const isCancelled = booking.status === "CANCELLED"
 
   const formatDate = (date: Date, tz: string) => {
     return date.toLocaleDateString(undefined, {
@@ -55,6 +60,8 @@ export default async function BookingConfirmationPage({ params }: PageProps) {
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}`
   }
 
+  const isPast = new Date(booking.startTime) < new Date()
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
@@ -74,25 +81,49 @@ export default async function BookingConfirmationPage({ params }: PageProps) {
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          {/* Success Icon */}
+          {/* Status Icon */}
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-[#1a1a2e]">Confirmed!</h1>
-            <p className="text-gray-500 mt-1">
-              You&apos;re scheduled with {booking.host.name || booking.host.email}
-            </p>
+            {isCancelled ? (
+              <>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+                  <XCircle className="w-8 h-8 text-red-600" />
+                </div>
+                <h1 className="text-2xl font-bold text-[#1a1a2e]">Cancelled</h1>
+                <p className="text-gray-500 mt-1">
+                  This meeting has been cancelled
+                </p>
+              </>
+            ) : isPast ? (
+              <>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                  <Clock className="w-8 h-8 text-gray-600" />
+                </div>
+                <h1 className="text-2xl font-bold text-[#1a1a2e]">Completed</h1>
+                <p className="text-gray-500 mt-1">
+                  This meeting has already taken place
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                </div>
+                <h1 className="text-2xl font-bold text-[#1a1a2e]">Confirmed!</h1>
+                <p className="text-gray-500 mt-1">
+                  You&apos;re scheduled with {booking.host.name || booking.host.email}
+                </p>
+              </>
+            )}
           </div>
 
           {/* Booking Details */}
-          <div className="border border-gray-200 rounded-lg p-5 space-y-4">
-            <div className="font-semibold text-[#1a1a2e] text-lg">
+          <div className={`border rounded-lg p-5 space-y-4 ${isCancelled ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}>
+            <div className={`font-semibold text-lg ${isCancelled ? 'text-gray-500 line-through' : 'text-[#1a1a2e]'}`}>
               {booking.eventType.title}
             </div>
             
-            <div className="flex items-start gap-3 text-gray-600">
-              <Calendar className="w-5 h-5 mt-0.5 text-[#0066FF]" />
+            <div className={`flex items-start gap-3 ${isCancelled ? 'text-gray-400' : 'text-gray-600'}`}>
+              <Calendar className={`w-5 h-5 mt-0.5 ${isCancelled ? 'text-gray-400' : 'text-[#0066FF]'}`} />
               <div>
                 <p className="font-medium">{formatDate(booking.startTime, booking.guestTimezone)}</p>
                 <p className="text-sm text-gray-500">
@@ -101,29 +132,29 @@ export default async function BookingConfirmationPage({ params }: PageProps) {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 text-gray-600">
-              <Globe className="w-5 h-5 text-[#0066FF]" />
+            <div className={`flex items-center gap-3 ${isCancelled ? 'text-gray-400' : 'text-gray-600'}`}>
+              <Globe className={`w-5 h-5 ${isCancelled ? 'text-gray-400' : 'text-[#0066FF]'}`} />
               <span>{booking.guestTimezone.replace(/_/g, " ")}</span>
             </div>
 
-            <div className="flex items-center gap-3 text-gray-600">
-              <Clock className="w-5 h-5 text-[#0066FF]" />
+            <div className={`flex items-center gap-3 ${isCancelled ? 'text-gray-400' : 'text-gray-600'}`}>
+              <Clock className={`w-5 h-5 ${isCancelled ? 'text-gray-400' : 'text-[#0066FF]'}`} />
               <span>{booking.eventType.duration} minutes</span>
             </div>
 
             {booking.eventType.location && (
-              <div className="flex items-center gap-3 text-gray-600">
-                <MapPin className="w-5 h-5 text-[#0066FF]" />
+              <div className={`flex items-center gap-3 ${isCancelled ? 'text-gray-400' : 'text-gray-600'}`}>
+                <MapPin className={`w-5 h-5 ${isCancelled ? 'text-gray-400' : 'text-[#0066FF]'}`} />
                 <span>{booking.eventType.location}</span>
               </div>
             )}
 
             <div className="border-t border-gray-200 pt-4 mt-4">
-              <div className="flex items-center gap-3 text-gray-600 mb-2">
+              <div className={`flex items-center gap-3 mb-2 ${isCancelled ? 'text-gray-400' : 'text-gray-600'}`}>
                 <User className="w-5 h-5 text-gray-400" />
                 <span>{booking.guestName}</span>
               </div>
-              <div className="flex items-center gap-3 text-gray-600">
+              <div className={`flex items-center gap-3 ${isCancelled ? 'text-gray-400' : 'text-gray-600'}`}>
                 <Mail className="w-5 h-5 text-gray-400" />
                 <span>{booking.guestEmail}</span>
               </div>
@@ -132,27 +163,47 @@ export default async function BookingConfirmationPage({ params }: PageProps) {
             {booking.notes && (
               <div className="border-t border-gray-200 pt-4">
                 <p className="text-sm text-gray-500 mb-1">Notes:</p>
-                <p className="text-gray-700">{booking.notes}</p>
+                <p className={isCancelled ? 'text-gray-400' : 'text-gray-700'}>{booking.notes}</p>
               </div>
             )}
           </div>
 
-          {/* Add to Calendar */}
-          <div className="mt-6 space-y-3">
-            <a
-              href={generateGoogleCalendarUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-[#0066FF] text-white rounded-lg font-medium hover:bg-[#0052cc] transition-colors"
-            >
-              <Calendar className="w-4 h-4" />
-              Add to Google Calendar
-            </a>
-            
-            <p className="text-center text-sm text-gray-500">
-              A calendar invitation has been sent to your email
-            </p>
-          </div>
+          {/* Actions */}
+          {!isCancelled && !isPast && (
+            <div className="mt-6 space-y-3">
+              <a
+                href={generateGoogleCalendarUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-[#0066FF] text-white rounded-lg font-medium hover:bg-[#0052cc] transition-colors"
+              >
+                <Calendar className="w-4 h-4" />
+                Add to Google Calendar
+              </a>
+              
+              <BookingActions 
+                bookingId={booking.id}
+                guestEmail={email || booking.guestEmail}
+              />
+              
+              <p className="text-center text-sm text-gray-500">
+                A calendar invitation has been sent to your email
+              </p>
+            </div>
+          )}
+
+          {isCancelled && (
+            <div className="mt-6 p-4 bg-gray-100 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-gray-500 mt-0.5" />
+                <div>
+                  <p className="text-sm text-gray-600">
+                    This booking was cancelled. If you'd like to book another time, please visit the host's booking page.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 

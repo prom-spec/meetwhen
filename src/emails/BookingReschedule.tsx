@@ -13,48 +13,68 @@ import {
 } from "@react-email/components"
 import * as React from "react"
 
-interface BookingConfirmationProps {
-  guestName: string
-  hostName: string
+interface BookingRescheduleProps {
+  recipientName: string
+  otherPartyName: string
   eventTitle: string
-  startTime: string
-  endTime: string
+  oldStartTime: string
+  oldEndTime: string
+  newStartTime: string
+  newEndTime: string
   timezone: string
+  rescheduledBy: "host" | "guest"
+  isHost: boolean
+  bookingUrl: string
   meetingUrl?: string | null
   location?: string | null
-  bookingUrl?: string | null
 }
 
-export default function BookingConfirmation({
-  guestName,
-  hostName,
+export default function BookingReschedule({
+  recipientName,
+  otherPartyName,
   eventTitle,
-  startTime,
-  endTime,
+  oldStartTime,
+  oldEndTime,
+  newStartTime,
+  newEndTime,
   timezone,
+  rescheduledBy,
+  isHost,
+  bookingUrl,
   meetingUrl,
   location,
-  bookingUrl,
-}: BookingConfirmationProps) {
+}: BookingRescheduleProps) {
+  const reschedulerDescription = rescheduledBy === "host" 
+    ? (isHost ? "You" : otherPartyName)
+    : (isHost ? otherPartyName : "You")
+
   return (
     <Html>
       <Head />
-      <Preview>Your booking with {hostName} is confirmed</Preview>
+      <Preview>Your meeting has been rescheduled</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Booking Confirmed! ✓</Heading>
+          <Heading style={h1}>Meeting Rescheduled 📅</Heading>
           
-          <Text style={text}>Hi {guestName},</Text>
+          <Text style={text}>Hi {recipientName},</Text>
           
           <Text style={text}>
-            Your meeting with <strong>{hostName}</strong> has been confirmed.
+            {reschedulerDescription} {reschedulerDescription === "You" ? "have" : "has"} rescheduled the following meeting:
           </Text>
 
           <Section style={eventBox}>
             <Text style={eventTitleStyle}>{eventTitle}</Text>
-            <Text style={eventDetails}>
-              📅 {startTime} - {endTime}
+            
+            <Text style={labelText}>Previous time (cancelled):</Text>
+            <Text style={oldTimeText}>
+              ❌ {oldStartTime} - {oldEndTime}
             </Text>
+            
+            <Text style={labelText}>New time:</Text>
+            <Text style={newTimeText}>
+              ✅ {newStartTime} - {newEndTime}
+            </Text>
+            
             <Text style={eventDetails}>
               🌍 {timezone}
             </Text>
@@ -70,23 +90,17 @@ export default function BookingConfirmation({
             )}
           </Section>
 
-          {bookingUrl && (
-            <Section style={buttonContainer}>
-              <Button style={button} href={bookingUrl}>
-                Manage Booking
-              </Button>
-            </Section>
-          )}
+          <Section style={buttonContainer}>
+            <Button style={button} href={bookingUrl}>
+              View Booking Details
+            </Button>
+          </Section>
 
           <Hr style={hr} />
 
           <Text style={footerText}>
-            Need to make changes?{" "}
-            {bookingUrl ? (
-              <Link href={bookingUrl} style={link}>Reschedule or cancel your booking</Link>
-            ) : (
-              <>Contact {hostName} directly to reschedule or cancel.</>
-            )}
+            Need to make more changes?{" "}
+            <Link href={bookingUrl} style={link}>Manage your booking</Link>
           </Text>
 
           <Text style={footerText}>
@@ -138,6 +152,31 @@ const eventTitleStyle = {
   color: "#1a1a1a",
   fontSize: "18px",
   fontWeight: "600",
+  margin: "0 0 16px",
+}
+
+const labelText = {
+  color: "#6b7280",
+  fontSize: "12px",
+  fontWeight: "600",
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.05em",
+  margin: "12px 0 4px",
+}
+
+const oldTimeText = {
+  color: "#9ca3af",
+  fontSize: "14px",
+  lineHeight: "20px",
+  margin: "0 0 8px",
+  textDecoration: "line-through",
+}
+
+const newTimeText = {
+  color: "#059669",
+  fontSize: "14px",
+  fontWeight: "600",
+  lineHeight: "20px",
   margin: "0 0 12px",
 }
 
@@ -151,18 +190,6 @@ const eventDetails = {
 const link = {
   color: "#3B82F6",
   textDecoration: "none",
-}
-
-const hr = {
-  borderColor: "#e5e7eb",
-  margin: "24px 0",
-}
-
-const footerText = {
-  color: "#6b7280",
-  fontSize: "14px",
-  lineHeight: "20px",
-  margin: "0 0 8px",
 }
 
 const buttonContainer = {
@@ -179,4 +206,16 @@ const button = {
   textDecoration: "none",
   textAlign: "center" as const,
   padding: "12px 24px",
+}
+
+const hr = {
+  borderColor: "#e5e7eb",
+  margin: "24px 0",
+}
+
+const footerText = {
+  color: "#6b7280",
+  fontSize: "14px",
+  lineHeight: "20px",
+  margin: "0 0 8px",
 }

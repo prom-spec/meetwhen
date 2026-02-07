@@ -59,6 +59,11 @@ model User {
   bookings      Booking[]      @relation("host")
   availability  Availability[]
   dateOverrides DateOverride[]
+  webhooks      Webhook[]
+
+  // Team relations
+  ownedTeams    Team[]         @relation("teamOwner")
+  teamMembers   TeamMember[]
 }
 
 model EventType {
@@ -66,12 +71,19 @@ model EventType {
   userId      String
   user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Optional team association
+  teamId         String?
+  team           Team?          @relation("teamEventTypes", fields: [teamId], references: [id], onDelete: Cascade)
+  schedulingType SchedulingType @default(INDIVIDUAL)
+
   title       String
   slug        String
   description String?
   duration    Int
   color       String  @default("#3B82F6")
-  location    String?
+  location    String? // Deprecated: kept for backwards compatibility
+  locationType  LocationType @default(GOOGLE_MEET)
+  locationValue String?      // Address, phone number, or custom URL depending on locationType
   isActive    Boolean @default(true)
 
   bufferBefore Int @default(0)
@@ -82,10 +94,13 @@ model EventType {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  bookings Booking[]
+  bookings  Booking[]
+  pageViews PageView[]
 
   @@unique([userId, slug])
+  @@unique([teamId, slug])
   @@index([userId])
+  @@index([teamId])
 }
 
 model Availability {
@@ -155,4 +170,123 @@ enum BookingStatus {
   CONFIRMED
   CANCELLED
   COMPLETED
+}
+
+enum LocationType {
+  IN_PERSON
+  GOOGLE_MEET
+  ZOOM
+  PHONE
+  CUSTOM
+}
+
+enum SchedulingType {
+  INDIVIDUAL
+  ROUND_ROBIN
+  COLLECTIVE
+}
+
+enum TeamMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  ownerId   String
+  owner     User     @relation("teamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // Round-robin tracking
+  lastAssignedMemberId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members    TeamMember[]
+  eventTypes EventType[]  @relation("teamEventTypes")
+
+  @@index([ownerId])
+}
+
+model TeamMember {
+  id        String         @id @default(cuid())
+  teamId    String
+  team      Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      TeamMemberRole @default(MEMBER)
+
+  // For round-robin priority/weighting
+  priority  Int            @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+model Webhook {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  url       String
+  events    String[]
+  secret    String
+  active    Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deliveries WebhookDelivery[]
+
+  @@index([userId])
+}
+
+model WebhookDelivery {
+  id           String   @id @default(cuid())
+  webhookId    String
+  webhook      Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  event        String
+  payload      Json
+  status       DeliveryStatus @default(PENDING)
+  responseCode Int?
+  responseBody String?  @db.Text
+  attempts     Int      @default(0)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([webhookId])
+  @@index([createdAt])
+}
+
+enum DeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model PageView {
+  id          String   @id @default(cuid())
+  eventTypeId String
+  eventType   EventType @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  
+  // Funnel stage: view, slot_selected, booking_confirmed
+  stage       String   @default("view")
+  
+  // Optional session tracking
+  sessionId   String?
+  
+  createdAt   DateTime @default(now())
+
+  @@index([eventTypeId])
+  @@index([createdAt])
+  @@index([stage])
 }

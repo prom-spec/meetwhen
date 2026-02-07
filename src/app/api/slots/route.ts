@@ -2,22 +2,34 @@ import { NextRequest, NextResponse } from "next/server"
 import * as dateFns from "date-fns"
 import prisma from "@/lib/prisma"
 import { getFreeBusyTimes } from "@/lib/calendar"
+import { getRoundRobinSlots, getCollectiveSlots } from "@/lib/team-scheduling"
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const username = searchParams.get("username")
+    const teamSlug = searchParams.get("teamSlug")
     const eventSlug = searchParams.get("eventSlug")
     const dateStr = searchParams.get("date")
 
-    if (!username || !eventSlug || !dateStr) {
+    if (!eventSlug || !dateStr) {
       return NextResponse.json({ error: "Missing required parameters" }, { status: 400 })
+    }
+
+    // Handle team event slots
+    if (teamSlug) {
+      return handleTeamSlots(teamSlug, eventSlug, dateStr)
+    }
+
+    // Handle individual user slots
+    if (!username) {
+      return NextResponse.json({ error: "Missing username or teamSlug" }, { status: 400 })
     }
 
     const user = await prisma.user.findUnique({
     where: { username },
     include: {
-      eventTypes: { where: { slug: eventSlug, isActive: true } },
+      eventTypes: { where: { slug: eventSlug, isActive: true, teamId: null } },
       availability: true,
       dateOverrides: true,
     },
@@ -95,6 +107,84 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error("Error fetching slots:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
+// Handle team event slots (round-robin or collective)
+async function handleTeamSlots(teamSlug: string, eventSlug: string, dateStr: string) {
+  try {
+    const team = await prisma.team.findUnique({
+      where: { slug: teamSlug },
+      include: {
+        eventTypes: {
+          where: { slug: eventSlug, isActive: true },
+          include: {
+            user: {
+              select: { timezone: true },
+            },
+          },
+        },
+        members: {
+          include: {
+            user: {
+              select: { timezone: true },
+            },
+          },
+        },
+      },
+    })
+
+    if (!team || team.eventTypes.length === 0) {
+      return NextResponse.json({ error: "Team event type not found" }, { status: 404 })
+    }
+
+    const eventType = team.eventTypes[0]
+    const requestedDate = dateFns.parse(dateStr, "yyyy-MM-dd", new Date())
+
+    // Use the team owner's or first member's timezone as default
+    const teamTimezone = team.members[0]?.user.timezone || "UTC"
+
+    let slots: string[] = []
+
+    if (eventType.schedulingType === "ROUND_ROBIN") {
+      const roundRobinSlots = await getRoundRobinSlots(team.id, requestedDate, {
+        duration: eventType.duration,
+        bufferBefore: eventType.bufferBefore,
+        bufferAfter: eventType.bufferAfter,
+        minNotice: eventType.minNotice,
+        maxDaysAhead: eventType.maxDaysAhead,
+      })
+      slots = roundRobinSlots.map((s) => s.time)
+    } else if (eventType.schedulingType === "COLLECTIVE") {
+      slots = await getCollectiveSlots(team.id, requestedDate, {
+        duration: eventType.duration,
+        bufferBefore: eventType.bufferBefore,
+        bufferAfter: eventType.bufferAfter,
+        minNotice: eventType.minNotice,
+        maxDaysAhead: eventType.maxDaysAhead,
+      })
+    }
+
+    return NextResponse.json({
+      slots,
+      eventType: {
+        id: eventType.id,
+        title: eventType.title,
+        duration: eventType.duration,
+        description: eventType.description,
+        location: eventType.location,
+        schedulingType: eventType.schedulingType,
+      },
+      team: {
+        id: team.id,
+        name: team.name,
+        slug: team.slug,
+      },
+      hostTimezone: teamTimezone,
+    })
+  } catch (error) {
+    console.error("Error fetching team slots:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

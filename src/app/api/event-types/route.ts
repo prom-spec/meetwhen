@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, slug, description, duration, color, location, bufferBefore, bufferAfter, minNotice, maxDaysAhead } = body
+    const { title, slug, description, duration, color, location, locationType, locationValue, bufferBefore, bufferAfter, minNotice, maxDaysAhead } = body
 
     if (!title || !slug || !duration) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
@@ -60,6 +60,8 @@ export async function POST(request: NextRequest) {
         duration: parseInt(duration),
         color: color || "#3B82F6",
         location: location || null,
+        locationType: locationType || "GOOGLE_MEET",
+        locationValue: locationValue || null,
         bufferBefore: bufferBefore ? parseInt(bufferBefore) : 0,
         bufferAfter: bufferAfter ? parseInt(bufferAfter) : 0,
         minNotice: minNotice ? parseInt(minNotice) : 240,

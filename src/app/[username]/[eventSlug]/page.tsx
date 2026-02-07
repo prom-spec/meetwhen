@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -20,6 +20,35 @@ interface SlotResponse {
   hostTimezone: string
 }
 
+// Generate a simple session ID for funnel tracking
+function getSessionId() {
+  if (typeof window === "undefined") return null
+  let sessionId = sessionStorage.getItem("booking_session_id")
+  if (!sessionId) {
+    sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    sessionStorage.setItem("booking_session_id", sessionId)
+  }
+  return sessionId
+}
+
+// Track analytics event
+async function trackEvent(eventTypeId: string, stage: string) {
+  try {
+    await fetch("/api/analytics/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eventTypeId,
+        stage,
+        sessionId: getSessionId(),
+      }),
+    })
+  } catch (e) {
+    // Silently fail - analytics should not break booking flow
+    console.debug("Analytics tracking failed:", e)
+  }
+}
+
 export default function BookingPage() {
   const params = useParams()
   const router = useRouter()
@@ -37,11 +66,21 @@ export default function BookingPage() {
   const [isBooked, setIsBooked] = useState(false)
   const [bookingId, setBookingId] = useState<string | null>(null)
   const [guestTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone)
+  const hasTrackedView = useRef(false)
+  const hasTrackedSlot = useRef(false)
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
   })
+
+  // Track page view once when event type is loaded
+  useEffect(() => {
+    if (eventType?.id && !hasTrackedView.current) {
+      hasTrackedView.current = true
+      trackEvent(eventType.id, "view")
+    }
+  }, [eventType?.id])
 
   const formatDate = (date: Date) => {
     return date.toISOString().split("T")[0]
@@ -98,6 +137,8 @@ export default function BookingPage() {
         const data = await res.json()
         setBookingId(data.id)
         setIsBooked(true)
+        // Track booking confirmation
+        trackEvent(eventType.id, "booking_confirmed")
       } else {
         const error = await res.json()
         alert(error.error || "Failed to book")
@@ -366,6 +407,11 @@ export default function BookingPage() {
                                 onClick={() => {
                                   setSelectedTime(slot)
                                   setShowForm(true)
+                                  // Track slot selection (only once per session)
+                                  if (eventType?.id && !hasTrackedSlot.current) {
+                                    hasTrackedSlot.current = true
+                                    trackEvent(eventType.id, "slot_selected")
+                                  }
                                 }}
                                 className={`
                                   w-full py-2.5 px-3 text-sm border rounded-lg font-medium transition-colors

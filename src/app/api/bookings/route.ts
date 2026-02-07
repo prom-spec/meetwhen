@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth"
 import * as dateFns from "date-fns"
 import prisma from "@/lib/prisma"
 import { createCalendarEvent, hasCalendarConflict, getGoogleAccessToken, BookingData } from "@/lib/calendar"
+import { triggerWebhook } from "@/lib/webhooks"
+import { getNextRoundRobinMember, updateLastAssignedMember, createCollectiveBooking, isMemberAvailableAtSlot } from "@/lib/team-scheduling"
 
 export async function GET() {
   try {
@@ -51,6 +53,23 @@ export async function POST(request: NextRequest) {
             calendarSyncEnabled: true,
           },
         },
+        team: {
+          include: {
+            members: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    timezone: true,
+                    calendarSyncEnabled: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     })
 
@@ -78,6 +97,157 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Time slot is too soon" }, { status: 400 })
     }
 
+    // Handle team bookings
+    if (eventType.teamId && eventType.team) {
+      if (eventType.schedulingType === "COLLECTIVE") {
+        // Collective: create bookings for all team members
+        const bookingIds = await createCollectiveBooking(
+          eventTypeId,
+          eventType.teamId,
+          guestName,
+          guestEmail,
+          guestTimezone || "UTC",
+          startTime,
+          endTime
+        )
+
+        // Create calendar events for all team members asynchronously
+        for (const member of eventType.team.members) {
+          if (member.user.calendarSyncEnabled) {
+            getGoogleAccessToken(member.userId).then(async (accessToken) => {
+              if (accessToken) {
+                const bookingData: BookingData = {
+                  id: bookingIds[0],
+                  guestName,
+                  guestEmail,
+                  startTime,
+                  endTime,
+                  eventType: {
+                    title: eventType.title,
+                    description: eventType.description,
+                    location: eventType.location,
+                  },
+                  host: {
+                    name: member.user.name,
+                    email: member.user.email,
+                  },
+                }
+                await createCalendarEvent(accessToken, bookingData)
+              }
+            }).catch((err) => console.error("Calendar event creation failed:", err))
+          }
+        }
+
+        return NextResponse.json({ 
+          success: true, 
+          bookingIds,
+          schedulingType: "COLLECTIVE",
+          teamName: eventType.team.name,
+        }, { status: 201 })
+      } else if (eventType.schedulingType === "ROUND_ROBIN") {
+        // Round-robin: find next available member
+        const assignedMemberId = await getNextRoundRobinMember(
+          eventType.teamId,
+          startTime,
+          endTime,
+          eventType.bufferBefore,
+          eventType.bufferAfter
+        )
+
+        if (!assignedMemberId) {
+          return NextResponse.json({ error: "No team members available at this time" }, { status: 409 })
+        }
+
+        // Create booking for the assigned member
+        const assignedMember = eventType.team.members.find((m) => m.userId === assignedMemberId)
+        
+        const booking = await prisma.booking.create({
+          data: {
+            eventTypeId,
+            hostId: assignedMemberId,
+            guestName,
+            guestEmail,
+            guestTimezone: guestTimezone || "UTC",
+            startTime,
+            endTime,
+            status: "CONFIRMED",
+          },
+          include: {
+            eventType: true,
+            host: { select: { name: true, email: true, timezone: true } },
+          },
+        })
+
+        // Update round-robin tracker
+        await updateLastAssignedMember(eventType.teamId, assignedMemberId)
+
+        // Create Google Calendar event for the assigned member
+        if (assignedMember?.user.calendarSyncEnabled) {
+          getGoogleAccessToken(assignedMemberId).then(async (accessToken) => {
+            if (accessToken) {
+              const bookingData: BookingData = {
+                id: booking.id,
+                guestName: booking.guestName,
+                guestEmail: booking.guestEmail,
+                startTime: booking.startTime,
+                endTime: booking.endTime,
+                eventType: {
+                  title: booking.eventType.title,
+                  description: booking.eventType.description,
+                  location: booking.eventType.location,
+                },
+                host: {
+                  name: booking.host.name,
+                  email: booking.host.email,
+                },
+              }
+              const googleEventId = await createCalendarEvent(accessToken, bookingData)
+              
+              if (googleEventId) {
+                await prisma.booking.update({
+                  where: { id: booking.id },
+                  data: { googleEventId },
+                })
+              }
+            }
+          }).catch((err) => console.error("Calendar event creation failed:", err))
+        }
+
+        // Trigger webhook for round-robin booking
+        triggerWebhook(assignedMemberId, "booking.created", {
+          booking: {
+            id: booking.id,
+            eventType: {
+              id: booking.eventType.id,
+              title: booking.eventType.title,
+              duration: booking.eventType.duration,
+            },
+            guestName: booking.guestName,
+            guestEmail: booking.guestEmail,
+            guestTimezone: booking.guestTimezone,
+            startTime: booking.startTime.toISOString(),
+            endTime: booking.endTime.toISOString(),
+            status: booking.status,
+            createdAt: booking.createdAt.toISOString(),
+            schedulingType: "ROUND_ROBIN",
+            teamName: eventType.team.name,
+          },
+          host: {
+            id: assignedMemberId,
+            name: assignedMember?.user.name,
+            email: assignedMember?.user.email,
+          },
+        }).catch((err) => console.error("Webhook trigger failed:", err))
+
+        return NextResponse.json({
+          ...booking,
+          schedulingType: "ROUND_ROBIN",
+          teamName: eventType.team.name,
+        }, { status: 201 })
+      }
+    }
+
+    // Standard individual booking
     // Check for conflicts
     const conflictingBooking = await prisma.booking.findFirst({
       where: {
@@ -117,7 +287,27 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create Google Calendar event if enabled (async, don't block response)
+    // Determine meeting URL based on location type
+    let meetingUrl: string | null = null
+    
+    // For custom URLs (Zoom, custom), use the locationValue immediately
+    if (eventType.locationType === "ZOOM" || eventType.locationType === "CUSTOM") {
+      meetingUrl = eventType.locationValue || null
+    } else if (eventType.locationType === "PHONE") {
+      meetingUrl = eventType.locationValue ? `tel:${eventType.locationValue.replace(/\D/g, "")}` : null
+    }
+
+    // Update booking with initial meeting URL if available
+    if (meetingUrl) {
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: { meetingUrl },
+      })
+      booking.meetingUrl = meetingUrl
+    }
+
+    // Create Google Calendar event if enabled
+    // For Google Meet, this will generate the Meet link
     if (eventType.user.calendarSyncEnabled) {
       getGoogleAccessToken(eventType.userId).then(async (accessToken) => {
         if (accessToken) {
@@ -131,23 +321,58 @@ export async function POST(request: NextRequest) {
               title: booking.eventType.title,
               description: booking.eventType.description,
               location: booking.eventType.location,
+              locationType: eventType.locationType,
+              locationValue: eventType.locationValue,
             },
             host: {
               name: booking.host.name,
               email: booking.host.email,
             },
           }
-          const googleEventId = await createCalendarEvent(accessToken, bookingData)
+          const result = await createCalendarEvent(accessToken, bookingData)
           
-          if (googleEventId) {
+          // Update booking with Google Calendar event ID and meeting URL
+          const updateData: { googleEventId?: string; meetingUrl?: string } = {}
+          if (result.googleEventId) {
+            updateData.googleEventId = result.googleEventId
+          }
+          if (result.meetingUrl) {
+            updateData.meetingUrl = result.meetingUrl
+          }
+          
+          if (Object.keys(updateData).length > 0) {
             await prisma.booking.update({
               where: { id: booking.id },
-              data: { googleEventId },
+              data: updateData,
             })
           }
         }
       }).catch((err) => console.error("Calendar event creation failed:", err))
     }
+
+    // Trigger webhook for booking.created event
+    triggerWebhook(eventType.userId, "booking.created", {
+      booking: {
+        id: booking.id,
+        eventType: {
+          id: booking.eventType.id,
+          title: booking.eventType.title,
+          duration: booking.eventType.duration,
+        },
+        guestName: booking.guestName,
+        guestEmail: booking.guestEmail,
+        guestTimezone: booking.guestTimezone,
+        startTime: booking.startTime.toISOString(),
+        endTime: booking.endTime.toISOString(),
+        status: booking.status,
+        createdAt: booking.createdAt.toISOString(),
+      },
+      host: {
+        id: eventType.user.id,
+        name: eventType.user.name,
+        email: eventType.user.email,
+      },
+    }).catch((err) => console.error("Webhook trigger failed:", err))
 
     return NextResponse.json(booking, { status: 201 })
   } catch (error) {

@@ -1,11 +1,9 @@
 import {
   Body,
-  Button,
   Container,
   Head,
   Heading,
   Html,
-  Link,
   Preview,
   Section,
   Text,
@@ -13,41 +11,43 @@ import {
 } from "@react-email/components"
 import * as React from "react"
 
-interface BookingConfirmationProps {
-  guestName: string
-  hostName: string
+interface BookingCancellationProps {
+  recipientName: string
+  otherPartyName: string
   eventTitle: string
   startTime: string
   endTime: string
   timezone: string
-  meetingUrl?: string | null
-  location?: string | null
-  bookingUrl?: string | null
+  cancelledBy: "host" | "guest"
+  isHost: boolean
 }
 
-export default function BookingConfirmation({
-  guestName,
-  hostName,
+export default function BookingCancellation({
+  recipientName,
+  otherPartyName,
   eventTitle,
   startTime,
   endTime,
   timezone,
-  meetingUrl,
-  location,
-  bookingUrl,
-}: BookingConfirmationProps) {
+  cancelledBy,
+  isHost,
+}: BookingCancellationProps) {
+  const cancellerDescription = cancelledBy === "host" 
+    ? (isHost ? "You" : otherPartyName)
+    : (isHost ? otherPartyName : "You")
+
   return (
     <Html>
       <Head />
-      <Preview>Your booking with {hostName} is confirmed</Preview>
+      <Preview>Your meeting has been cancelled</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Booking Confirmed! ✓</Heading>
+          <Heading style={h1}>Meeting Cancelled</Heading>
           
-          <Text style={text}>Hi {guestName},</Text>
+          <Text style={text}>Hi {recipientName},</Text>
           
           <Text style={text}>
-            Your meeting with <strong>{hostName}</strong> has been confirmed.
+            {cancellerDescription} {cancellerDescription === "You" ? "have" : "has"} cancelled the following meeting:
           </Text>
 
           <Section style={eventBox}>
@@ -58,35 +58,22 @@ export default function BookingConfirmation({
             <Text style={eventDetails}>
               🌍 {timezone}
             </Text>
-            {location && (
-              <Text style={eventDetails}>
-                📍 {location}
-              </Text>
-            )}
-            {meetingUrl && (
-              <Text style={eventDetails}>
-                🔗 <Link href={meetingUrl} style={link}>Join Meeting</Link>
-              </Text>
-            )}
+            <Text style={eventDetails}>
+              👤 {isHost ? `With ${otherPartyName}` : `With ${otherPartyName}`}
+            </Text>
           </Section>
 
-          {bookingUrl && (
-            <Section style={buttonContainer}>
-              <Button style={button} href={bookingUrl}>
-                Manage Booking
-              </Button>
-            </Section>
-          )}
+          <Section style={cancelledBox}>
+            <Text style={cancelledText}>❌ This meeting has been cancelled</Text>
+          </Section>
 
           <Hr style={hr} />
 
           <Text style={footerText}>
-            Need to make changes?{" "}
-            {bookingUrl ? (
-              <Link href={bookingUrl} style={link}>Reschedule or cancel your booking</Link>
-            ) : (
-              <>Contact {hostName} directly to reschedule or cancel.</>
-            )}
+            {isHost 
+              ? "The attendee has been notified of this cancellation."
+              : "If you'd like to book a new time, please visit the host's booking page."
+            }
           </Text>
 
           <Text style={footerText}>
@@ -112,7 +99,7 @@ const container = {
 }
 
 const h1 = {
-  color: "#1a1a1a",
+  color: "#dc2626",
   fontSize: "24px",
   fontWeight: "600",
   lineHeight: "40px",
@@ -127,8 +114,8 @@ const text = {
 }
 
 const eventBox = {
-  backgroundColor: "#f9fafb",
-  border: "1px solid #e5e7eb",
+  backgroundColor: "#fef2f2",
+  border: "1px solid #fecaca",
   borderRadius: "8px",
   padding: "20px",
   margin: "24px 0",
@@ -139,18 +126,29 @@ const eventTitleStyle = {
   fontSize: "18px",
   fontWeight: "600",
   margin: "0 0 12px",
+  textDecoration: "line-through",
 }
 
 const eventDetails = {
-  color: "#484848",
+  color: "#6b7280",
   fontSize: "14px",
   lineHeight: "20px",
   margin: "4px 0",
 }
 
-const link = {
-  color: "#3B82F6",
-  textDecoration: "none",
+const cancelledBox = {
+  backgroundColor: "#fef2f2",
+  borderRadius: "8px",
+  padding: "12px 16px",
+  margin: "0 0 24px",
+  textAlign: "center" as const,
+}
+
+const cancelledText = {
+  color: "#dc2626",
+  fontSize: "14px",
+  fontWeight: "600",
+  margin: "0",
 }
 
 const hr = {
@@ -163,20 +161,4 @@ const footerText = {
   fontSize: "14px",
   lineHeight: "20px",
   margin: "0 0 8px",
-}
-
-const buttonContainer = {
-  textAlign: "center" as const,
-  margin: "24px 0",
-}
-
-const button = {
-  backgroundColor: "#3B82F6",
-  borderRadius: "6px",
-  color: "#ffffff",
-  fontSize: "14px",
-  fontWeight: "600",
-  textDecoration: "none",
-  textAlign: "center" as const,
-  padding: "12px 24px",
 }

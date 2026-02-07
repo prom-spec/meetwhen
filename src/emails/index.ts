@@ -1,3 +1,5 @@
 export { default as BookingConfirmation } from "./BookingConfirmation"
 export { default as BookingNotification } from "./BookingNotification"
 export { default as BookingReminder } from "./BookingReminder"
+export { default as BookingCancellation } from "./BookingCancellation"
+export { default as BookingReschedule } from "./BookingReschedule"

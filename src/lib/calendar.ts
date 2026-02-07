@@ -1,6 +1,8 @@
 import { google, calendar_v3 } from "googleapis"
 import prisma from "./prisma"
 
+export type LocationType = "IN_PERSON" | "GOOGLE_MEET" | "ZOOM" | "PHONE" | "CUSTOM"
+
 export interface BookingData {
   id: string
   guestName: string
@@ -11,11 +13,18 @@ export interface BookingData {
     title: string
     description: string | null
     location: string | null
+    locationType: LocationType
+    locationValue: string | null
   }
   host: {
     name: string | null
     email: string | null
   }
+}
+
+export interface CalendarEventResult {
+  googleEventId: string | null
+  meetingUrl: string | null
 }
 
 /**
@@ -78,20 +87,43 @@ export async function getGoogleAccessToken(userId: string): Promise<string | nul
 }
 
 /**
+ * Get the location string for calendar event based on location type
+ */
+function getEventLocation(booking: BookingData): string | undefined {
+  const { locationType, locationValue, location } = booking.eventType
+  
+  switch (locationType) {
+    case "IN_PERSON":
+      return locationValue || location || undefined
+    case "PHONE":
+      return locationValue ? `Phone: ${locationValue}` : undefined
+    case "ZOOM":
+    case "CUSTOM":
+      return locationValue || location || undefined
+    case "GOOGLE_MEET":
+      // Location will be set by conferenceData
+      return undefined
+    default:
+      return location || undefined
+  }
+}
+
+/**
  * Creates a Google Calendar event for a booking
- * Returns the Google Calendar event ID if successful, null otherwise
+ * Returns the Google Calendar event ID and meeting URL if successful
  */
 export async function createCalendarEvent(
   accessToken: string,
   booking: BookingData
-): Promise<string | null> {
+): Promise<CalendarEventResult> {
   try {
     const calendar = getGoogleCalendarClient(accessToken)
+    const isGoogleMeet = booking.eventType.locationType === "GOOGLE_MEET"
 
     const event: calendar_v3.Schema$Event = {
       summary: `${booking.eventType.title} with ${booking.guestName}`,
       description: booking.eventType.description || undefined,
-      location: booking.eventType.location || undefined,
+      location: getEventLocation(booking),
       start: {
         dateTime: booking.startTime.toISOString(),
         timeZone: "UTC",
@@ -111,21 +143,48 @@ export async function createCalendarEvent(
           { method: "popup", minutes: 15 },
         ],
       },
-      // Add conferencing if Google Meet is desired
-      // conferenceData: { createRequest: { requestId: booking.id } },
+    }
+
+    // Add Google Meet conference if requested
+    if (isGoogleMeet) {
+      event.conferenceData = {
+        createRequest: {
+          requestId: booking.id,
+          conferenceSolutionKey: {
+            type: "hangoutsMeet",
+          },
+        },
+      }
     }
 
     const response = await calendar.events.insert({
       calendarId: "primary",
       requestBody: event,
-      sendUpdates: "all", // Send email notifications to attendees
+      sendUpdates: "all",
+      conferenceDataVersion: isGoogleMeet ? 1 : undefined,
     })
 
-    console.log(`Created Google Calendar event: ${response.data.id}`)
-    return response.data.id || null
+    const googleEventId = response.data.id || null
+    let meetingUrl: string | null = null
+
+    // Extract Google Meet URL from response
+    if (isGoogleMeet && response.data.conferenceData?.entryPoints) {
+      const videoEntry = response.data.conferenceData.entryPoints.find(
+        (ep) => ep.entryPointType === "video"
+      )
+      meetingUrl = videoEntry?.uri || null
+    }
+
+    // For other location types with custom URLs, use that as the meeting URL
+    if (!meetingUrl && (booking.eventType.locationType === "ZOOM" || booking.eventType.locationType === "CUSTOM")) {
+      meetingUrl = booking.eventType.locationValue || null
+    }
+
+    console.log(`Created Google Calendar event: ${googleEventId}, meetingUrl: ${meetingUrl}`)
+    return { googleEventId, meetingUrl }
   } catch (error) {
     console.error("Error creating Google Calendar event:", error)
-    return null
+    return { googleEventId: null, meetingUrl: null }
   }
 }
 

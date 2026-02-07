@@ -57,7 +57,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { title, slug, description, duration, color, location, isActive, bufferBefore, bufferAfter, minNotice, maxDaysAhead } = body
+    const { title, slug, description, duration, color, location, locationType, locationValue, isActive, bufferBefore, bufferAfter, minNotice, maxDaysAhead } = body
 
     if (slug && slug !== existingEventType.slug) {
       const slugExists = await prisma.eventType.findFirst({
@@ -82,6 +82,8 @@ export async function PATCH(
         ...(duration !== undefined && { duration: parseInt(duration) }),
         ...(color !== undefined && { color }),
         ...(location !== undefined && { location }),
+        ...(locationType !== undefined && { locationType }),
+        ...(locationValue !== undefined && { locationValue }),
         ...(isActive !== undefined && { isActive }),
         ...(bufferBefore !== undefined && { bufferBefore: parseInt(bufferBefore) }),
         ...(bufferAfter !== undefined && { bufferAfter: parseInt(bufferAfter) }),

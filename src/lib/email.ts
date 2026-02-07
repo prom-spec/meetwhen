@@ -3,6 +3,8 @@ import { formatInTimeZone } from "date-fns-tz"
 import BookingConfirmation from "@/emails/BookingConfirmation"
 import BookingNotification from "@/emails/BookingNotification"
 import BookingReminder from "@/emails/BookingReminder"
+import BookingCancellation from "@/emails/BookingCancellation"
+import BookingReschedule from "@/emails/BookingReschedule"
 
 // Lazy initialization with dynamic import to avoid build errors when env var is not set
 let resendInstance: Resend | null = null
@@ -62,6 +64,9 @@ export async function sendBookingConfirmation(data: BookingEmailData) {
     return { success: false, error: "Email not configured" }
   }
 
+  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+  const bookingUrl = `${baseUrl}/booking/${booking.id}?email=${encodeURIComponent(booking.guestEmail)}`
+
   const { startTime, endTime } = formatTimeRange(
     booking.startTime,
     booking.endTime,
@@ -82,6 +87,7 @@ export async function sendBookingConfirmation(data: BookingEmailData) {
         timezone: booking.guestTimezone,
         meetingUrl: booking.meetingUrl,
         location: eventType.location,
+        bookingUrl,
       }),
     })
 
@@ -194,4 +200,131 @@ export async function sendBookingEmails(data: BookingEmailData) {
     confirmation: results[0].status === "fulfilled" ? results[0].value : { success: false, error: results[0].reason },
     notification: results[1].status === "fulfilled" ? results[1].value : { success: false, error: results[1].reason },
   }
+}
+
+interface CancellationEmailData extends BookingEmailData {
+  cancelledBy: "host" | "guest"
+}
+
+export async function sendBookingCancellation(data: CancellationEmailData) {
+  const { booking, eventType, host, cancelledBy } = data
+  
+  const client = await getResend()
+  if (!client) {
+    console.warn("RESEND_API_KEY not set, skipping email")
+    return { success: false, error: "Email not configured" }
+  }
+
+  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+
+  // Send to guest
+  const guestTime = formatTimeRange(booking.startTime, booking.endTime, booking.guestTimezone)
+  const guestResult = await client.emails.send({
+    from: FROM_EMAIL,
+    to: booking.guestEmail,
+    subject: `Cancelled: ${eventType.title} with ${host.name || "Host"}`,
+    react: BookingCancellation({
+      recipientName: booking.guestName,
+      otherPartyName: host.name || "Host",
+      eventTitle: eventType.title,
+      startTime: guestTime.startTime,
+      endTime: guestTime.endTime,
+      timezone: booking.guestTimezone,
+      cancelledBy,
+      isHost: false,
+    }),
+  }).catch((err) => ({ error: err }))
+
+  // Send to host
+  const hostTimezone = host.timezone || "UTC"
+  const hostTime = formatTimeRange(booking.startTime, booking.endTime, hostTimezone)
+  const hostResult = await client.emails.send({
+    from: FROM_EMAIL,
+    to: host.email,
+    subject: `Cancelled: ${eventType.title} with ${booking.guestName}`,
+    react: BookingCancellation({
+      recipientName: host.name || "Host",
+      otherPartyName: booking.guestName,
+      eventTitle: eventType.title,
+      startTime: hostTime.startTime,
+      endTime: hostTime.endTime,
+      timezone: hostTimezone,
+      cancelledBy,
+      isHost: true,
+    }),
+  }).catch((err) => ({ error: err }))
+
+  console.log("Cancellation emails sent:", { guestResult, hostResult })
+  return { success: true, guestResult, hostResult }
+}
+
+interface RescheduleEmailData extends BookingEmailData {
+  oldStartTime: Date
+  oldEndTime: Date
+  rescheduledBy: "host" | "guest"
+}
+
+export async function sendBookingReschedule(data: RescheduleEmailData) {
+  const { booking, eventType, host, oldStartTime, oldEndTime, rescheduledBy } = data
+  
+  const client = await getResend()
+  if (!client) {
+    console.warn("RESEND_API_KEY not set, skipping email")
+    return { success: false, error: "Email not configured" }
+  }
+
+  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+  const bookingUrl = `${baseUrl}/booking/${booking.id}`
+
+  // Send to guest
+  const guestOldTime = formatTimeRange(oldStartTime, oldEndTime, booking.guestTimezone)
+  const guestNewTime = formatTimeRange(booking.startTime, booking.endTime, booking.guestTimezone)
+  const guestResult = await client.emails.send({
+    from: FROM_EMAIL,
+    to: booking.guestEmail,
+    subject: `Rescheduled: ${eventType.title} with ${host.name || "Host"}`,
+    react: BookingReschedule({
+      recipientName: booking.guestName,
+      otherPartyName: host.name || "Host",
+      eventTitle: eventType.title,
+      oldStartTime: guestOldTime.startTime,
+      oldEndTime: guestOldTime.endTime,
+      newStartTime: guestNewTime.startTime,
+      newEndTime: guestNewTime.endTime,
+      timezone: booking.guestTimezone,
+      rescheduledBy,
+      isHost: false,
+      bookingUrl: `${bookingUrl}?email=${encodeURIComponent(booking.guestEmail)}`,
+      meetingUrl: booking.meetingUrl,
+      location: eventType.location,
+    }),
+  }).catch((err) => ({ error: err }))
+
+  // Send to host
+  const hostTimezone = host.timezone || "UTC"
+  const hostOldTime = formatTimeRange(oldStartTime, oldEndTime, hostTimezone)
+  const hostNewTime = formatTimeRange(booking.startTime, booking.endTime, hostTimezone)
+  const hostResult = await client.emails.send({
+    from: FROM_EMAIL,
+    to: host.email,
+    subject: `Rescheduled: ${eventType.title} with ${booking.guestName}`,
+    react: BookingReschedule({
+      recipientName: host.name || "Host",
+      otherPartyName: booking.guestName,
+      eventTitle: eventType.title,
+      oldStartTime: hostOldTime.startTime,
+      oldEndTime: hostOldTime.endTime,
+      newStartTime: hostNewTime.startTime,
+      newEndTime: hostNewTime.endTime,
+      timezone: hostTimezone,
+      rescheduledBy,
+      isHost: true,
+      bookingUrl,
+      meetingUrl: booking.meetingUrl,
+      location: eventType.location,
+    }),
+  }).catch((err) => ({ error: err }))
+
+  console.log("Reschedule emails sent:", { guestResult, hostResult })
+  return { success: true, guestResult, hostResult }
 }

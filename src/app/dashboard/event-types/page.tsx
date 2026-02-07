@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Edit, Trash2, Copy, ExternalLink } from "lucide-react"
+import { Plus, Edit, Trash2, Copy, ExternalLink, Video, MapPin, Phone, Link2 } from "lucide-react"
 
 // Note: metadata must be in a separate layout.tsx for client components
 // Title is set in the dashboard layout
+
+type LocationType = "IN_PERSON" | "GOOGLE_MEET" | "ZOOM" | "PHONE" | "CUSTOM"
 
 interface EventType {
   id: string
@@ -14,11 +16,21 @@ interface EventType {
   duration: number
   color: string
   location: string | null
+  locationType: LocationType
+  locationValue: string | null
   isActive: boolean
   bufferBefore: number
   bufferAfter: number
   createdAt: string
 }
+
+const LOCATION_OPTIONS: { value: LocationType; label: string; icon: typeof Video; placeholder: string }[] = [
+  { value: "GOOGLE_MEET", label: "Google Meet", icon: Video, placeholder: "Link generated automatically" },
+  { value: "ZOOM", label: "Zoom", icon: Video, placeholder: "https://zoom.us/j/..." },
+  { value: "IN_PERSON", label: "In Person", icon: MapPin, placeholder: "123 Main St, City, Country" },
+  { value: "PHONE", label: "Phone Call", icon: Phone, placeholder: "+1 (555) 123-4567" },
+  { value: "CUSTOM", label: "Custom Link", icon: Link2, placeholder: "https://..." },
+]
 
 export default function EventTypesPage() {
   const [eventTypes, setEventTypes] = useState<EventType[]>([])

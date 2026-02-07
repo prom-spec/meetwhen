@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar, Check, X, RefreshCw, Settings, User, Globe } from "lucide-react"
+import { Calendar, Check, X, RefreshCw, Settings, User, Globe, Webhook, ChevronRight } from "lucide-react"
+import Link from "next/link"
 
 interface UserSettings {
   id: string
@@ -312,6 +313,27 @@ export default function SettingsPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Webhooks Section */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+            <Webhook className="h-5 w-5" />
+            Webhooks
+          </h2>
+
+          <p className="text-sm text-gray-600 mb-4">
+            Get notified via HTTP callbacks when bookings are created, cancelled, or rescheduled.
+            Perfect for integrating with your own systems.
+          </p>
+
+          <Link
+            href="/dashboard/settings/webhooks"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+          >
+            Manage Webhooks
+            <ChevronRight className="h-4 w-4" />
+          </Link>
         </div>
 
         {/* Save Button */}
