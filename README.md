@@ -100,6 +100,7 @@ A modern, open-source scheduling application built with Next.js 16 — similar t
 | `pnpm start` | Start production server |
 | `pnpm lint` | Run ESLint |
 | `pnpm db:push` | Push Prisma schema to database |
+| `pnpm db:generate` | Generate Prisma client |
 | `pnpm db:studio` | Open Prisma Studio |
 | `pnpm mcp` | Start MCP server for AI integrations |
 
@@ -113,13 +114,14 @@ src/
 │   ├── dashboard/          # Authenticated dashboard
 │   └── login/              # Login page
 ├── components/             # React components
+├── emails/                 # Email templates
 ├── lib/                    # Utilities and configurations
 │   ├── auth.ts             # NextAuth configuration
 │   ├── calendar.ts         # Google Calendar integration
 │   ├── prisma.ts           # Prisma client
 │   └── slots.ts            # Time slot calculations
-├── emails/                 # Email templates
-└── mcp/                    # MCP server for AI agents
+├── mcp/                    # MCP server for AI agents
+└── types/                  # TypeScript type definitions
 ```
 
 ## API Routes
