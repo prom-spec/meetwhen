@@ -7,7 +7,7 @@ import * as dateFns from "date-fns"
 
 interface RescheduleCalendarProps {
   bookingId: string
-  guestEmail: string
+  token: string
   guestTimezone: string
   eventType: {
     id: string
@@ -26,7 +26,7 @@ interface RescheduleCalendarProps {
 
 export default function RescheduleCalendar({
   bookingId,
-  guestEmail,
+  token,
   guestTimezone,
   eventType,
   host,
@@ -53,7 +53,7 @@ export default function RescheduleCalendar({
     try {
       const dateStr = dateFns.format(date, "yyyy-MM-dd")
       const response = await fetch(
-        `/api/bookings/${bookingId}/reschedule?date=${dateStr}&email=${encodeURIComponent(guestEmail)}`
+        `/api/bookings/${bookingId}/reschedule?date=${dateStr}&token=${token}`
       )
       
       if (!response.ok) {
@@ -68,7 +68,7 @@ export default function RescheduleCalendar({
     } finally {
       setIsLoadingSlots(false)
     }
-  }, [bookingId, guestEmail])
+  }, [bookingId, token])
 
   useEffect(() => {
     if (selectedDate) {
@@ -94,7 +94,7 @@ export default function RescheduleCalendar({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           startTime: startTime.toISOString(),
-          email: guestEmail,
+          token,
         }),
       })
 
@@ -104,7 +104,7 @@ export default function RescheduleCalendar({
       }
 
       // Redirect to booking confirmation page
-      router.push(`/booking/${bookingId}?email=${encodeURIComponent(guestEmail)}`)
+      router.push(`/booking/${bookingId}?token=${token}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to reschedule")
       setIsSubmitting(false)

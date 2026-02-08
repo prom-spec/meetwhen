@@ -7,7 +7,7 @@ import RescheduleCalendar from "./RescheduleCalendar"
 
 interface PageProps {
   params: Promise<{ bookingId: string }>
-  searchParams: Promise<{ email?: string }>
+  searchParams: Promise<{ token?: string }>
 }
 
 export const metadata: Metadata = {
@@ -16,9 +16,9 @@ export const metadata: Metadata = {
 
 export default async function ReschedulePage({ params, searchParams }: PageProps) {
   const { bookingId } = await params
-  const { email } = await searchParams
+  const { token } = await searchParams
   
-  if (!email) {
+  if (!token) {
     redirect(`/booking/${bookingId}`)
   }
 
@@ -42,18 +42,19 @@ export default async function ReschedulePage({ params, searchParams }: PageProps
     notFound()
   }
 
-  // Verify email matches guest
-  if (email.toLowerCase() !== booking.guestEmail.toLowerCase()) {
+  // Verify token
+  const { verifyBookingToken } = await import("@/lib/booking-tokens")
+  if (!verifyBookingToken(token, bookingId, booking.guestEmail)) {
     redirect(`/booking/${bookingId}`)
   }
 
   if (booking.status === "CANCELLED") {
-    redirect(`/booking/${bookingId}?email=${encodeURIComponent(email)}`)
+    redirect(`/booking/${bookingId}?token=${token}`)
   }
 
   const isPast = new Date(booking.startTime) < new Date()
   if (isPast) {
-    redirect(`/booking/${bookingId}?email=${encodeURIComponent(email)}`)
+    redirect(`/booking/${bookingId}?token=${token}`)
   }
 
   return (
@@ -70,7 +71,7 @@ export default async function ReschedulePage({ params, searchParams }: PageProps
             />
           </Link>
           <Link 
-            href={`/booking/${bookingId}?email=${encodeURIComponent(email)}`}
+            href={`/booking/${bookingId}?token=${token}`}
             className="text-sm text-gray-600 hover:text-gray-900"
           >
             ← Back to booking
@@ -120,7 +121,7 @@ export default async function ReschedulePage({ params, searchParams }: PageProps
           {/* Reschedule Calendar */}
           <RescheduleCalendar
             bookingId={bookingId}
-            guestEmail={email}
+            token={token}
             guestTimezone={booking.guestTimezone}
             eventType={{
               id: booking.eventType.id,

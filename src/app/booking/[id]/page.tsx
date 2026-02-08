@@ -8,7 +8,7 @@ import BookingActions from "./BookingActions"
 
 interface PageProps {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ email?: string }>
+  searchParams: Promise<{ token?: string }>
 }
 
 export const metadata: Metadata = {
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export default async function BookingConfirmationPage({ params, searchParams }: PageProps) {
   const { id } = await params
-  const { email } = await searchParams
+  const { token } = await searchParams
   
   const booking = await prisma.booking.findUnique({
     where: { id },
@@ -236,10 +236,12 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
                 Add to Google Calendar
               </a>
               
-              <BookingActions 
-                bookingId={booking.id}
-                guestEmail={email || booking.guestEmail}
-              />
+              {token && (
+                <BookingActions 
+                  bookingId={booking.id}
+                  token={token}
+                />
+              )}
               
               <p className="text-center text-sm text-gray-500">
                 A calendar invitation has been sent to your email

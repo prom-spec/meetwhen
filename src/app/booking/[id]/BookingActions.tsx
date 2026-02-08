@@ -6,10 +6,10 @@ import { CalendarClock, X } from "lucide-react"
 
 interface BookingActionsProps {
   bookingId: string
-  guestEmail: string
+  token: string
 }
 
-export default function BookingActions({ bookingId, guestEmail }: BookingActionsProps) {
+export default function BookingActions({ bookingId, token }: BookingActionsProps) {
   const router = useRouter()
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -20,7 +20,7 @@ export default function BookingActions({ bookingId, guestEmail }: BookingActions
     setError(null)
     
     try {
-      const response = await fetch(`/api/bookings/${bookingId}?email=${encodeURIComponent(guestEmail)}`, {
+      const response = await fetch(`/api/bookings/${bookingId}?token=${token}`, {
         method: "DELETE",
       })
       
@@ -40,7 +40,7 @@ export default function BookingActions({ bookingId, guestEmail }: BookingActions
   }
 
   const handleReschedule = () => {
-    router.push(`/reschedule/${bookingId}?email=${encodeURIComponent(guestEmail)}`)
+    router.push(`/reschedule/${bookingId}?token=${token}`)
   }
 
   return (

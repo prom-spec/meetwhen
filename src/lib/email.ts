@@ -77,7 +77,8 @@ export async function sendBookingConfirmation(data: BookingEmailData) {
   }
 
   const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
-  const bookingUrl = `${baseUrl}/booking/${booking.id}?email=${encodeURIComponent(booking.guestEmail)}`
+  const token = generateBookingToken(booking.id, booking.guestEmail)
+  const bookingUrl = `${baseUrl}/booking/${booking.id}?token=${token}`
 
   const { startTime, endTime } = formatTimeRange(
     booking.startTime,
@@ -344,6 +345,7 @@ export async function sendBookingReschedule(data: RescheduleEmailData) {
   }
 
   const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+  const guestToken = generateBookingToken(booking.id, booking.guestEmail)
   const bookingUrl = `${baseUrl}/booking/${booking.id}`
 
   // Send to guest
@@ -364,7 +366,7 @@ export async function sendBookingReschedule(data: RescheduleEmailData) {
       timezone: booking.guestTimezone,
       rescheduledBy,
       isHost: false,
-      bookingUrl: `${bookingUrl}?email=${encodeURIComponent(booking.guestEmail)}`,
+      bookingUrl: `${bookingUrl}?token=${guestToken}`,
       meetingUrl: booking.meetingUrl,
       location: eventType.location,
     }),
