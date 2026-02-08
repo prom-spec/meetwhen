@@ -143,6 +143,65 @@ export const authOptions: NextAuthOptions = {
         email: user.email,
         isNewUser: !user.id,
       })
+      
+      // Generate username for existing users who don't have one
+      if (user.id) {
+        try {
+          const existingUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { id: true, username: true, name: true, email: true }
+          })
+          
+          if (existingUser && !existingUser.username) {
+            let baseUsername = ""
+            
+            if (existingUser.name) {
+              baseUsername = existingUser.name
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/(^-|-$)/g, "")
+                .substring(0, 20)
+            }
+            
+            if (!baseUsername && existingUser.email) {
+              baseUsername = existingUser.email
+                .split("@")[0]
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/(^-|-$)/g, "")
+                .substring(0, 20)
+            }
+            
+            if (!baseUsername) baseUsername = "user"
+            
+            let username = baseUsername
+            let suffix = 1
+            while (true) {
+              const existing = await prisma.user.findUnique({ 
+                where: { username },
+                select: { id: true }
+              })
+              if (!existing || existing.id === user.id) break
+              username = `${baseUsername}-${suffix}`
+              suffix++
+              if (suffix > 100) {
+                username = `${baseUsername}-${Math.random().toString(36).substring(2, 8)}`
+                break
+              }
+            }
+            
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { username }
+            })
+            
+            authLogger.info("Generated username for existing user", { visitorId: user.id, username })
+          }
+        } catch (error) {
+          authLogger.error("Failed to generate username for existing user", error, { visitorId: user.id })
+        }
+      }
+      
       return true
     },
   },
