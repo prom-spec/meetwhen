@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma"
 import { getGoogleAccessToken, deleteCalendarEvent, createCalendarEvent, hasCalendarConflict, BookingData } from "@/lib/calendar"
 import { sendBookingCancellation, sendBookingReschedule } from "@/lib/email"
 import { triggerWebhook } from "@/lib/webhooks"
+import { verifyBookingToken } from "@/lib/booking-tokens"
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
     const { searchParams } = new URL(request.url)
-    const email = searchParams.get("email")
+    const token = searchParams.get("token")
 
     const booking = await prisma.booking.findUnique({
       where: { id },
@@ -30,10 +31,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 })
     }
 
-    // Check authorization: must be host (authenticated) or guest (via email param)
+    // Check authorization: must be host (authenticated) or guest (via token param)
     const session = await getServerSession(authOptions)
     const isHost = session?.user?.id === booking.hostId
-    const isGuest = email && email.toLowerCase() === booking.guestEmail.toLowerCase()
+    const isGuest = token ? verifyBookingToken(token, id, booking.guestEmail) : false
 
     if (!isHost && !isGuest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -51,7 +52,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
     const { searchParams } = new URL(request.url)
-    const email = searchParams.get("email")
+    const token = searchParams.get("token")
 
     const booking = await prisma.booking.findUnique({
       where: { id },
@@ -69,10 +70,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Booking is already cancelled" }, { status: 400 })
     }
 
-    // Check authorization: must be host (authenticated) or guest (via email param)
+    // Check authorization: must be host (authenticated) or guest (via token param)
     const session = await getServerSession(authOptions)
     const isHost = session?.user?.id === booking.hostId
-    const isGuest = email && email.toLowerCase() === booking.guestEmail.toLowerCase()
+    const isGuest = token ? verifyBookingToken(token, id, booking.guestEmail) : false
 
     if (!isHost && !isGuest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -152,7 +153,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
     const body = await request.json()
-    const { startTime: newStartTimeISO, email } = body
+    const { startTime: newStartTimeISO, token } = body
 
     if (!newStartTimeISO) {
       return NextResponse.json({ error: "New start time is required" }, { status: 400 })
@@ -181,7 +182,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     // Check authorization
     const session = await getServerSession(authOptions)
     const isHost = session?.user?.id === booking.hostId
-    const isGuest = email && email.toLowerCase() === booking.guestEmail.toLowerCase()
+    const isGuest = token ? verifyBookingToken(token, id, booking.guestEmail) : false
 
     if (!isHost && !isGuest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

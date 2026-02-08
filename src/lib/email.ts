@@ -6,6 +6,7 @@ import BookingReminder from "@/emails/BookingReminder"
 import BookingCancellation from "@/emails/BookingCancellation"
 import BookingReschedule from "@/emails/BookingReschedule"
 import { emailLogger } from "./logger"
+import { generateBookingToken } from "./booking-tokens"
 
 // Lazy initialization with dynamic import to avoid build errors when env var is not set
 let resendInstance: Resend | null = null

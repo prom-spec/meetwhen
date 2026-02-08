@@ -85,8 +85,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid URL format" }, { status: 400 })
     }
 
-    if (!url.startsWith("https://") && !url.startsWith("http://localhost")) {
-      return NextResponse.json({ error: "URL must use HTTPS (except localhost)" }, { status: 400 })
+    if (!url.startsWith("https://")) {
+      return NextResponse.json({ error: "URL must use HTTPS" }, { status: 400 })
+    }
+
+    // SSRF protection: block private/internal URLs
+    if (isPrivateUrl(url)) {
+      return NextResponse.json({ error: "Webhook URL must not point to private or internal addresses" }, { status: 400 })
     }
 
     // Validate events

@@ -451,6 +451,7 @@ async function handleCreateBooking(userId: string, args: ToolArgs) {
           id: true,
           title: true,
           duration: true,
+          availabilityRules: true,
         },
       },
     },
@@ -468,6 +469,31 @@ async function handleCreateBooking(userId: string, args: ToolArgs) {
   // Calculate end time
   const start = new Date(startTime)
   const end = new Date(start.getTime() + eventType.duration * 60 * 1000)
+
+  // Validate slot falls within host's availability rules
+  const dayOfWeek = start.getDay()
+  const slotStartMinutes = start.getUTCHours() * 60 + start.getUTCMinutes()
+  const slotEndMinutes = slotStartMinutes + eventType.duration
+
+  const rulesForDay = eventType.availabilityRules.filter(
+    (rule: { dayOfWeek: number }) => rule.dayOfWeek === dayOfWeek
+  )
+
+  if (rulesForDay.length === 0) {
+    throw new Error("The host is not available on this day")
+  }
+
+  const fitsInWindow = rulesForDay.some((rule: { startTime: string; endTime: string }) => {
+    const [rStartH, rStartM] = rule.startTime.split(":").map(Number)
+    const [rEndH, rEndM] = rule.endTime.split(":").map(Number)
+    const ruleStart = rStartH * 60 + rStartM
+    const ruleEnd = rEndH * 60 + rEndM
+    return slotStartMinutes >= ruleStart && slotEndMinutes <= ruleEnd
+  })
+
+  if (!fitsInWindow) {
+    throw new Error("The requested time slot falls outside the host's availability window")
+  }
 
   // Check for conflicts
   const conflictingBooking = await prisma.booking.findFirst({
@@ -546,12 +572,27 @@ async function handleToolCall(userId: string, name: string, args: ToolArgs) {
   }
 }
 
+const CORS_ORIGIN = process.env.NEXTAUTH_URL || "https://meetwhen.app"
+
+const corsHeaders: Record<string, string> = {
+  "Access-Control-Allow-Origin": CORS_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+}
+
+function jsonRpc(body: object, init?: { status?: number; headers?: Record<string, string> }) {
+  return NextResponse.json(body, {
+    status: init?.status,
+    headers: { ...corsHeaders, ...init?.headers },
+  })
+}
+
 export async function POST(req: NextRequest) {
   // Rate limit: 30 requests per IP per minute
   const ip = getClientIp(req)
   const rl = mcpRateLimiter.check(ip)
   if (!rl.allowed) {
-    return NextResponse.json(
+    return jsonRpc(
       { jsonrpc: "2.0", error: { code: -32000, message: "Rate limit exceeded" }, id: null },
       { status: 429, headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
     )
@@ -562,7 +603,7 @@ export async function POST(req: NextRequest) {
   const userId = await validateApiKey(authHeader)
 
   if (!userId) {
-    return NextResponse.json(
+    return jsonRpc(
       { jsonrpc: "2.0", error: { code: -32001, message: "Unauthorized - invalid or missing API key" }, id: null },
       { status: 401 }
     )
@@ -573,7 +614,7 @@ export async function POST(req: NextRequest) {
     const { jsonrpc, method, params, id } = body
 
     if (jsonrpc !== "2.0") {
-      return NextResponse.json({
+      return jsonRpc({
         jsonrpc: "2.0",
         error: { code: -32600, message: "Invalid Request - must be JSON-RPC 2.0" },
         id: id || null,
@@ -582,7 +623,7 @@ export async function POST(req: NextRequest) {
 
     // Handle MCP protocol methods
     if (method === "initialize") {
-      return NextResponse.json({
+      return jsonRpc({
         jsonrpc: "2.0",
         result: {
           protocolVersion: "2024-11-05",
@@ -594,7 +635,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (method === "tools/list") {
-      return NextResponse.json({
+      return jsonRpc({
         jsonrpc: "2.0",
         result: { tools: toolDefinitions },
         id,
@@ -605,7 +646,7 @@ export async function POST(req: NextRequest) {
       const { name, arguments: args } = params || {}
 
       if (!name) {
-        return NextResponse.json({
+        return jsonRpc({
           jsonrpc: "2.0",
           error: { code: -32602, message: "Missing tool name" },
           id,
@@ -614,7 +655,7 @@ export async function POST(req: NextRequest) {
 
       try {
         const result = await handleToolCall(userId, name, args || {})
-        return NextResponse.json({
+        return jsonRpc({
           jsonrpc: "2.0",
           result: {
             content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
@@ -623,7 +664,7 @@ export async function POST(req: NextRequest) {
         })
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown error"
-        return NextResponse.json({
+        return jsonRpc({
           jsonrpc: "2.0",
           result: {
             content: [{ type: "text", text: JSON.stringify({ error: message }) }],
@@ -635,27 +676,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Unknown method
-    return NextResponse.json({
+    return jsonRpc({
       jsonrpc: "2.0",
       error: { code: -32601, message: `Method not found: ${method}` },
       id,
     })
   } catch (error) {
     console.error("MCP error:", error)
-    return NextResponse.json({
+    return jsonRpc({
       jsonrpc: "2.0",
       error: { code: -32603, message: "Internal error" },
       id: null,
     })
   }
-}
-
-const CORS_ORIGIN = process.env.NEXTAUTH_URL || "https://meetwhen.app"
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": CORS_ORIGIN,
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 }
 
 // Handle OPTIONS for CORS

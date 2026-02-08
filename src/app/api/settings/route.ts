@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { z } from "zod"
+
+const updateSettingsSchema = z.object({
+  name: z.string().min(1).max(200).trim().optional(),
+  username: z.string().min(1).max(50).regex(/^[a-z0-9_-]+$/i, "Username can only contain letters, numbers, underscores, and hyphens").optional(),
+  timezone: z.string().min(1).max(100).optional(),
+  calendarSyncEnabled: z.boolean().optional(),
+}).strict()
 
 export async function GET() {
   try {
@@ -61,17 +69,14 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, username, timezone, calendarSyncEnabled } = body
+    const parsed = updateSettingsSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
+    }
+    const { name, username, timezone, calendarSyncEnabled } = parsed.data
 
-    // Validate username if provided
+    // Validate username uniqueness if provided
     if (username !== undefined) {
-      // Check format
-      if (!/^[a-z0-9_-]+$/i.test(username)) {
-        return NextResponse.json(
-          { error: "Username can only contain letters, numbers, underscores, and hyphens" },
-          { status: 400 }
-        )
-      }
       
       // Check uniqueness
       const existing = await prisma.user.findFirst({

@@ -5,6 +5,11 @@ import EmailProvider from "next-auth/providers/email"
 import { prisma } from "./prisma"
 import { authLogger } from "./logger"
 
+// Startup check: ensure NEXTAUTH_SECRET is set in production
+if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_SECRET) {
+  throw new Error("NEXTAUTH_SECRET must be set in production environment")
+}
+
 // Build authorization header for Resend API
 function getResendAuthHeader(): string {
   const key = process.env.RESEND_API_KEY || ""

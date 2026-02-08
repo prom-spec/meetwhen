@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import * as dateFns from "date-fns"
 import prisma from "@/lib/prisma"
 import { getFreeBusyTimes } from "@/lib/calendar"
+import { verifyBookingToken } from "@/lib/booking-tokens"
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
     const { searchParams } = new URL(request.url)
-    const email = searchParams.get("email")
+    const token = searchParams.get("token")
     const dateStr = searchParams.get("date")
 
     if (!dateStr) {
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Check authorization
     const session = await getServerSession(authOptions)
     const isHost = session?.user?.id === booking.hostId
-    const isGuest = email && email.toLowerCase() === booking.guestEmail.toLowerCase()
+    const isGuest = token ? verifyBookingToken(token, id, booking.guestEmail) : false
 
     if (!isHost && !isGuest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
