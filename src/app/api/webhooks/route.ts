@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
-import { generateWebhookSecret, WEBHOOK_EVENTS } from "@/lib/webhooks"
+import { generateWebhookSecret, WEBHOOK_EVENTS, isPrivateUrl } from "@/lib/webhooks"
 
 // GET /api/webhooks - List all webhooks for the current user
 export async function GET() {
@@ -16,7 +16,14 @@ export async function GET() {
     const webhooks = await prisma.webhook.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: "desc" },
-      include: {
+      select: {
+        id: true,
+        url: true,
+        events: true,
+        active: true,
+        createdAt: true,
+        updatedAt: true,
+        userId: true,
         _count: {
           select: { deliveries: true },
         },

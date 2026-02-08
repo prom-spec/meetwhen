@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { hashApiKey, isValidApiKeyFormat } from "@/lib/api-keys"
+import { mcpRateLimiter, getClientIp } from "@/lib/rate-limit"
 
 // Base URL for generating booking links
 const BASE_URL = process.env.NEXTAUTH_URL || "https://meetwhen-production.up.railway.app"
@@ -546,6 +547,16 @@ async function handleToolCall(userId: string, name: string, args: ToolArgs) {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 30 requests per IP per minute
+  const ip = getClientIp(req)
+  const rl = mcpRateLimiter.check(ip)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { jsonrpc: "2.0", error: { code: -32000, message: "Rate limit exceeded" }, id: null },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    )
+  }
+
   // Validate API key
   const authHeader = req.headers.get("authorization")
   const userId = await validateApiKey(authHeader)
@@ -639,14 +650,15 @@ export async function POST(req: NextRequest) {
   }
 }
 
+const CORS_ORIGIN = process.env.NEXTAUTH_URL || "https://meetwhen.app"
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": CORS_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+}
+
 // Handle OPTIONS for CORS
 export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    },
-  })
+  return new NextResponse(null, { status: 200, headers: corsHeaders })
 }

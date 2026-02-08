@@ -22,6 +22,15 @@ export async function GET(
         id,
         userId: session.user.id,
       },
+      select: {
+        id: true,
+        url: true,
+        events: true,
+        active: true,
+        createdAt: true,
+        updatedAt: true,
+        userId: true,
+      },
     })
 
     if (!webhook) {
@@ -105,6 +114,15 @@ export async function PATCH(
     const webhook = await prisma.webhook.update({
       where: { id },
       data: updates,
+      select: {
+        id: true,
+        url: true,
+        events: true,
+        active: true,
+        createdAt: true,
+        updatedAt: true,
+        userId: true,
+      },
     })
 
     return NextResponse.json(webhook)

@@ -1,4 +1,4 @@
-import { createHmac } from "crypto"
+import { createHmac, randomBytes } from "crypto"
 import prisma from "./prisma"
 import { DeliveryStatus, Prisma } from "@prisma/client"
 import { webhookLogger } from "./logger"
@@ -33,12 +33,58 @@ export function signPayload(payload: string, secret: string): string {
  * Generate a random webhook secret
  */
 export function generateWebhookSecret(): string {
-  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-  let secret = "whsec_"
-  for (let i = 0; i < 32; i++) {
-    secret += chars.charAt(Math.floor(Math.random() * chars.length))
+  return `whsec_${randomBytes(24).toString("base64url")}`
+}
+
+/**
+ * Check if a URL points to a private/internal IP or localhost (SSRF protection)
+ */
+export function isPrivateUrl(urlString: string): boolean {
+  let parsed: URL
+  try {
+    parsed = new URL(urlString)
+  } catch {
+    return true // Invalid URLs are treated as private
   }
-  return secret
+
+  const hostname = parsed.hostname.toLowerCase()
+
+  // Block localhost variants
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "[::1]" ||
+    hostname === "0.0.0.0"
+  ) {
+    return true
+  }
+
+  // Block private IP ranges
+  const ipv4Match = hostname.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/)
+  if (ipv4Match) {
+    const [, a, b] = ipv4Match.map(Number)
+    if (
+      a === 10 ||                          // 10.0.0.0/8
+      (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12
+      (a === 192 && b === 168) ||          // 192.168.0.0/16
+      a === 127 ||                         // 127.0.0.0/8
+      a === 0 ||                           // 0.0.0.0/8
+      (a === 169 && b === 254)             // 169.254.0.0/16 link-local
+    ) {
+      return true
+    }
+  }
+
+  // Block common internal hostnames
+  if (
+    hostname.endsWith(".local") ||
+    hostname.endsWith(".internal") ||
+    hostname.endsWith(".localhost")
+  ) {
+    return true
+  }
+
+  return false
 }
 
 /**

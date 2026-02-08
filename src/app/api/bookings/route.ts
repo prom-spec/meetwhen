@@ -7,6 +7,19 @@ import { createCalendarEvent, hasCalendarConflict, getGoogleAccessToken, Booking
 import { triggerWebhook } from "@/lib/webhooks"
 import { getNextRoundRobinMember, updateLastAssignedMember, createCollectiveBooking } from "@/lib/team-scheduling"
 import { bookingLogger, apiLogger } from "@/lib/logger"
+import { z } from "zod"
+
+const createBookingSchema = z.object({
+  eventTypeId: z.string().min(1),
+  guestName: z.string().min(1).max(200).trim(),
+  guestEmail: z.string().email().max(320),
+  guestTimezone: z.string().max(100).optional(),
+  notes: z.string().max(2000).optional(),
+  date: z.string().optional(),
+  time: z.string().optional(),
+  startTime: z.string().optional(),
+})
+import { bookingRateLimiter, getClientIp } from "@/lib/rate-limit"
 
 export async function GET() {
   try {
@@ -39,10 +52,26 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const requestId = Math.random().toString(36).substring(7)
-  
+
+  // Rate limit: 5 bookings per IP per hour
+  const ip = getClientIp(request)
+  const rl = bookingRateLimiter.check(ip)
+  if (!rl.allowed) {
+    bookingLogger.warn("Rate limit exceeded", { requestId, ip })
+    return NextResponse.json(
+      { error: "Too many booking requests. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    )
+  }
+
   try {
     const body = await request.json()
-    const { eventTypeId, guestName, guestEmail, guestTimezone, date, time, startTime: startTimeISO } = body
+    const parsed = createBookingSchema.safeParse(body)
+    if (!parsed.success) {
+      bookingLogger.warn("Validation failed", { requestId, errors: parsed.error.flatten() })
+      return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
+    }
+    const { eventTypeId, guestName, guestEmail, guestTimezone, date, time, startTime: startTimeISO } = parsed.data
 
     bookingLogger.info("Booking request received", { 
       requestId,
@@ -53,9 +82,9 @@ export async function POST(request: NextRequest) {
       hasStartTimeISO: !!startTimeISO 
     })
 
-    if (!eventTypeId || !guestName || !guestEmail || (!startTimeISO && (!date || !time))) {
+    if (!startTimeISO && (!date || !time)) {
       bookingLogger.warn("Missing required fields", { requestId, eventTypeId, guestName: !!guestName, guestEmail: !!guestEmail })
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+      return NextResponse.json({ error: "Missing required fields: provide startTime or date+time" }, { status: 400 })
     }
 
     const eventType = await prisma.eventType.findUnique({
@@ -447,7 +476,9 @@ export async function POST(request: NextRequest) {
       bookingLogger.error("Webhook trigger failed", err, { bookingId: booking.id })
     })
 
-    return NextResponse.json(booking, { status: 201 })
+    // L1: Strip host email from response
+    const { host: { email: _hostEmail, ...hostRest }, ...bookingRest } = booking
+    return NextResponse.json({ ...bookingRest, host: hostRest }, { status: 201 })
   } catch (error) {
     bookingLogger.error("Error creating booking", error, { requestId })
     return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 })
