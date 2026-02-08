@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, Plus, Users, Trash2, Crown, Shield, User, RefreshCw, ExternalLink, Copy, Edit } from "lucide-react"
+import { ArrowLeft, Plus, Users, Trash2, Crown, Shield, User, RefreshCw, ExternalLink, Copy, Check, Edit, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { useToast } from "@/components/ToastProvider"
+import ConfirmDialog from "@/components/ConfirmDialog"
 
 interface TeamMember {
   id: string
@@ -51,6 +53,10 @@ export default function TeamSettingsPage() {
   const [newMemberEmail, setNewMemberEmail] = useState("")
   const [newMemberRole, setNewMemberRole] = useState<"ADMIN" | "MEMBER">("MEMBER")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
+  const [confirmRemoveMember, setConfirmRemoveMember] = useState<string | null>(null)
+  const [confirmDeleteEvent, setConfirmDeleteEvent] = useState<string | null>(null)
+  const { toast } = useToast()
   const [editingEventType, setEditingEventType] = useState<EventType | null>(null)
   const [eventTypeForm, setEventTypeForm] = useState({
     title: "",
@@ -100,7 +106,7 @@ export default function TeamSettingsPage() {
         setNewMemberRole("MEMBER")
       } else {
         const error = await res.json()
-        alert(error.error || "Failed to add member")
+        toast(error.error || "Failed to add member", "error")
       }
     } catch (error) {
       console.error("Error adding member:", error)
@@ -110,10 +116,13 @@ export default function TeamSettingsPage() {
   }
 
   const handleRemoveMember = async (userId: string) => {
-    if (!confirm("Remove this member from the team?")) return
+    setConfirmRemoveMember(userId)
+  }
 
+  const executeRemoveMember = async () => {
+    if (!confirmRemoveMember) return
     try {
-      const res = await fetch(`/api/teams/${teamId}/members?userId=${userId}`, {
+      const res = await fetch(`/api/teams/${teamId}/members?userId=${confirmRemoveMember}`, {
         method: "DELETE",
       })
 
@@ -121,10 +130,12 @@ export default function TeamSettingsPage() {
         fetchTeam()
       } else {
         const error = await res.json()
-        alert(error.error || "Failed to remove member")
+        toast(error.error || "Failed to remove member", "error")
       }
     } catch (error) {
       console.error("Error removing member:", error)
+    } finally {
+      setConfirmRemoveMember(null)
     }
   }
 
@@ -140,7 +151,7 @@ export default function TeamSettingsPage() {
         fetchTeam()
       } else {
         const error = await res.json()
-        alert(error.error || "Failed to update role")
+        toast(error.error || "Failed to update role", "error")
       }
     } catch (error) {
       console.error("Error updating role:", error)
@@ -180,7 +191,7 @@ export default function TeamSettingsPage() {
         })
       } else {
         const error = await res.json()
-        alert(error.error || "Failed to create event type")
+        toast(error.error || "Failed to create event type", "error")
       }
     } catch (error) {
       console.error("Error creating event type:", error)
@@ -190,15 +201,21 @@ export default function TeamSettingsPage() {
   }
 
   const handleDeleteEventType = async (eventTypeId: string) => {
-    if (!confirm("Delete this event type?")) return
+    setConfirmDeleteEvent(eventTypeId)
+  }
 
+  const executeDeleteEventType = async () => {
+    if (!confirmDeleteEvent) return
     try {
-      const res = await fetch(`/api/event-types/${eventTypeId}`, { method: "DELETE" })
+      const res = await fetch(`/api/event-types/${confirmDeleteEvent}`, { method: "DELETE" })
       if (res.ok) {
         fetchTeam()
+        toast("Event type deleted", "success")
       }
     } catch (error) {
       console.error("Error deleting event type:", error)
+    } finally {
+      setConfirmDeleteEvent(null)
     }
   }
 
@@ -218,7 +235,8 @@ export default function TeamSettingsPage() {
   const copyEventLink = (slug: string) => {
     if (team) {
       navigator.clipboard.writeText(`${window.location.origin}/team/${team.slug}/${slug}`)
-      alert("Event link copied!")
+      setCopiedSlug(slug)
+      setTimeout(() => setCopiedSlug(null), 2000)
     }
   }
 
@@ -234,7 +252,7 @@ export default function TeamSettingsPage() {
   }
 
   if (isLoading) {
-    return <div className="text-center py-10">Loading...</div>
+    return (<div className="flex items-center justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>)
   }
 
   if (!team) {
@@ -243,6 +261,22 @@ export default function TeamSettingsPage() {
 
   return (
     <div className="px-4 sm:px-0">
+      <ConfirmDialog
+        open={!!confirmRemoveMember}
+        title="Remove Member"
+        message="Remove this member from the team?"
+        confirmLabel="Remove"
+        onConfirm={executeRemoveMember}
+        onCancel={() => setConfirmRemoveMember(null)}
+      />
+      <ConfirmDialog
+        open={!!confirmDeleteEvent}
+        title="Delete Event Type"
+        message="Are you sure you want to delete this event type?"
+        confirmLabel="Delete"
+        onConfirm={executeDeleteEventType}
+        onCancel={() => setConfirmDeleteEvent(null)}
+      />
       {/* Header */}
       <div className="mb-6">
         <Link
@@ -395,10 +429,10 @@ export default function TeamSettingsPage() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => copyEventLink(eventType.slug)}
-                        className="p-1.5 text-gray-400 hover:text-gray-600"
+                        className={`p-1.5 ${copiedSlug === eventType.slug ? "text-green-500" : "text-gray-400 hover:text-gray-600"}`}
                         title="Copy link"
                       >
-                        <Copy className="w-4 h-4" />
+                        {copiedSlug === eventType.slug ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                       </button>
                       <a
                         href={`/team/${team.slug}/${eventType.slug}`}

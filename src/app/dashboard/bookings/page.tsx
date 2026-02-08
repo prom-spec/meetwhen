@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { Calendar, Clock, User, Mail, MoreHorizontal, Loader2, CalendarX, XCircle, RefreshCw } from "lucide-react"
+import ConfirmDialog from "@/components/ConfirmDialog"
 
 // Note: metadata must be in a separate layout.tsx for client components
 // Title is set in the dashboard layout
@@ -28,6 +29,7 @@ export default function BookingsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState<"upcoming" | "past" | "all">("upcoming")
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -75,9 +77,14 @@ export default function BookingsPage() {
   }, [])
 
   const handleCancel = async (id: string) => {
-    if (!confirm("Are you sure you want to cancel this booking?")) return
+    setConfirmCancelId(id)
+    setOpenMenuId(null)
+  }
+
+  const executeCancelBooking = async () => {
+    if (!confirmCancelId) return
     try {
-      const res = await fetch(`/api/bookings/${id}`, {
+      const res = await fetch(`/api/bookings/${confirmCancelId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "CANCELLED" }),
@@ -86,7 +93,7 @@ export default function BookingsPage() {
     } catch (error) {
       console.error("Error cancelling booking:", error)
     }
-    setOpenMenuId(null)
+    setConfirmCancelId(null)
   }
 
   const now = new Date()
@@ -107,6 +114,14 @@ export default function BookingsPage() {
 
   return (
     <div className="px-4 sm:px-0">
+      <ConfirmDialog
+        open={!!confirmCancelId}
+        title="Cancel Booking"
+        message="Are you sure you want to cancel this booking?"
+        confirmLabel="Cancel Booking"
+        onConfirm={executeCancelBooking}
+        onCancel={() => setConfirmCancelId(null)}
+      />
       <div className="sm:flex sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>

@@ -70,7 +70,7 @@ export default function NewEventTypePage() {
         router.push("/dashboard/event-types")
       } else {
         const error = await res.json()
-        alert(error.error || "Something went wrong")
+        toast(error.error || "Something went wrong", "error")
       }
     } catch (error) {
       console.error("Error:", error)

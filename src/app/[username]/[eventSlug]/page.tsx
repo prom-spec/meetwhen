@@ -4,7 +4,9 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Clock, MapPin, CheckCircle, Globe, Search } from "lucide-react"
+import { ChevronLeft, ChevronRight, Clock, MapPin, CheckCircle, Globe, Search, Loader2 } from "lucide-react"
+import PoweredByFooter from "@/components/PoweredByFooter"
+import { useToast } from "@/components/ToastProvider"
 
 interface EventType {
   id: string
@@ -74,6 +76,7 @@ export default function BookingPage() {
   const hasAutoSelected = useRef(false)
   const tzDropdownRef = useRef<HTMLDivElement>(null)
 
+  const { toast } = useToast()
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -206,11 +209,11 @@ export default function BookingPage() {
         trackEvent(eventType.id, "booking_confirmed")
       } else {
         const error = await res.json()
-        alert(error.error || "Failed to book")
+        toast(error.error || "Failed to book", "error")
       }
     } catch (error) {
       console.error("Error booking:", error)
-      alert("Failed to book")
+      toast("Failed to book", "error")
     } finally {
       setIsLoading(false)
     }
@@ -300,12 +303,7 @@ export default function BookingPage() {
           </div>
         </main>
 
-        <footer className="py-6 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#0066FF] transition-colors">
-            <Image src="/logo.svg" alt="MeetWhen" width={16} height={16} className="opacity-50" />
-            <span>Powered by <span className="font-semibold">MeetWhen</span></span>
-          </Link>
-        </footer>
+        <PoweredByFooter />
       </div>
     )
   }
@@ -371,6 +369,7 @@ export default function BookingPage() {
                             )
                           }
                           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                          aria-label="Previous month"
                         >
                           <ChevronLeft className="w-5 h-5 text-gray-600" />
                         </button>
@@ -384,6 +383,7 @@ export default function BookingPage() {
                             )
                           }
                           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                          aria-label="Next month"
                         >
                           <ChevronRight className="w-5 h-5 text-gray-600" />
                         </button>
@@ -418,9 +418,10 @@ export default function BookingPage() {
                                 }
                               }}
                               disabled={disabled}
+                              aria-label={new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                               className={`
                                 py-2 rounded-full text-sm transition-colors relative
-                                ${disabled ? "text-gray-300 cursor-not-allowed" : "hover:bg-blue-50"}
+                                ${disabled ? "text-gray-400 cursor-not-allowed" : "hover:bg-blue-50"}
                                 ${selected ? "bg-[#0066FF] text-white hover:bg-[#0052cc]" : ""}
                                 ${!disabled && !selected && available ? "font-semibold text-[#1a1a2e]" : ""}
                               `}
@@ -496,7 +497,9 @@ export default function BookingPage() {
                         </h3>
                         <div className="max-h-64 overflow-y-auto space-y-2">
                           {isLoading ? (
-                            <div className="text-sm text-gray-500">Loading...</div>
+                            <div className="flex items-center justify-center py-4">
+                              <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                            </div>
                           ) : slots.length === 0 ? (
                             <div className="text-sm text-gray-500 py-4 text-center">
                               <p>No times available on this day.</p>
@@ -515,7 +518,7 @@ export default function BookingPage() {
                                   }
                                 }}
                                 className={`
-                                  w-full py-2.5 px-3 text-sm border rounded-lg font-medium transition-colors
+                                  w-full py-2.5 px-3 text-sm border rounded-lg font-medium transition-colors focus:ring-2 focus:ring-[#0066FF] focus:ring-offset-2
                                   ${
                                     selectedTime === slot
                                       ? "border-[#0066FF] bg-blue-50 text-[#0066FF]"
@@ -607,12 +610,7 @@ export default function BookingPage() {
         </div>
       </main>
 
-      <footer className="py-6 text-center border-t border-gray-100">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#0066FF] transition-colors">
-          <Image src="/logo.svg" alt="MeetWhen" width={16} height={16} className="opacity-50" />
-          <span>Powered by <span className="font-semibold">MeetWhen</span></span>
-        </Link>
-      </footer>
+      <PoweredByFooter className="border-t border-gray-100" />
     </div>
   )
 }

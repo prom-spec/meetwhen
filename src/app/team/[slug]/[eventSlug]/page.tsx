@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Clock, MapPin, CheckCircle, Users, RefreshCw, User } from "lucide-react"
+import { ChevronLeft, ChevronRight, Clock, MapPin, CheckCircle, Users, RefreshCw, User, Loader2 } from "lucide-react"
+import PoweredByFooter from "@/components/PoweredByFooter"
+import { useToast } from "@/components/ToastProvider"
 
 interface EventType {
   id: string
@@ -78,6 +80,7 @@ export default function TeamBookingPage() {
   const hasTrackedView = useRef(false)
   const hasTrackedSlot = useRef(false)
 
+  const { toast } = useToast()
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -152,11 +155,11 @@ export default function TeamBookingPage() {
         trackEvent(eventType.id, "booking_confirmed")
       } else {
         const error = await res.json()
-        alert(error.error || "Failed to book")
+        toast(error.error || "Failed to book", "error")
       }
     } catch (error) {
       console.error("Error booking:", error)
-      alert("Failed to book")
+      toast("Failed to book", "error")
     } finally {
       setIsLoading(false)
     }
@@ -277,21 +280,7 @@ export default function TeamBookingPage() {
           </div>
         </main>
 
-        <footer className="py-6 text-center">
-          <Link 
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#0066FF] transition-colors"
-          >
-            <Image
-              src="/logo.svg"
-              alt="MeetWhen"
-              width={16}
-              height={16}
-              className="opacity-50"
-            />
-            <span>Powered by <span className="font-semibold">MeetWhen</span></span>
-          </Link>
-        </footer>
+        <PoweredByFooter />
       </div>
     )
   }
@@ -382,6 +371,7 @@ export default function TeamBookingPage() {
                             )
                           }
                           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                          aria-label="Previous month"
                         >
                           <ChevronLeft className="w-5 h-5 text-gray-600" />
                         </button>
@@ -395,6 +385,7 @@ export default function TeamBookingPage() {
                             )
                           }
                           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                          aria-label="Next month"
                         >
                           <ChevronRight className="w-5 h-5 text-gray-600" />
                         </button>
@@ -430,7 +421,7 @@ export default function TeamBookingPage() {
                               disabled={disabled}
                               className={`
                                 py-2 rounded-full text-sm transition-colors
-                                ${disabled ? "text-gray-300 cursor-not-allowed" : "hover:bg-blue-50"}
+                                ${disabled ? "text-gray-400 cursor-not-allowed" : "hover:bg-blue-50"}
                                 ${selected ? "bg-[#0066FF] text-white hover:bg-[#0052cc]" : ""}
                               `}
                             >
@@ -453,7 +444,7 @@ export default function TeamBookingPage() {
                         </h3>
                         <div className="max-h-64 overflow-y-auto space-y-2">
                           {isLoading ? (
-                            <div className="text-sm text-gray-500">Loading...</div>
+                            <div className="flex items-center justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-blue-600" /></div>
                           ) : slots.length === 0 ? (
                             <div className="text-sm text-gray-500">No available times</div>
                           ) : (
@@ -555,21 +546,7 @@ export default function TeamBookingPage() {
         </div>
       </main>
 
-      <footer className="py-6 text-center border-t border-gray-100">
-        <Link 
-          href="/"
-          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#0066FF] transition-colors"
-        >
-          <Image
-            src="/logo.svg"
-            alt="MeetWhen"
-            width={16}
-            height={16}
-            className="opacity-50"
-          />
-          <span>Powered by <span className="font-semibold">MeetWhen</span></span>
-        </Link>
-      </footer>
+      <PoweredByFooter className="border-t border-gray-100" />
     </div>
   )
 }

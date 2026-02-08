@@ -212,10 +212,10 @@ export default function EventTypesPage() {
     return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
   }
 
-  const copyLink = (id: string) => {
-    const bookingUrl = `${window.location.origin}/book/${id}`
+  const copyLink = (eventType: EventType) => {
+    const bookingUrl = `${window.location.origin}/${username}/${eventType.slug}`
     navigator.clipboard.writeText(bookingUrl)
-    setCopiedId(id)
+    setCopiedId(eventType.id)
     setTimeout(() => setCopiedId(null), 2000)
   }
 
@@ -226,12 +226,8 @@ export default function EventTypesPage() {
 
   const getFullUrl = () => {
     const base = getBaseUrl()
-    // Show ID-based URL for existing events, or slug preview for new events
-    if (editingEventType?.id) {
-      return `${base}/book/${editingEventType.id}`
-    }
     const slug = formData.slug || "event"
-    return `${base}/book/[id] (${slug})`
+    return `${base}/${username || "you"}/${slug}`
   }
 
   if (isLoading) {
@@ -299,6 +295,7 @@ export default function EventTypesPage() {
                     checked={eventType.isActive}
                     onChange={() => toggleActive(eventType)}
                     className="sr-only peer"
+                    aria-label={`Toggle ${eventType.title} ${eventType.isActive ? "off" : "on"}`}
                   />
                   <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
@@ -306,14 +303,14 @@ export default function EventTypesPage() {
               
               <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
                 <button
-                  onClick={() => copyLink(eventType.id)}
+                  onClick={() => copyLink(eventType)}
                   className={`p-2 ${copiedId === eventType.id ? "text-green-500" : "text-gray-400 hover:text-gray-600"}`}
                   title="Copy link"
                 >
                   {copiedId === eventType.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </button>
                 <a
-                  href={`/book/${eventType.id}`}
+                  href={`/${username}/${eventType.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 text-gray-400 hover:text-gray-600"

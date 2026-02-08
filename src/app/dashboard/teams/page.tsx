@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Users, Settings, ExternalLink, Copy, Trash2 } from "lucide-react"
+import { Plus, Users, Settings, ExternalLink, Copy, Check, Trash2, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { useToast } from "@/components/ToastProvider"
+import ConfirmDialog from "@/components/ConfirmDialog"
 
 interface TeamMember {
   id: string
@@ -35,6 +37,9 @@ export default function TeamsPage() {
   const [showModal, setShowModal] = useState(false)
   const [formData, setFormData] = useState({ name: "", slug: "" })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [confirmDeleteTeam, setConfirmDeleteTeam] = useState<string | null>(null)
+  const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchTeams()
@@ -73,7 +78,7 @@ export default function TeamsPage() {
         setFormData({ name: "", slug: "" })
       } else {
         const error = await res.json()
-        alert(error.error || "Failed to create team")
+        toast(error.error || "Failed to create team", "error")
       }
     } catch (error) {
       console.error("Error creating team:", error)
@@ -83,34 +88,47 @@ export default function TeamsPage() {
   }
 
   const handleDelete = async (teamId: string) => {
-    if (!confirm("Are you sure you want to delete this team? This action cannot be undone.")) {
-      return
-    }
+    setConfirmDeleteTeam(teamId)
+  }
 
+  const executeDeleteTeam = async () => {
+    if (!confirmDeleteTeam) return
     try {
-      const res = await fetch(`/api/teams/${teamId}`, { method: "DELETE" })
+      const res = await fetch(`/api/teams/${confirmDeleteTeam}`, { method: "DELETE" })
       if (res.ok) {
         fetchTeams()
+        toast("Team deleted", "success")
       } else {
         const error = await res.json()
-        alert(error.error || "Failed to delete team")
+        toast(error.error || "Failed to delete team", "error")
       }
     } catch (error) {
       console.error("Error deleting team:", error)
+    } finally {
+      setConfirmDeleteTeam(null)
     }
   }
 
   const copyTeamLink = (slug: string) => {
     navigator.clipboard.writeText(`${window.location.origin}/team/${slug}`)
-    alert("Team link copied!")
+    setCopiedSlug(slug)
+    setTimeout(() => setCopiedSlug(null), 2000)
   }
 
   if (isLoading) {
-    return <div className="text-center py-10">Loading...</div>
+    return (<div className="flex items-center justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>)
   }
 
   return (
     <div className="px-4 sm:px-0">
+      <ConfirmDialog
+        open={!!confirmDeleteTeam}
+        title="Delete Team"
+        message="Are you sure you want to delete this team? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={executeDeleteTeam}
+        onCancel={() => setConfirmDeleteTeam(null)}
+      />
       <div className="sm:flex sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Teams</h1>
@@ -192,10 +210,10 @@ export default function TeamsPage() {
               <div className="flex items-center gap-2 pt-4 border-t border-gray-100">
                 <button
                   onClick={() => copyTeamLink(team.slug)}
-                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className={`p-2 transition-colors ${copiedSlug === team.slug ? "text-green-500" : "text-gray-400 hover:text-gray-600"}`}
                   title="Copy team link"
                 >
-                  <Copy className="w-4 h-4" />
+                  {copiedSlug === team.slug ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </button>
                 <a
                   href={`/team/${team.slug}`}

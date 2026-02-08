@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Clock, MapPin, CheckCircle, User } from "lucide-react"
+import { ChevronLeft, ChevronRight, Clock, MapPin, CheckCircle, User, Loader2 } from "lucide-react"
+import PoweredByFooter from "@/components/PoweredByFooter"
+import { useToast } from "@/components/ToastProvider"
 
 interface EventType {
   id: string
@@ -68,6 +70,7 @@ export default function BookingByIdPage() {
   const hasTrackedView = useRef(false)
   const hasTrackedSlot = useRef(false)
 
+  const { toast } = useToast()
   const [formData, setFormData] = useState({ name: "", email: "" })
 
   // Initial load - fetch event type info
@@ -156,11 +159,11 @@ export default function BookingByIdPage() {
         trackEvent(eventType.id, "booking_confirmed")
       } else {
         const errorData = await res.json()
-        alert(errorData.error || "Failed to book")
+        toast(errorData.error || "Failed to book", "error")
       }
     } catch (error) {
       console.error("Error booking:", error)
-      alert("Failed to book")
+      toast("Failed to book", "error")
     } finally {
       setIsLoading(false)
     }
@@ -233,12 +236,7 @@ export default function BookingByIdPage() {
             )}
           </div>
         </main>
-        <footer className="py-6 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#0066FF] transition-colors">
-            <Image src="/logo.svg" alt="MeetWhen" width={16} height={16} className="opacity-50" />
-            <span>Powered by <span className="font-semibold">MeetWhen</span></span>
-          </Link>
-        </footer>
+        <PoweredByFooter />
       </div>
     )
   }
@@ -294,11 +292,11 @@ export default function BookingByIdPage() {
                   <div className="md:flex gap-6">
                     <div className="flex-1 mb-6 md:mb-0">
                       <div className="flex items-center justify-between mb-4">
-                        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} className="p-2 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Previous month">
                           <ChevronLeft className="w-5 h-5 text-gray-600" />
                         </button>
                         <h2 className="font-semibold text-[#1a1a2e]">{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h2>
-                        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} className="p-2 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Next month">
                           <ChevronRight className="w-5 h-5 text-gray-600" />
                         </button>
                       </div>
@@ -311,7 +309,7 @@ export default function BookingByIdPage() {
                           const selected = isDateSelected(day)
                           return (
                             <button key={day} onClick={() => !disabled && setSelectedDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day))} disabled={disabled}
-                              className={`py-2 rounded-full text-sm transition-colors ${disabled ? "text-gray-300 cursor-not-allowed" : "hover:bg-blue-50"} ${selected ? "bg-[#0066FF] text-white hover:bg-[#0052cc]" : ""}`}>
+                              className={`py-2 rounded-full text-sm transition-colors ${disabled ? "text-gray-400 cursor-not-allowed" : "hover:bg-blue-50"} ${selected ? "bg-[#0066FF] text-white hover:bg-[#0052cc]" : ""}`}>
                               {day}
                             </button>
                           )
@@ -323,7 +321,7 @@ export default function BookingByIdPage() {
                       <div className="md:w-44">
                         <h3 className="font-medium mb-3 text-sm text-[#1a1a2e]">{selectedDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</h3>
                         <div className="max-h-64 overflow-y-auto space-y-2">
-                          {isLoading ? <div className="text-sm text-gray-500">Loading...</div> : slots.length === 0 ? <div className="text-sm text-gray-500">No available times</div> : (
+                          {isLoading ? <div className="flex items-center justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-blue-600" /></div> : slots.length === 0 ? <div className="text-sm text-gray-500">No available times</div> : (
                             slots.map((slot) => (
                               <button key={slot} onClick={() => { setSelectedTime(slot); setShowForm(true); if (eventType?.id && !hasTrackedSlot.current) { hasTrackedSlot.current = true; trackEvent(eventType.id, "slot_selected") } }}
                                 className={`w-full py-2.5 px-3 text-sm border rounded-lg font-medium transition-colors ${selectedTime === slot ? "border-[#0066FF] bg-blue-50 text-[#0066FF]" : "border-gray-200 hover:border-[#0066FF] hover:text-[#0066FF]"}`}>
@@ -364,12 +362,7 @@ export default function BookingByIdPage() {
         </div>
       </main>
 
-      <footer className="py-6 text-center border-t border-gray-100">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#0066FF] transition-colors">
-          <Image src="/logo.svg" alt="MeetWhen" width={16} height={16} className="opacity-50" />
-          <span>Powered by <span className="font-semibold">MeetWhen</span></span>
-        </Link>
-      </footer>
+      <PoweredByFooter className="border-t border-gray-100" />
     </div>
   )
 }

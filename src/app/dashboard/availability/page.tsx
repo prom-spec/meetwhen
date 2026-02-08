@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Save, Plus, Trash2, Calendar, X } from "lucide-react"
+import { Save, Plus, Trash2, Calendar, X, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ToastProvider"
 
 // Note: metadata must be in a separate layout.tsx for client components
@@ -236,7 +236,11 @@ export default function AvailabilityPage() {
   }
 
   if (isLoading) {
-    return <div className="text-center py-10">Loading...</div>
+    return (
+      <div className="flex items-center justify-center py-10">
+        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+      </div>
+    )
   }
 
   return (

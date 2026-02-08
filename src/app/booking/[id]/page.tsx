@@ -3,6 +3,7 @@ import Link from "next/link"
 import Image from "next/image"
 import prisma from "@/lib/prisma"
 import { CheckCircle, Calendar, Clock, MapPin, User, Mail, Globe, XCircle, AlertTriangle, Video, Phone, ExternalLink } from "lucide-react"
+import PoweredByFooter from "@/components/PoweredByFooter"
 import type { Metadata } from "next"
 import BookingActions from "./BookingActions"
 
@@ -265,21 +266,7 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
       </main>
 
       {/* Footer */}
-      <footer className="py-6 text-center">
-        <Link 
-          href="/"
-          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#0066FF] transition-colors"
-        >
-          <Image
-            src="/logo.svg"
-            alt="MeetWhen"
-            width={16}
-            height={16}
-            className="opacity-50"
-          />
-          <span>Powered by <span className="font-semibold">MeetWhen</span></span>
-        </Link>
-      </footer>
+      <PoweredByFooter />
     </div>
   )
 }

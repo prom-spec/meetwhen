@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react"
+import ConfirmDialog from "@/components/ConfirmDialog"
 
 interface WebhookData {
   id: string
@@ -73,6 +74,7 @@ export default function WebhooksPage() {
 
   // Testing state
   const [testingWebhook, setTestingWebhook] = useState<string | null>(null)
+  const [confirmDeleteWebhook, setConfirmDeleteWebhook] = useState<string | null>(null)
 
   useEffect(() => {
     fetchWebhooks()
@@ -126,8 +128,13 @@ export default function WebhooksPage() {
   }
 
   async function deleteWebhook(id: string) {
-    if (!confirm("Are you sure you want to delete this webhook?")) return
+    setConfirmDeleteWebhook(id)
+  }
 
+  async function executeDeleteWebhook() {
+    const id = confirmDeleteWebhook
+    if (!id) return
+    setConfirmDeleteWebhook(null)
     try {
       const res = await fetch(`/api/webhooks/${id}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Failed to delete webhook")
@@ -227,6 +234,14 @@ export default function WebhooksPage() {
 
   return (
     <div className="px-4 py-6 sm:px-0">
+      <ConfirmDialog
+        open={!!confirmDeleteWebhook}
+        title="Delete Webhook"
+        message="Are you sure you want to delete this webhook?"
+        confirmLabel="Delete"
+        onConfirm={executeDeleteWebhook}
+        onCancel={() => setConfirmDeleteWebhook(null)}
+      />
       {/* Header */}
       <div className="mb-8">
         <Link

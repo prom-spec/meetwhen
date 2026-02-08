@@ -4,6 +4,7 @@ import Image from "next/image"
 import prisma from "@/lib/prisma"
 import type { Metadata } from "next"
 import RescheduleCalendar from "./RescheduleCalendar"
+import PoweredByFooter from "@/components/PoweredByFooter"
 
 interface PageProps {
   params: Promise<{ bookingId: string }>
@@ -141,21 +142,7 @@ export default async function ReschedulePage({ params, searchParams }: PageProps
       </main>
 
       {/* Footer */}
-      <footer className="py-6 text-center border-t border-gray-200">
-        <Link 
-          href="/"
-          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#0066FF] transition-colors"
-        >
-          <Image
-            src="/logo.svg"
-            alt="MeetWhen"
-            width={16}
-            height={16}
-            className="opacity-50"
-          />
-          <span>Powered by <span className="font-semibold">MeetWhen</span></span>
-        </Link>
-      </footer>
+      <PoweredByFooter className="border-t border-gray-200" />
     </div>
   )
 }

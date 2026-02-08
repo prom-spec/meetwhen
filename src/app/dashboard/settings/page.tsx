@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Calendar, Check, X, RefreshCw, Settings, User, Globe, Webhook, ChevronRight, Key, Copy, Trash2, Plus, Bot } from "lucide-react"
 import Link from "next/link"
+import ConfirmDialog from "@/components/ConfirmDialog"
 
 interface ApiKey {
   id: string
@@ -41,6 +42,7 @@ export default function SettingsPage() {
   const [newKeyName, setNewKeyName] = useState("")
   const [showNewKey, setShowNewKey] = useState<string | null>(null)
   const [creatingKey, setCreatingKey] = useState(false)
+  const [confirmRevokeKey, setConfirmRevokeKey] = useState<string | null>(null)
 
   useEffect(() => {
     fetchSettings()
@@ -106,7 +108,13 @@ export default function SettingsPage() {
   }
 
   async function revokeApiKey(keyId: string) {
-    if (!confirm("Are you sure you want to revoke this API key? This cannot be undone.")) return
+    setConfirmRevokeKey(keyId)
+  }
+
+  async function executeRevokeApiKey() {
+    const keyId = confirmRevokeKey
+    if (!keyId) return
+    setConfirmRevokeKey(null)
     try {
       const res = await fetch(`/api/settings/api-keys?id=${keyId}`, {
         method: "DELETE",
@@ -173,6 +181,14 @@ export default function SettingsPage() {
 
   return (
     <div className="px-4 py-6 sm:px-0">
+      <ConfirmDialog
+        open={!!confirmRevokeKey}
+        title="Revoke API Key"
+        message="Are you sure you want to revoke this API key? This cannot be undone."
+        confirmLabel="Revoke"
+        onConfirm={executeRevokeApiKey}
+        onCancel={() => setConfirmRevokeKey(null)}
+      />
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <Settings className="h-6 w-6" />

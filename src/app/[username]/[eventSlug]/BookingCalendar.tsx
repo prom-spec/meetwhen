@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, ChevronRight, Globe } from "lucide-react"
+import { ChevronLeft, ChevronRight, Globe, Loader2 } from "lucide-react"
 
 interface BookingCalendarProps {
   username: string
@@ -295,6 +295,7 @@ export default function BookingCalendar({
         <button
           onClick={prevMonth}
           className="p-2 hover:bg-gray-100 rounded-full"
+          aria-label="Previous month"
         >
           <ChevronLeft className="w-5 h-5 text-gray-600" />
         </button>
@@ -304,6 +305,7 @@ export default function BookingCalendar({
         <button
           onClick={nextMonth}
           className="p-2 hover:bg-gray-100 rounded-full"
+          aria-label="Next month"
         >
           <ChevronRight className="w-5 h-5 text-gray-600" />
         </button>
@@ -332,10 +334,11 @@ export default function BookingCalendar({
               key={day}
               onClick={() => !disabled && setSelectedDate(date)}
               disabled={disabled}
+              aria-label={date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
               className={`
                 aspect-square flex items-center justify-center text-sm rounded-full
                 ${disabled 
-                  ? "text-gray-300 cursor-not-allowed" 
+                  ? "text-gray-400 cursor-not-allowed" 
                   : isSelected
                     ? "bg-blue-600 text-white"
                     : "hover:bg-gray-100 text-gray-900"
@@ -360,7 +363,10 @@ export default function BookingCalendar({
           </h4>
           
           {isLoadingSlots ? (
-            <p className="text-sm text-gray-500">Loading available times...</p>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading available times...
+            </div>
           ) : slots.length === 0 ? (
             <p className="text-sm text-gray-500">No available times on this day</p>
           ) : (
@@ -372,7 +378,7 @@ export default function BookingCalendar({
                     setSelectedSlot(slot)
                     setShowForm(true)
                   }}
-                  className="py-2 px-3 text-sm border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50"
+                  className="py-2 px-3 text-sm border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 focus:ring-2 focus:ring-[#0066FF] focus:ring-offset-2"
                 >
                   {formatTime(slot.start)}
                 </button>
