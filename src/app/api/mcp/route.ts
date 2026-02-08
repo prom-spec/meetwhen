@@ -6,6 +6,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { hashApiKey, isValidApiKeyFormat } from "@/lib/api-keys"
 
+// Base URL for generating booking links
+const BASE_URL = process.env.NEXTAUTH_URL || "https://meetwhen-production.up.railway.app"
+
 // Validate API key and get user ID
 async function validateApiKey(authHeader: string | null): Promise<string | null> {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -65,6 +68,65 @@ const toolDefinitions = [
         reason: { type: "string", description: "Reason for cancellation (optional)" },
       },
       required: ["bookingId"],
+    },
+  },
+  {
+    name: "get_my_booking_link",
+    description: "Returns the user's booking page URL that can be shared with others.",
+    inputSchema: { type: "object" as const, properties: {}, required: [] },
+  },
+  {
+    name: "find_user",
+    description: "Search for a MeetWhen user by their username.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        username: { type: "string", description: "The username to search for" },
+      },
+      required: ["username"],
+    },
+  },
+  {
+    name: "get_user_event_types",
+    description: "Get another user's public (active) event types by their username.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        username: { type: "string", description: "The username of the user whose event types to retrieve" },
+      },
+      required: ["username"],
+    },
+  },
+  {
+    name: "get_available_slots",
+    description: "Get available time slots for booking a specific event type. Returns slots for the next 7 days by default.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        username: { type: "string", description: "The username of the host" },
+        eventTypeSlug: { type: "string", description: "The slug of the event type" },
+        startDate: { type: "string", description: "Start date for availability check (ISO 8601, defaults to today)" },
+        endDate: { type: "string", description: "End date for availability check (ISO 8601, defaults to 7 days from start)" },
+        timezone: { type: "string", description: "Timezone for the returned slots (defaults to UTC)" },
+      },
+      required: ["username", "eventTypeSlug"],
+    },
+  },
+  {
+    name: "create_booking",
+    description: "Book a meeting with another MeetWhen user.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        username: { type: "string", description: "The username of the host" },
+        eventTypeSlug: { type: "string", description: "The slug of the event type to book" },
+        startTime: { type: "string", description: "Start time of the meeting (ISO 8601)" },
+        guestName: { type: "string", description: "Name of the guest booking the meeting" },
+        guestEmail: { type: "string", description: "Email of the guest booking the meeting" },
+        guestTimezone: { type: "string", description: "Timezone of the guest (defaults to UTC)" },
+        notes: { type: "string", description: "Optional notes for the booking" },
+      },
+      required: ["username", "eventTypeSlug", "startTime", "guestName", "guestEmail"],
     },
   },
 ]
@@ -153,6 +215,312 @@ async function handleCancelBooking(userId: string, args: ToolArgs) {
   return { success: true, message: "Booking cancelled successfully" }
 }
 
+async function handleGetMyBookingLink(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { username: true, name: true },
+  })
+
+  if (!user || !user.username) {
+    throw new Error("User profile not found or username not set")
+  }
+
+  return {
+    bookingUrl: `${BASE_URL}/${user.username}`,
+    username: user.username,
+    name: user.name,
+  }
+}
+
+async function handleFindUser(_userId: string, args: ToolArgs) {
+  const { username } = args as { username: string }
+
+  const user = await prisma.user.findUnique({
+    where: { username },
+    select: {
+      id: true,
+      username: true,
+      name: true,
+      image: true,
+      eventTypes: {
+        where: { isActive: true },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          description: true,
+          duration: true,
+        },
+        orderBy: { createdAt: "asc" },
+      },
+    },
+  })
+
+  if (!user) {
+    throw new Error(`User not found: ${username}`)
+  }
+
+  return {
+    user: {
+      username: user.username,
+      name: user.name,
+      image: user.image,
+      bookingUrl: `${BASE_URL}/${user.username}`,
+      eventTypes: user.eventTypes.map((et) => ({
+        ...et,
+        bookingUrl: `${BASE_URL}/${user.username}/${et.slug}`,
+      })),
+    },
+  }
+}
+
+async function handleGetUserEventTypes(_userId: string, args: ToolArgs) {
+  const { username } = args as { username: string }
+
+  const user = await prisma.user.findUnique({
+    where: { username },
+    select: {
+      username: true,
+      eventTypes: {
+        where: { isActive: true },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          description: true,
+          duration: true,
+          color: true,
+        },
+        orderBy: { createdAt: "asc" },
+      },
+    },
+  })
+
+  if (!user) {
+    throw new Error(`User not found: ${username}`)
+  }
+
+  return {
+    eventTypes: user.eventTypes.map((et) => ({
+      ...et,
+      bookingUrl: `${BASE_URL}/${user.username}/${et.slug}`,
+    })),
+  }
+}
+
+async function handleGetAvailableSlots(_userId: string, args: ToolArgs) {
+  const { username, eventTypeSlug, startDate, endDate, timezone = "UTC" } = args as {
+    username: string
+    eventTypeSlug: string
+    startDate?: string
+    endDate?: string
+    timezone?: string
+  }
+
+  // Find the host user and their event type
+  const host = await prisma.user.findUnique({
+    where: { username },
+    select: {
+      id: true,
+      username: true,
+      eventTypes: {
+        where: { slug: eventTypeSlug, isActive: true },
+        include: {
+          availabilityRules: true,
+        },
+      },
+    },
+  })
+
+  if (!host) {
+    throw new Error(`User not found: ${username}`)
+  }
+
+  const eventType = host.eventTypes[0]
+  if (!eventType) {
+    throw new Error(`Event type not found: ${eventTypeSlug}`)
+  }
+
+  // Date range for availability check
+  const start = startDate ? new Date(startDate) : new Date()
+  start.setHours(0, 0, 0, 0)
+  
+  const end = endDate ? new Date(endDate) : new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000)
+  end.setHours(23, 59, 59, 999)
+
+  // Get existing bookings for this host in the date range
+  const existingBookings = await prisma.booking.findMany({
+    where: {
+      hostId: host.id,
+      status: { not: "CANCELLED" },
+      startTime: { lt: end },
+      endTime: { gt: start },
+    },
+    select: { startTime: true, endTime: true },
+  })
+
+  // Generate available slots based on availability rules
+  const slots: Array<{ startTime: string; endTime: string }> = []
+  const duration = eventType.duration // in minutes
+
+  // Iterate through each day
+  const currentDay = new Date(start)
+  while (currentDay <= end) {
+    const dayOfWeek = currentDay.getDay() // 0 = Sunday, 1 = Monday, etc.
+
+    // Find availability rules for this day
+    const rulesForDay = eventType.availabilityRules.filter(
+      (rule) => rule.dayOfWeek === dayOfWeek
+    )
+
+    for (const rule of rulesForDay) {
+      // Parse start and end times (format: "HH:MM")
+      const [startHour, startMin] = rule.startTime.split(":").map(Number)
+      const [endHour, endMin] = rule.endTime.split(":").map(Number)
+
+      // Generate slots within this time window
+      const windowStart = new Date(currentDay)
+      windowStart.setHours(startHour, startMin, 0, 0)
+
+      const windowEnd = new Date(currentDay)
+      windowEnd.setHours(endHour, endMin, 0, 0)
+
+      let slotStart = new Date(windowStart)
+      while (slotStart.getTime() + duration * 60 * 1000 <= windowEnd.getTime()) {
+        const slotEnd = new Date(slotStart.getTime() + duration * 60 * 1000)
+
+        // Skip slots in the past
+        if (slotStart > new Date()) {
+          // Check for conflicts with existing bookings
+          const hasConflict = existingBookings.some(
+            (booking) =>
+              slotStart < booking.endTime && slotEnd > booking.startTime
+          )
+
+          if (!hasConflict) {
+            slots.push({
+              startTime: slotStart.toISOString(),
+              endTime: slotEnd.toISOString(),
+            })
+          }
+        }
+
+        // Move to next slot
+        slotStart = new Date(slotStart.getTime() + duration * 60 * 1000)
+      }
+    }
+
+    // Move to next day
+    currentDay.setDate(currentDay.getDate() + 1)
+  }
+
+  return {
+    eventType: {
+      title: eventType.title,
+      duration: eventType.duration,
+      description: eventType.description,
+    },
+    timezone,
+    slots,
+    totalSlots: slots.length,
+  }
+}
+
+async function handleCreateBooking(userId: string, args: ToolArgs) {
+  const { username, eventTypeSlug, startTime, guestName, guestEmail, guestTimezone = "UTC", notes } = args as {
+    username: string
+    eventTypeSlug: string
+    startTime: string
+    guestName: string
+    guestEmail: string
+    guestTimezone?: string
+    notes?: string
+  }
+
+  // Find the host
+  const host = await prisma.user.findUnique({
+    where: { username },
+    select: {
+      id: true,
+      username: true,
+      name: true,
+      eventTypes: {
+        where: { slug: eventTypeSlug, isActive: true },
+        select: {
+          id: true,
+          title: true,
+          duration: true,
+        },
+      },
+    },
+  })
+
+  if (!host) {
+    throw new Error(`User not found: ${username}`)
+  }
+
+  const eventType = host.eventTypes[0]
+  if (!eventType) {
+    throw new Error(`Event type not found or inactive: ${eventTypeSlug}`)
+  }
+
+  // Calculate end time
+  const start = new Date(startTime)
+  const end = new Date(start.getTime() + eventType.duration * 60 * 1000)
+
+  // Check for conflicts
+  const conflictingBooking = await prisma.booking.findFirst({
+    where: {
+      hostId: host.id,
+      status: { not: "CANCELLED" },
+      startTime: { lt: end },
+      endTime: { gt: start },
+    },
+  })
+
+  if (conflictingBooking) {
+    throw new Error("This time slot is no longer available")
+  }
+
+  // Create the booking
+  const booking = await prisma.booking.create({
+    data: {
+      hostId: host.id,
+      eventTypeId: eventType.id,
+      guestName,
+      guestEmail,
+      guestTimezone,
+      startTime: start,
+      endTime: end,
+      status: "CONFIRMED",
+      notes: notes || null,
+    },
+    select: {
+      id: true,
+      startTime: true,
+      endTime: true,
+      status: true,
+      guestName: true,
+      guestEmail: true,
+    },
+  })
+
+  return {
+    success: true,
+    booking: {
+      id: booking.id,
+      eventType: eventType.title,
+      hostName: host.name,
+      hostUsername: host.username,
+      startTime: booking.startTime.toISOString(),
+      endTime: booking.endTime.toISOString(),
+      status: booking.status,
+      guestName: booking.guestName,
+      guestEmail: booking.guestEmail,
+    },
+  }
+}
+
 // Main tool dispatcher
 async function handleToolCall(userId: string, name: string, args: ToolArgs) {
   switch (name) {
@@ -162,6 +530,16 @@ async function handleToolCall(userId: string, name: string, args: ToolArgs) {
       return handleGetBookings(userId, args)
     case "cancel_booking":
       return handleCancelBooking(userId, args)
+    case "get_my_booking_link":
+      return handleGetMyBookingLink(userId)
+    case "find_user":
+      return handleFindUser(userId, args)
+    case "get_user_event_types":
+      return handleGetUserEventTypes(userId, args)
+    case "get_available_slots":
+      return handleGetAvailableSlots(userId, args)
+    case "create_booking":
+      return handleCreateBooking(userId, args)
     default:
       throw new Error(`Unknown tool: ${name}`)
   }
