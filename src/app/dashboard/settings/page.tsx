@@ -1,8 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar, Check, X, RefreshCw, Settings, User, Globe, Webhook, ChevronRight } from "lucide-react"
+import { Calendar, Check, X, RefreshCw, Settings, User, Globe, Webhook, ChevronRight, Key, Copy, Trash2, Plus, Bot } from "lucide-react"
 import Link from "next/link"
+
+interface ApiKey {
+  id: string
+  name: string
+  keyPrefix: string
+  createdAt: string
+  lastUsedAt: string | null
+}
 
 interface UserSettings {
   id: string
@@ -27,8 +35,16 @@ export default function SettingsPage() {
   const [timezone, setTimezone] = useState("")
   const [calendarSyncEnabled, setCalendarSyncEnabled] = useState(true)
 
+  // API Keys state
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([])
+  const [loadingKeys, setLoadingKeys] = useState(false)
+  const [newKeyName, setNewKeyName] = useState("")
+  const [showNewKey, setShowNewKey] = useState<string | null>(null)
+  const [creatingKey, setCreatingKey] = useState(false)
+
   useEffect(() => {
     fetchSettings()
+    fetchApiKeys()
   }, [])
 
   async function fetchSettings() {
@@ -47,6 +63,66 @@ export default function SettingsPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function fetchApiKeys() {
+    setLoadingKeys(true)
+    try {
+      const res = await fetch("/api/settings/api-keys")
+      if (res.ok) {
+        const data = await res.json()
+        setApiKeys(data.keys || [])
+      }
+    } catch (error) {
+      console.error("Error fetching API keys:", error)
+    } finally {
+      setLoadingKeys(false)
+    }
+  }
+
+  async function createApiKey() {
+    if (!newKeyName.trim()) return
+    setCreatingKey(true)
+    try {
+      const res = await fetch("/api/settings/api-keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newKeyName.trim() }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setShowNewKey(data.key) // Show the key once
+        setNewKeyName("")
+        fetchApiKeys() // Refresh list
+      } else {
+        const data = await res.json()
+        setMessage({ type: "error", text: data.error || "Failed to create API key" })
+      }
+    } catch (error) {
+      setMessage({ type: "error", text: "Failed to create API key" })
+    } finally {
+      setCreatingKey(false)
+    }
+  }
+
+  async function revokeApiKey(keyId: string) {
+    if (!confirm("Are you sure you want to revoke this API key? This cannot be undone.")) return
+    try {
+      const res = await fetch(`/api/settings/api-keys?id=${keyId}`, {
+        method: "DELETE",
+      })
+      if (res.ok) {
+        fetchApiKeys()
+        setMessage({ type: "success", text: "API key revoked" })
+      }
+    } catch (error) {
+      setMessage({ type: "error", text: "Failed to revoke API key" })
+    }
+  }
+
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text)
+    setMessage({ type: "success", text: "Copied to clipboard!" })
   }
 
   async function handleSave() {
@@ -334,6 +410,142 @@ export default function SettingsPage() {
             Manage Webhooks
             <ChevronRight className="h-4 w-4" />
           </Link>
+        </div>
+
+        {/* AI Assistant Section */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+            <Bot className="h-5 w-5" />
+            AI Assistant
+          </h2>
+
+          <p className="text-sm text-gray-600 mb-4">
+            Connect your AI assistant (like Claude or ChatGPT) to manage your calendar through natural conversation.
+            Create an API key below and add it to your AI app.
+          </p>
+
+          {/* New Key Created Alert */}
+          {showNewKey && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm font-medium text-green-800 mb-2">
+                🎉 API Key Created! Copy it now — you won&apos;t see it again.
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 p-2 bg-white border rounded text-sm font-mono break-all">
+                  {showNewKey}
+                </code>
+                <button
+                  onClick={() => copyToClipboard(showNewKey)}
+                  className="p-2 text-green-700 hover:bg-green-100 rounded"
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+              </div>
+              <button
+                onClick={() => setShowNewKey(null)}
+                className="mt-2 text-sm text-green-700 hover:underline"
+              >
+                I&apos;ve saved it, dismiss
+              </button>
+            </div>
+          )}
+
+          {/* Create New Key */}
+          <div className="mb-4 flex gap-2">
+            <input
+              type="text"
+              placeholder="Key name (e.g., Claude Desktop)"
+              value={newKeyName}
+              onChange={(e) => setNewKeyName(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-[#0066FF] focus:border-[#0066FF]"
+            />
+            <button
+              onClick={createApiKey}
+              disabled={creatingKey || !newKeyName.trim()}
+              className="px-4 py-2 bg-[#0066FF] text-white rounded-md text-sm font-medium hover:bg-[#0052CC] disabled:opacity-50 flex items-center gap-2"
+            >
+              {creatingKey ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              Create Key
+            </button>
+          </div>
+
+          {/* Existing Keys */}
+          {loadingKeys ? (
+            <div className="flex justify-center py-4">
+              <RefreshCw className="h-5 w-5 animate-spin text-gray-400" />
+            </div>
+          ) : apiKeys.length > 0 ? (
+            <div className="border rounded-lg overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Key</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Last Used</th>
+                    <th className="px-4 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {apiKeys.map((key) => (
+                    <tr key={key.id}>
+                      <td className="px-4 py-2 text-sm text-gray-900">{key.name}</td>
+                      <td className="px-4 py-2 text-sm font-mono text-gray-500">{key.keyPrefix}...</td>
+                      <td className="px-4 py-2 text-sm text-gray-500">
+                        {new Date(key.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-gray-500">
+                        {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : "Never"}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        <button
+                          onClick={() => revokeApiKey(key.id)}
+                          className="text-red-600 hover:text-red-800 p-1"
+                          title="Revoke key"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 text-center py-4">
+              No API keys yet. Create one to get started.
+            </p>
+          )}
+
+          {/* Setup Instructions */}
+          <details className="mt-4">
+            <summary className="cursor-pointer text-sm font-medium text-[#0066FF] hover:underline">
+              Setup instructions for Claude Desktop
+            </summary>
+            <div className="mt-2 p-4 bg-gray-50 rounded-lg text-sm">
+              <p className="mb-2">Add this to your Claude Desktop config file:</p>
+              <pre className="p-2 bg-gray-900 text-gray-100 rounded text-xs overflow-x-auto">
+{`{
+  "mcpServers": {
+    "meetwhen": {
+      "command": "npx",
+      "args": ["-y", "meetwhen-mcp"],
+      "env": {
+        "MEETWHEN_API_KEY": "YOUR_API_KEY_HERE"
+      }
+    }
+  }
+}`}
+              </pre>
+              <p className="mt-2 text-gray-500">
+                Config location: <code className="bg-gray-200 px-1 rounded">~/.config/claude/config.json</code>
+              </p>
+            </div>
+          </details>
         </div>
 
         {/* Save Button */}

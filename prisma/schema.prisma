@@ -60,10 +60,26 @@ model User {
   availability  Availability[]
   dateOverrides DateOverride[]
   webhooks      Webhook[]
+  apiKeys       ApiKey[]
 
   // Team relations
   ownedTeams    Team[]         @relation("teamOwner")
   teamMembers   TeamMember[]
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  keyHash    String    @unique
+  keyPrefix  String    // First 8 chars for display (mk_xxxx)
+  name       String
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+
+  @@index([userId])
+  @@index([keyHash])
 }
 
 model EventType {
