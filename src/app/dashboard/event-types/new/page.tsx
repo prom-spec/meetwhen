@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Video, MapPin, Phone, Link2, Check, Save } from "lucide-react"
+import { useToast } from "@/components/ToastProvider"
 
 type LocationType = "IN_PERSON" | "GOOGLE_MEET" | "ZOOM" | "PHONE" | "CUSTOM"
 
@@ -28,6 +29,7 @@ const DURATION_OPTIONS = [
 
 export default function NewEventTypePage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [username, setUsername] = useState("")
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
@@ -98,7 +100,8 @@ export default function NewEventTypePage() {
               </div>
             </div>
             <button
-              onClick={handleSubmit}
+              type="submit"
+              form="event-type-form"
               disabled={saving || !formData.title || !formData.slug}
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -111,7 +114,7 @@ export default function NewEventTypePage() {
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form onSubmit={handleSubmit}>
+        <form id="event-type-form" onSubmit={handleSubmit}>
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Left Column - Event Details */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

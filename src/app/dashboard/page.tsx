@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import Link from "next/link"
-import { Calendar, Clock, Users } from "lucide-react"
+import { Calendar, Clock, Users, CalendarX } from "lucide-react"
 
 export const metadata = {
   title: "Dashboard",
@@ -77,13 +77,15 @@ export default async function DashboardPage() {
           <h2 className="text-lg font-semibold text-gray-900">Upcoming Meetings</h2>
         </div>
         {upcomingBookings.length === 0 ? (
-          <div className="px-6 py-8 text-center text-gray-500">
-            <p>No upcoming meetings</p>
+          <div className="px-6 py-12 text-center">
+            <CalendarX className="w-10 h-10 mx-auto text-gray-300 mb-3" />
+            <h3 className="text-base font-semibold text-gray-900 mb-1">No upcoming meetings</h3>
+            <p className="text-sm text-gray-500 mb-4">Share your booking link to start getting meetings.</p>
             <Link
               href="/dashboard/event-types"
-              className="text-blue-600 hover:text-blue-700 mt-2 inline-block"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
             >
-              Create an event type to get started
+              View Event Types
             </Link>
           </div>
         ) : (

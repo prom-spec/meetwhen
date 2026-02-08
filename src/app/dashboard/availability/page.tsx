@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Save, Plus, Trash2, Calendar, X } from "lucide-react"
+import { useToast } from "@/components/ToastProvider"
 
 // Note: metadata must be in a separate layout.tsx for client components
 // Title is set in the dashboard layout
@@ -47,6 +48,7 @@ export default function AvailabilityPage() {
   const [hasChanges, setHasChanges] = useState(false)
   
   // Date override modal state
+  const { toast } = useToast()
   const [showOverrideModal, setShowOverrideModal] = useState(false)
   const [overrideDate, setOverrideDate] = useState("")
   const [overrideType, setOverrideType] = useState<"unavailable" | "custom">("unavailable")
@@ -96,13 +98,13 @@ export default function AvailabilityPage() {
 
       if (res.ok) {
         setHasChanges(false)
-        alert("Availability saved!")
+        toast("Availability saved!", "success")
       } else {
-        alert("Failed to save availability")
+        toast("Failed to save availability", "error")
       }
     } catch (error) {
       console.error("Error saving availability:", error)
-      alert("Failed to save availability")
+      toast("Failed to save availability", "error")
     } finally {
       setIsSaving(false)
     }
@@ -159,7 +161,7 @@ export default function AvailabilityPage() {
 
   const handleAddOverride = async () => {
     if (!overrideDate) {
-      alert("Please select a date")
+      toast("Please select a date", "error")
       return
     }
 
@@ -186,11 +188,11 @@ export default function AvailabilityPage() {
         setShowOverrideModal(false)
         resetOverrideForm()
       } else {
-        alert("Failed to add date override")
+        toast("Failed to add date override", "error")
       }
     } catch (error) {
       console.error("Error adding override:", error)
-      alert("Failed to add date override")
+      toast("Failed to add date override", "error")
     }
   }
 
@@ -203,11 +205,11 @@ export default function AvailabilityPage() {
       if (res.ok) {
         setDateOverrides(prev => prev.filter(o => o.date !== dateStr))
       } else {
-        alert("Failed to delete override")
+        toast("Failed to delete override", "error")
       }
     } catch (error) {
       console.error("Error deleting override:", error)
-      alert("Failed to delete override")
+      toast("Failed to delete override", "error")
     }
   }
 

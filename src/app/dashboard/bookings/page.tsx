@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Calendar, Clock, User, Mail, MoreHorizontal } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import Link from "next/link"
+import { Calendar, Clock, User, Mail, MoreHorizontal, Loader2, CalendarX, XCircle, RefreshCw } from "lucide-react"
 
 // Note: metadata must be in a separate layout.tsx for client components
 // Title is set in the dashboard layout
@@ -26,6 +27,8 @@ export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState<"upcoming" | "past" | "all">("upcoming")
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchBookings()
@@ -60,6 +63,32 @@ export default function BookingsPage() {
     })
   }
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  const handleCancel = async (id: string) => {
+    if (!confirm("Are you sure you want to cancel this booking?")) return
+    try {
+      const res = await fetch(`/api/bookings/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "CANCELLED" }),
+      })
+      if (res.ok) fetchBookings()
+    } catch (error) {
+      console.error("Error cancelling booking:", error)
+    }
+    setOpenMenuId(null)
+  }
+
   const now = new Date()
   const filteredBookings = bookings.filter((booking) => {
     const bookingDate = new Date(booking.startTime)
@@ -69,7 +98,11 @@ export default function BookingsPage() {
   })
 
   if (isLoading) {
-    return <div className="text-center py-10">Loading...</div>
+    return (
+      <div className="flex items-center justify-center py-10">
+        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+      </div>
+    )
   }
 
   return (
@@ -106,8 +139,22 @@ export default function BookingsPage() {
 
       {/* Bookings List */}
       {filteredBookings.length === 0 ? (
-        <div className="text-center py-10 bg-white rounded-lg border border-gray-200">
-          <p className="text-gray-500">No {filter} bookings</p>
+        <div className="text-center py-16 bg-white rounded-lg border border-gray-200">
+          <CalendarX className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">No {filter} bookings</h3>
+          <p className="text-sm text-gray-500 mb-6">
+            {filter === "upcoming"
+              ? "You don't have any upcoming meetings scheduled."
+              : filter === "past"
+              ? "No past bookings to show yet."
+              : "No bookings found."}
+          </p>
+          <Link
+            href="/dashboard/event-types"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
+          >
+            Share your booking link
+          </Link>
         </div>
       ) : (
         <div className="space-y-4">
@@ -159,10 +206,44 @@ export default function BookingsPage() {
                   )}
                 </div>
 
-                <div className="mt-4 sm:mt-0 sm:ml-4">
-                  <button className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100">
+                <div className="relative mt-4 sm:mt-0 sm:ml-4" ref={openMenuId === booking.id ? menuRef : undefined}>
+                  <button
+                    onClick={() => setOpenMenuId(openMenuId === booking.id ? null : booking.id)}
+                    className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+                  >
                     <MoreHorizontal className="w-5 h-5" />
                   </button>
+                  {openMenuId === booking.id && (
+                    <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                      {booking.status !== "CANCELLED" && new Date(booking.startTime) >= now && (
+                        <>
+                          <Link
+                            href={`/reschedule/${booking.id}`}
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            onClick={() => setOpenMenuId(null)}
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                            Reschedule
+                          </Link>
+                          <button
+                            onClick={() => handleCancel(booking.id)}
+                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                          >
+                            <XCircle className="w-4 h-4" />
+                            Cancel Booking
+                          </button>
+                        </>
+                      )}
+                      <Link
+                        href={`/booking/${booking.id}`}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setOpenMenuId(null)}
+                      >
+                        <Calendar className="w-4 h-4" />
+                        View Details
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

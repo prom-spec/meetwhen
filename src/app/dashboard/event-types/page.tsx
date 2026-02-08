@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Plus, Edit, Trash2, Copy, ExternalLink, Video, MapPin, Phone, Link2, Check, ChevronRight, X } from "lucide-react"
+import { Plus, Edit, Trash2, Copy, ExternalLink, Video, MapPin, Phone, Link2, Check, ChevronRight, X, Loader2, CalendarPlus } from "lucide-react"
+import { useToast } from "@/components/ToastProvider"
+import ConfirmDialog from "@/components/ConfirmDialog"
 
 type LocationType = "IN_PERSON" | "GOOGLE_MEET" | "ZOOM" | "PHONE" | "CUSTOM"
 
@@ -64,6 +66,9 @@ export default function EventTypesPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingEventType, setEditingEventType] = useState<EventType | null>(null)
   const [username, setUsername] = useState<string>("")
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const { toast } = useToast()
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
@@ -125,7 +130,7 @@ export default function EventTypesPage() {
         closeModal()
       } else {
         const error = await res.json()
-        alert(error.error || "Something went wrong")
+        toast(error.error || "Something went wrong", "error")
       }
     } catch (error) {
       console.error("Error saving event type:", error)
@@ -133,15 +138,21 @@ export default function EventTypesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this event type?")) return
+    setConfirmDelete(id)
+  }
 
+  const executeDelete = async () => {
+    if (!confirmDelete) return
     try {
-      const res = await fetch(`/api/event-types/${id}`, { method: "DELETE" })
+      const res = await fetch(`/api/event-types/${confirmDelete}`, { method: "DELETE" })
       if (res.ok) {
         fetchEventTypes()
+        toast("Event type deleted", "success")
       }
     } catch (error) {
       console.error("Error deleting event type:", error)
+    } finally {
+      setConfirmDelete(null)
     }
   }
 
@@ -204,7 +215,8 @@ export default function EventTypesPage() {
   const copyLink = (id: string) => {
     const bookingUrl = `${window.location.origin}/book/${id}`
     navigator.clipboard.writeText(bookingUrl)
-    alert("Link copied!")
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
   }
 
   const getBaseUrl = () => {
@@ -223,7 +235,11 @@ export default function EventTypesPage() {
   }
 
   if (isLoading) {
-    return <div className="text-center py-10">Loading...</div>
+    return (
+      <div className="flex items-center justify-center py-10">
+        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+      </div>
+    )
   }
 
   return (
@@ -245,8 +261,17 @@ export default function EventTypesPage() {
       </div>
 
       {eventTypes.length === 0 ? (
-        <div className="text-center py-10 bg-white rounded-lg border border-gray-200">
-          <p className="text-gray-500">No event types yet. Create your first one!</p>
+        <div className="text-center py-16 bg-white rounded-lg border border-gray-200">
+          <CalendarPlus className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">No event types yet</h3>
+          <p className="text-sm text-gray-500 mb-6">Create your first event type so people can book time with you.</p>
+          <Link
+            href="/dashboard/event-types/new"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Event Type
+          </Link>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -282,10 +307,10 @@ export default function EventTypesPage() {
               <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
                 <button
                   onClick={() => copyLink(eventType.id)}
-                  className="p-2 text-gray-400 hover:text-gray-600"
+                  className={`p-2 ${copiedId === eventType.id ? "text-green-500" : "text-gray-400 hover:text-gray-600"}`}
                   title="Copy link"
                 >
-                  <Copy className="w-4 h-4" />
+                  {copiedId === eventType.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </button>
                 <a
                   href={`/book/${eventType.id}`}
@@ -317,6 +342,15 @@ export default function EventTypesPage() {
       )}
 
       {/* Modal - Responsive: Full screen on mobile, centered card on desktop */}
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title="Delete Event Type"
+        message="Are you sure you want to delete this event type? This cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={executeDelete}
+        onCancel={() => setConfirmDelete(null)}
+      />
+
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
           <div className="bg-white w-full sm:max-w-2xl sm:rounded-xl sm:mx-4 max-h-[90vh] overflow-hidden flex flex-col rounded-t-xl sm:rounded-xl">

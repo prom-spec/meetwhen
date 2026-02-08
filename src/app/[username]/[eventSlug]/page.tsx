@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Clock, MapPin, CheckCircle } from "lucide-react"
+import { ChevronLeft, ChevronRight, Clock, MapPin, CheckCircle, Globe, Search } from "lucide-react"
 
 interface EventType {
   id: string
@@ -44,7 +44,6 @@ async function trackEvent(eventTypeId: string, stage: string) {
       }),
     })
   } catch (e) {
-    // Silently fail - analytics should not break booking flow
     console.debug("Analytics tracking failed:", e)
   }
 }
@@ -65,14 +64,49 @@ export default function BookingPage() {
   const [showForm, setShowForm] = useState(false)
   const [isBooked, setIsBooked] = useState(false)
   const [bookingId, setBookingId] = useState<string | null>(null)
-  const [guestTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone)
+  const [guestTimezone, setGuestTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone)
+  const [showTimezoneSelector, setShowTimezoneSelector] = useState(false)
+  const [timezoneSearch, setTimezoneSearch] = useState("")
+  const [availableDates, setAvailableDates] = useState<Set<string>>(new Set())
+  const [isLoadingMonth, setIsLoadingMonth] = useState(false)
   const hasTrackedView = useRef(false)
   const hasTrackedSlot = useRef(false)
+  const hasAutoSelected = useRef(false)
+  const tzDropdownRef = useRef<HTMLDivElement>(null)
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    notes: "",
   })
+
+  const allTimezones = useMemo(() => {
+    try {
+      return Intl.supportedValuesOf("timeZone")
+    } catch {
+      return ["UTC", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+        "Europe/London", "Europe/Paris", "Europe/Berlin", "Asia/Tokyo", "Asia/Shanghai",
+        "Asia/Kolkata", "Asia/Jerusalem", "Australia/Sydney", "Pacific/Auckland"]
+    }
+  }, [])
+
+  const filteredTimezones = useMemo(() => {
+    if (!timezoneSearch) return allTimezones
+    const q = timezoneSearch.toLowerCase()
+    return allTimezones.filter((tz) => tz.toLowerCase().includes(q))
+  }, [allTimezones, timezoneSearch])
+
+  // Close timezone dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (tzDropdownRef.current && !tzDropdownRef.current.contains(e.target as Node)) {
+        setShowTimezoneSelector(false)
+        setTimezoneSearch("")
+      }
+    }
+    if (showTimezoneSelector) document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [showTimezoneSelector])
 
   // Track page view once when event type is loaded
   useEffect(() => {
@@ -86,7 +120,7 @@ export default function BookingPage() {
     return date.toISOString().split("T")[0]
   }
 
-  const fetchSlots = async (date: Date) => {
+  const fetchSlots = useCallback(async (date: Date) => {
     setIsLoading(true)
     try {
       const dateStr = formatDate(date)
@@ -103,7 +137,39 @@ export default function BookingPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [username, eventSlug, guestTimezone])
+
+  // Fetch month availability
+  const fetchMonthAvailability = useCallback(async (monthDate: Date) => {
+    setIsLoadingMonth(true)
+    try {
+      const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}`
+      const res = await fetch(
+        `/api/slots/month?username=${username}&eventSlug=${eventSlug}&month=${monthStr}`
+      )
+      const data = await res.json()
+      setAvailableDates(new Set(data.availableDates || []))
+    } catch {
+      setAvailableDates(new Set())
+    } finally {
+      setIsLoadingMonth(false)
+    }
+  }, [username, eventSlug])
+
+  // Fetch month availability when month changes
+  useEffect(() => {
+    fetchMonthAvailability(currentMonth)
+  }, [currentMonth, fetchMonthAvailability])
+
+  // Auto-select today on initial load
+  useEffect(() => {
+    if (!hasAutoSelected.current) {
+      hasAutoSelected.current = true
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      setSelectedDate(today)
+    }
+  }, [])
 
   useEffect(() => {
     if (selectedDate) {
@@ -111,8 +177,7 @@ export default function BookingPage() {
       setSelectedTime(null)
       setShowForm(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate])
+  }, [selectedDate, fetchSlots])
 
   const handleBook = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -130,6 +195,7 @@ export default function BookingPage() {
           guestTimezone,
           date: formatDate(selectedDate),
           time: selectedTime,
+          notes: formData.notes || null,
         }),
       })
 
@@ -137,7 +203,6 @@ export default function BookingPage() {
         const data = await res.json()
         setBookingId(data.id)
         setIsBooked(true)
-        // Track booking confirmation
         trackEvent(eventType.id, "booking_confirmed")
       } else {
         const error = await res.json()
@@ -187,19 +252,18 @@ export default function BookingPage() {
     )
   }
 
+  const hasAvailability = (day: number) => {
+    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+    return availableDates.has(dateStr)
+  }
+
   if (isBooked && eventType && selectedDate && selectedTime) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        {/* Header */}
         <header className="py-4 px-4">
           <div className="max-w-md mx-auto">
             <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
-              <Image
-                src="/logo-full.svg"
-                alt="MeetWhen"
-                width={100}
-                height={24}
-              />
+              <Image src="/logo-full.svg" alt="MeetWhen" width={100} height={24} />
             </Link>
           </div>
         </header>
@@ -217,10 +281,7 @@ export default function BookingPage() {
               <p className="font-semibold text-[#1a1a2e]">{eventType.title}</p>
               <p className="text-sm text-gray-500 mt-1">
                 {selectedDate.toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
+                  weekday: "long", month: "long", day: "numeric", year: "numeric",
                 })}
               </p>
               <p className="text-sm text-gray-500">{selectedTime} ({guestTimezone})</p>
@@ -239,19 +300,9 @@ export default function BookingPage() {
           </div>
         </main>
 
-        {/* Footer */}
         <footer className="py-6 text-center">
-          <Link 
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#0066FF] transition-colors"
-          >
-            <Image
-              src="/logo.svg"
-              alt="MeetWhen"
-              width={16}
-              height={16}
-              className="opacity-50"
-            />
+          <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#0066FF] transition-colors">
+            <Image src="/logo.svg" alt="MeetWhen" width={16} height={16} className="opacity-50" />
             <span>Powered by <span className="font-semibold">MeetWhen</span></span>
           </Link>
         </footer>
@@ -261,16 +312,10 @@ export default function BookingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
       <header className="py-4 px-4 border-b border-gray-100 bg-white">
         <div className="max-w-4xl mx-auto">
           <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
-            <Image
-              src="/logo-full.svg"
-              alt="MeetWhen"
-              width={100}
-              height={24}
-            />
+            <Image src="/logo-full.svg" alt="MeetWhen" width={100} height={24} />
           </Link>
         </div>
       </header>
@@ -357,6 +402,7 @@ export default function BookingPage() {
                           const day = i + 1
                           const disabled = isDateDisabled(day)
                           const selected = isDateSelected(day)
+                          const available = hasAvailability(day)
                           return (
                             <button
                               key={day}
@@ -373,15 +419,68 @@ export default function BookingPage() {
                               }}
                               disabled={disabled}
                               className={`
-                                py-2 rounded-full text-sm transition-colors
+                                py-2 rounded-full text-sm transition-colors relative
                                 ${disabled ? "text-gray-300 cursor-not-allowed" : "hover:bg-blue-50"}
                                 ${selected ? "bg-[#0066FF] text-white hover:bg-[#0052cc]" : ""}
+                                ${!disabled && !selected && available ? "font-semibold text-[#1a1a2e]" : ""}
                               `}
                             >
                               {day}
+                              {!disabled && available && !isLoadingMonth && (
+                                <span
+                                  className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${
+                                    selected ? "bg-white" : "bg-[#0066FF]"
+                                  }`}
+                                />
+                              )}
                             </button>
                           )
                         })}
+                      </div>
+
+                      {/* Timezone selector */}
+                      <div className="mt-4 relative" ref={tzDropdownRef}>
+                        <button
+                          onClick={() => setShowTimezoneSelector(!showTimezoneSelector)}
+                          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        >
+                          <Globe className="w-3.5 h-3.5" />
+                          <span>{guestTimezone.replace(/_/g, " ")}</span>
+                        </button>
+                        {showTimezoneSelector && (
+                          <div className="absolute bottom-full left-0 mb-1 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                            <div className="p-2 border-b border-gray-100">
+                              <div className="relative">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                                <input
+                                  type="text"
+                                  value={timezoneSearch}
+                                  onChange={(e) => setTimezoneSearch(e.target.value)}
+                                  placeholder="Search timezones..."
+                                  className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded focus:ring-1 focus:ring-[#0066FF] focus:border-transparent"
+                                  autoFocus
+                                />
+                              </div>
+                            </div>
+                            <div className="max-h-48 overflow-y-auto">
+                              {filteredTimezones.map((tz) => (
+                                <button
+                                  key={tz}
+                                  onClick={() => {
+                                    setGuestTimezone(tz)
+                                    setShowTimezoneSelector(false)
+                                    setTimezoneSearch("")
+                                  }}
+                                  className={`w-full text-left px-3 py-1.5 text-sm hover:bg-blue-50 ${
+                                    tz === guestTimezone ? "bg-blue-50 text-[#0066FF] font-medium" : "text-gray-700"
+                                  }`}
+                                >
+                                  {tz.replace(/_/g, " ")}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -399,7 +498,10 @@ export default function BookingPage() {
                           {isLoading ? (
                             <div className="text-sm text-gray-500">Loading...</div>
                           ) : slots.length === 0 ? (
-                            <div className="text-sm text-gray-500">No available times</div>
+                            <div className="text-sm text-gray-500 py-4 text-center">
+                              <p>No times available on this day.</p>
+                              <p className="mt-1 text-gray-400">Try another date.</p>
+                            </div>
                           ) : (
                             slots.map((slot) => (
                               <button
@@ -407,7 +509,6 @@ export default function BookingPage() {
                                 onClick={() => {
                                   setSelectedTime(slot)
                                   setShowForm(true)
-                                  // Track slot selection (only once per session)
                                   if (eventType?.id && !hasTrackedSlot.current) {
                                     hasTrackedSlot.current = true
                                     trackEvent(eventType.id, "slot_selected")
@@ -449,7 +550,7 @@ export default function BookingPage() {
                         })}
                         {" at "}{selectedTime}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">{guestTimezone}</p>
+                      <p className="text-xs text-gray-500 mt-1">{guestTimezone.replace(/_/g, " ")}</p>
                     </div>
                     <form onSubmit={handleBook} className="space-y-4">
                       <div>
@@ -478,6 +579,18 @@ export default function BookingPage() {
                           placeholder="john@example.com"
                         />
                       </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Additional notes <span className="text-gray-400 font-normal">(optional)</span>
+                        </label>
+                        <textarea
+                          value={formData.notes}
+                          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                          rows={3}
+                          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066FF] focus:border-transparent transition-shadow resize-none"
+                          placeholder="Share anything that will help prepare for the meeting..."
+                        />
+                      </div>
                       <button
                         type="submit"
                         disabled={isLoading}
@@ -494,19 +607,9 @@ export default function BookingPage() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="py-6 text-center border-t border-gray-100">
-        <Link 
-          href="/"
-          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#0066FF] transition-colors"
-        >
-          <Image
-            src="/logo.svg"
-            alt="MeetWhen"
-            width={16}
-            height={16}
-            className="opacity-50"
-          />
+        <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#0066FF] transition-colors">
+          <Image src="/logo.svg" alt="MeetWhen" width={16} height={16} className="opacity-50" />
           <span>Powered by <span className="font-semibold">MeetWhen</span></span>
         </Link>
       </footer>

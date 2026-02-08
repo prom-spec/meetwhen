@@ -110,7 +110,7 @@ export default function ChatInterface() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 w-96 h-[480px] bg-white rounded-lg shadow-xl flex flex-col z-50 border border-gray-200">
+    <div className="fixed bottom-4 right-4 w-96 h-[480px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)] bg-white rounded-lg shadow-xl flex flex-col z-50 border border-gray-200">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-blue-600 text-white rounded-t-lg">
         <div className="flex items-center gap-2">
