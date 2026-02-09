@@ -108,7 +108,7 @@ export default function BookingCalendar({
     setSlots([])
     setSelectedSlot(null)
     
-    const dateStr = date.toISOString().split("T")[0]
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
     
     try {
       const res = await fetch(
@@ -139,7 +139,7 @@ export default function BookingCalendar({
           guestName: formData.name,
           guestEmail: formData.email,
           guestTimezone: timezone,
-          date: selectedDate?.toISOString().split("T")[0],
+          date: selectedDate ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}` : undefined,
           time: selectedSlot,
           notes: formData.notes || null,
         }),
