@@ -44,6 +44,24 @@ export default function BookingCalendar({
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
+  const [holidays, setHolidays] = useState<Record<string, string>>({}) // date -> name
+
+  // Fetch holidays when month or timezone changes
+  useEffect(() => {
+    if (!timezone) return
+    const year = currentMonth.getFullYear()
+    const month = currentMonth.getMonth()
+    fetch(`/api/holidays?timezone=${timezone}&year=${year}&month=${month}`)
+      .then((res) => res.json())
+      .then((data) => {
+        const map: Record<string, string> = {}
+        for (const h of data.holidays || []) {
+          map[h.date] = h.name
+        }
+        setHolidays(map)
+      })
+      .catch(() => setHolidays({}))
+  }, [currentMonth, timezone])
 
   // Get all available timezones
   const timezones = useMemo(() => {
@@ -326,19 +344,25 @@ export default function BookingCalendar({
         {Array.from({ length: daysInMonth }).map((_, i) => {
           const day = i + 1
           const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
+          const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
           const isSelected = selectedDate?.toDateString() === date.toDateString()
           const disabled = isDateDisabled(day)
+          const holidayName = holidays[dateStr]
+          const isHoliday = !!holidayName
           
           return (
             <button
               key={day}
-              onClick={() => !disabled && setSelectedDate(date)}
-              disabled={disabled}
-              aria-label={date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+              onClick={() => !disabled && !isHoliday && setSelectedDate(date)}
+              disabled={disabled || isHoliday}
+              title={holidayName || undefined}
+              aria-label={`${date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}${holidayName ? ` (${holidayName})` : ""}`}
               className={`
-                aspect-square flex items-center justify-center text-sm rounded-full
-                ${disabled 
-                  ? "text-gray-400 cursor-not-allowed" 
+                aspect-square flex flex-col items-center justify-center text-sm rounded-full relative
+                ${disabled || isHoliday
+                  ? isHoliday
+                    ? "text-red-400 cursor-not-allowed"
+                    : "text-gray-400 cursor-not-allowed" 
                   : isSelected
                     ? "bg-blue-600 text-white"
                     : "hover:bg-gray-100 text-gray-900"
@@ -346,6 +370,9 @@ export default function BookingCalendar({
               `}
             >
               {day}
+              {isHoliday && (
+                <span className="absolute bottom-0.5 w-1 h-1 bg-red-400 rounded-full" />
+              )}
             </button>
           )
         })}

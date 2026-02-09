@@ -3,6 +3,7 @@ import * as dateFns from "date-fns"
 import prisma from "@/lib/prisma"
 import { getFreeBusyTimes } from "@/lib/calendar"
 import { apiLogger } from "@/lib/logger"
+import { isPublicHoliday } from "@/lib/holidays"
 
 // Returns which dates in a given month have at least one available slot
 export async function GET(request: NextRequest) {
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Event type not found" }, { status: 404 })
     }
 
-    const eventType = user.eventTypes[0]
+        const eventType = user.eventTypes[0]
     const now = new Date()
     const minBookingDate = dateFns.addMinutes(now, eventType.minNotice)
     const maxBookingDate = dateFns.addDays(now, eventType.maxDaysAhead)
@@ -72,6 +73,13 @@ export async function GET(request: NextRequest) {
     let currentDate = rangeStart
     while (currentDate <= rangeEnd) {
       const dateStr = dateFns.format(currentDate, "yyyy-MM-dd")
+
+      // Skip blocked holidays
+      if (user.blockHolidays && isPublicHoliday(currentDate, user.timezone)) {
+        currentDate = dateFns.addDays(currentDate, 1)
+        continue
+      }
+
       const dayOfWeek = currentDate.getDay()
 
       const dateOverride = user.dateOverrides.find(

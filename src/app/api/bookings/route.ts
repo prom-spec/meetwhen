@@ -129,12 +129,14 @@ export async function POST(request: NextRequest) {
     let startTime: Date
     if (startTimeISO) {
       startTime = new Date(startTimeISO)
-    } else {
+    } else if (date && time) {
       const [hour, minute] = time.split(":").map(Number)
       startTime = dateFns.setMinutes(
         dateFns.setHours(dateFns.parse(date, "yyyy-MM-dd", new Date()), hour),
         minute
       )
+    } else {
+      return NextResponse.json({ error: "Either startTime or date+time must be provided" }, { status: 400 })
     }
     const endTime = dateFns.addMinutes(startTime, eventType.duration)
 

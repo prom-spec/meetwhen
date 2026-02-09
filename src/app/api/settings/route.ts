@@ -9,6 +9,8 @@ const updateSettingsSchema = z.object({
   username: z.string().min(1).max(50).regex(/^[a-z0-9_-]+$/i, "Username can only contain letters, numbers, underscores, and hyphens").optional(),
   timezone: z.string().min(1).max(100).optional(),
   calendarSyncEnabled: z.boolean().optional(),
+  blockHolidays: z.boolean().optional(),
+  holidayCountry: z.string().max(2).optional(),
 }).strict()
 
 export async function GET() {
@@ -28,6 +30,8 @@ export async function GET() {
         username: true,
         timezone: true,
         calendarSyncEnabled: true,
+        blockHolidays: true,
+        holidayCountry: true,
       },
     })
 
@@ -73,7 +77,7 @@ export async function PATCH(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
     }
-    const { name, username, timezone, calendarSyncEnabled } = parsed.data
+    const { name, username, timezone, calendarSyncEnabled, blockHolidays, holidayCountry } = parsed.data
 
     // Validate username uniqueness if provided
     if (username !== undefined) {
@@ -100,6 +104,8 @@ export async function PATCH(request: NextRequest) {
     if (username !== undefined) updateData.username = username
     if (timezone !== undefined) updateData.timezone = timezone
     if (calendarSyncEnabled !== undefined) updateData.calendarSyncEnabled = calendarSyncEnabled
+    if (blockHolidays !== undefined) updateData.blockHolidays = blockHolidays
+    if (holidayCountry !== undefined) updateData.holidayCountry = holidayCountry
 
     const user = await prisma.user.update({
       where: { id: session.user.id },
@@ -111,6 +117,8 @@ export async function PATCH(request: NextRequest) {
         username: true,
         timezone: true,
         calendarSyncEnabled: true,
+        blockHolidays: true,
+        holidayCountry: true,
       },
     })
 

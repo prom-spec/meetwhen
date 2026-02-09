@@ -229,6 +229,26 @@ export const authOptions: NextAuthOptions = {
     async createUser({ user }) {
       authLogger.info("New user created", { visitorId: user.id, email: user.email })
       
+      // Create default availability based on user's timezone
+      try {
+        const { getDefaultWorkDays } = await import("@/lib/holidays")
+        const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { timezone: true } })
+        const timezone = dbUser?.timezone || "UTC"
+        const workDays = getDefaultWorkDays(timezone)
+        
+        await prisma.availability.createMany({
+          data: workDays.map((day) => ({
+            userId: user.id,
+            dayOfWeek: day,
+            startTime: "09:00",
+            endTime: "17:00",
+          })),
+        })
+        authLogger.info("Created default availability", { visitorId: user.id, timezone, workDays })
+      } catch (error) {
+        authLogger.error("Failed to create default availability", error, { visitorId: user.id })
+      }
+
       // Generate a unique username for new users
       try {
         let baseUsername = ""

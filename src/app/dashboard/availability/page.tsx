@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Save, Plus, Trash2, Calendar, X, Loader2 } from "lucide-react"
+import { Save, Plus, Trash2, Calendar, X, Loader2, Globe, Shield } from "lucide-react"
 import { useToast } from "@/components/ToastProvider"
 
 // Note: metadata must be in a separate layout.tsx for client components
@@ -47,6 +47,16 @@ export default function AvailabilityPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
   
+  // Work-week defaults
+  const [defaultLabel, setDefaultLabel] = useState("Mon–Fri 9–5")
+  const [defaultWorkDays, setDefaultWorkDays] = useState<number[]>([1, 2, 3, 4, 5])
+
+  // Holiday blocking
+  const [blockHolidays, setBlockHolidays] = useState(false)
+  const [holidayCountry, setHolidayCountry] = useState<string | null>(null)
+  const [holidaySaving, setHolidaySaving] = useState(false)
+  const [holidayCount, setHolidayCount] = useState<number | null>(null)
+
   // Date override modal state
   const { toast } = useToast()
   const [showOverrideModal, setShowOverrideModal] = useState(false)
@@ -57,6 +67,8 @@ export default function AvailabilityPage() {
 
   useEffect(() => {
     fetchData()
+    fetchDefaults()
+    fetchHolidayState()
   }, [])
 
   const fetchData = async () => {
@@ -84,6 +96,70 @@ export default function AvailabilityPage() {
       console.error("Error fetching data:", error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchDefaults = async () => {
+    try {
+      const res = await fetch("/api/availability/defaults")
+      const data = await res.json()
+      if (data.workDays) setDefaultWorkDays(data.workDays)
+      if (data.label) setDefaultLabel(data.label)
+    } catch (error) {
+      console.error("Error fetching defaults:", error)
+    }
+  }
+
+  const fetchHolidayState = async () => {
+    try {
+      const res = await fetch("/api/settings")
+      const data = await res.json()
+      if (typeof data.blockHolidays === "boolean") setBlockHolidays(data.blockHolidays)
+      if (data.holidayCountry) setHolidayCountry(data.holidayCountry)
+      
+      // Fetch holiday count for current + next year
+      const tz = data.timezone || "UTC"
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = now.getMonth()
+      const holRes = await fetch(`/api/holidays?timezone=${encodeURIComponent(tz)}&year=${year}&month=${month}`)
+      const holData = await holRes.json()
+      if (holData.holidays) setHolidayCount(holData.holidays.length)
+      if (holData.country && !data.holidayCountry) setHolidayCountry(holData.country)
+    } catch (error) {
+      console.error("Error fetching holiday state:", error)
+    }
+  }
+
+  const handleToggleHolidays = async () => {
+    const newValue = !blockHolidays
+    setHolidaySaving(true)
+    try {
+      const res = await fetch("/api/holidays", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blockHolidays: newValue }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setBlockHolidays(newValue)
+        if (newValue && data.blockedCount) {
+          toast(`Blocked ${data.blockedCount} holidays (${data.country})`, "success")
+          // Refresh date overrides since they were just created
+          const overridesRes = await fetch("/api/date-overrides")
+          const overridesData = await overridesRes.json()
+          if (Array.isArray(overridesData)) setDateOverrides(overridesData)
+        } else {
+          toast("Holiday blocking disabled", "success")
+        }
+      } else {
+        toast("Failed to update holiday settings", "error")
+      }
+    } catch (error) {
+      console.error("Error toggling holidays:", error)
+      toast("Failed to update holiday settings", "error")
+    } finally {
+      setHolidaySaving(false)
     }
   }
 
@@ -147,14 +223,11 @@ export default function AvailabilityPage() {
   }
 
   const setDefaultSchedule = () => {
-    const defaultSchedule: AvailabilitySlot[] = []
-    for (let day = 1; day <= 5; day++) {
-      defaultSchedule.push({
-        dayOfWeek: day,
-        startTime: "09:00",
-        endTime: "17:00",
-      })
-    }
+    const defaultSchedule: AvailabilitySlot[] = defaultWorkDays.map((day) => ({
+      dayOfWeek: day,
+      startTime: "09:00",
+      endTime: "17:00",
+    }))
     setAvailability(defaultSchedule)
     setHasChanges(true)
   }
@@ -259,7 +332,7 @@ export default function AvailabilityPage() {
               onClick={setDefaultSchedule}
               className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
             >
-              Set Default (Mon-Fri 9-5)
+              Set Default ({defaultLabel})
             </button>
             <button
               onClick={handleSave}
@@ -360,6 +433,42 @@ export default function AvailabilityPage() {
               You have unsaved changes. Remember to save!
             </p>
           </div>
+        )}
+      </div>
+
+      {/* Holiday Blocking Section */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-3">
+            <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Block National Holidays</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Automatically block public holidays{holidayCountry ? ` (${holidayCountry})` : ""} so no one can book on those days.
+                {holidayCount !== null && blockHolidays && (
+                  <span className="text-blue-600"> {holidayCount} upcoming holidays blocked.</span>
+                )}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleToggleHolidays}
+            disabled={holidaySaving}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+              blockHolidays ? "bg-blue-600" : "bg-gray-200"
+            } ${holidaySaving ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                blockHolidays ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+        {blockHolidays && (
+          <p className="mt-3 text-xs text-gray-400 ml-8">
+            Holidays are added as date overrides below. You can remove individual ones if needed.
+          </p>
         )}
       </div>
 

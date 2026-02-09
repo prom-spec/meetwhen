@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma"
 import { getFreeBusyTimes } from "@/lib/calendar"
 import { getRoundRobinSlots, getCollectiveSlots } from "@/lib/team-scheduling"
 import { apiLogger } from "@/lib/logger"
+import { isPublicHoliday } from "@/lib/holidays"
 
 export async function GET(request: NextRequest) {
   try {
@@ -56,6 +57,12 @@ export async function GET(request: NextRequest) {
 
     const dayOfWeek = requestedDate.getDay()
     const dateOverride = user.dateOverrides.find((d) => dateFns.format(d.date, "yyyy-MM-dd") === dateStr)
+
+    // Block national holidays if enabled (unless user has explicit date override)
+    if (user.blockHolidays && !dateOverride && isPublicHoliday(requestedDate, user.timezone)) {
+      apiLogger.debug("Date is a public holiday, returning no slots", { date: dateStr, timezone: user.timezone })
+      return NextResponse.json({ slots: [], holiday: true })
+    }
 
     let availableWindows: { start: string; end: string }[] = []
     if (dateOverride) {

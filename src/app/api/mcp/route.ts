@@ -318,17 +318,16 @@ async function handleGetAvailableSlots(_userId: string, args: ToolArgs) {
     timezone?: string
   }
 
-  // Find the host user and their event type
+  // Find the host user and their event type + availability
   const host = await prisma.user.findUnique({
     where: { username },
     select: {
       id: true,
       username: true,
+      availability: true,
+      dateOverrides: true,
       eventTypes: {
         where: { slug: eventTypeSlug, isActive: true },
-        include: {
-          availabilityRules: true,
-        },
       },
     },
   })
@@ -369,9 +368,9 @@ async function handleGetAvailableSlots(_userId: string, args: ToolArgs) {
   while (currentDay <= end) {
     const dayOfWeek = currentDay.getDay() // 0 = Sunday, 1 = Monday, etc.
 
-    // Find availability rules for this day
-    const rulesForDay = eventType.availabilityRules.filter(
-      (rule) => rule.dayOfWeek === dayOfWeek
+    // Find availability rules for this day (from user, not event type)
+    const rulesForDay = host.availability.filter(
+      (rule: { dayOfWeek: number }) => rule.dayOfWeek === dayOfWeek
     )
 
     for (const rule of rulesForDay) {
@@ -445,13 +444,13 @@ async function handleCreateBooking(userId: string, args: ToolArgs) {
       id: true,
       username: true,
       name: true,
+      availability: true,
       eventTypes: {
         where: { slug: eventTypeSlug, isActive: true },
         select: {
           id: true,
           title: true,
           duration: true,
-          availabilityRules: true,
         },
       },
     },
@@ -475,7 +474,7 @@ async function handleCreateBooking(userId: string, args: ToolArgs) {
   const slotStartMinutes = start.getUTCHours() * 60 + start.getUTCMinutes()
   const slotEndMinutes = slotStartMinutes + eventType.duration
 
-  const rulesForDay = eventType.availabilityRules.filter(
+  const rulesForDay = host.availability.filter(
     (rule: { dayOfWeek: number }) => rule.dayOfWeek === dayOfWeek
   )
 
