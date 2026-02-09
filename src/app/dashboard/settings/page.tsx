@@ -20,6 +20,8 @@ interface UserSettings {
   username: string | null
   timezone: string
   calendarSyncEnabled: boolean
+  blockHolidays: boolean
+  holidayCountry: string | null
   googleConnected: boolean
   hasCalendarScope: boolean
 }
@@ -35,6 +37,7 @@ export default function SettingsPage() {
   const [username, setUsername] = useState("")
   const [timezone, setTimezone] = useState("")
   const [calendarSyncEnabled, setCalendarSyncEnabled] = useState(true)
+  const [blockHolidays, setBlockHolidays] = useState(false)
 
   // API Keys state
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([])
@@ -59,6 +62,7 @@ export default function SettingsPage() {
       setUsername(data.username || "")
       setTimezone(data.timezone || "UTC")
       setCalendarSyncEnabled(data.calendarSyncEnabled)
+      setBlockHolidays(data.blockHolidays ?? false)
     } catch (error) {
       console.error("Error fetching settings:", error)
       setMessage({ type: "error", text: "Failed to load settings" })
@@ -146,6 +150,7 @@ export default function SettingsPage() {
           username: username || null,
           timezone,
           calendarSyncEnabled,
+          blockHolidays,
         }),
       })
 
@@ -405,6 +410,38 @@ export default function SettingsPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Holiday Blocking Section */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">
+            🏖️ National Holidays
+          </h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900">Block national holidays</p>
+              <p className="text-sm text-gray-500">
+                Automatically prevent bookings on public holidays based on your timezone
+              </p>
+            </div>
+            <button
+              onClick={() => setBlockHolidays(!blockHolidays)}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#0066FF] focus:ring-offset-2 ${
+                blockHolidays ? "bg-[#0066FF]" : "bg-gray-200"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  blockHolidays ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+          {blockHolidays && (
+            <p className="text-sm text-green-700 mt-3 p-3 bg-green-50 rounded-lg">
+              ✓ Public holidays for your timezone ({timezone.replace(/_/g, " ")}) will be automatically blocked.
+            </p>
+          )}
         </div>
 
         {/* Webhooks Section */}
