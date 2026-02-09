@@ -30,6 +30,8 @@ export default function BookingsPage() {
   const [filter, setFilter] = useState<"upcoming" | "past" | "all">("upcoming")
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null)
+  const [confirmRescheduleId, setConfirmRescheduleId] = useState<string | null>(null)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -83,24 +85,44 @@ export default function BookingsPage() {
 
   const executeCancelBooking = async () => {
     if (!confirmCancelId) return
+    setActionLoading(confirmCancelId)
     try {
       const res = await fetch(`/api/bookings/${confirmCancelId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "CANCELLED" }),
+        method: "DELETE",
       })
       if (res.ok) fetchBookings()
     } catch (error) {
       console.error("Error cancelling booking:", error)
     }
+    setActionLoading(null)
     setConfirmCancelId(null)
+  }
+
+  const handleRequestReschedule = async (id: string) => {
+    setConfirmRescheduleId(id)
+    setOpenMenuId(null)
+  }
+
+  const executeRequestReschedule = async () => {
+    if (!confirmRescheduleId) return
+    setActionLoading(confirmRescheduleId)
+    try {
+      const res = await fetch(`/api/bookings/${confirmRescheduleId}/request-reschedule`, {
+        method: "POST",
+      })
+      if (res.ok) fetchBookings()
+    } catch (error) {
+      console.error("Error requesting reschedule:", error)
+    }
+    setActionLoading(null)
+    setConfirmRescheduleId(null)
   }
 
   const now = new Date()
   const filteredBookings = bookings.filter((booking) => {
     const bookingDate = new Date(booking.startTime)
     if (filter === "upcoming") return bookingDate >= now && booking.status !== "CANCELLED"
-    if (filter === "past") return bookingDate < now || booking.status === "CANCELLED"
+    if (filter === "past") return bookingDate < now || booking.status === "CANCELLED" || booking.status === "COMPLETED"
     return true
   })
 
@@ -117,10 +139,18 @@ export default function BookingsPage() {
       <ConfirmDialog
         open={!!confirmCancelId}
         title="Cancel Booking"
-        message="Are you sure you want to cancel this booking?"
+        message="Are you sure you want to cancel this booking? The guest will be notified by email."
         confirmLabel="Cancel Booking"
         onConfirm={executeCancelBooking}
         onCancel={() => setConfirmCancelId(null)}
+      />
+      <ConfirmDialog
+        open={!!confirmRescheduleId}
+        title="Request Reschedule"
+        message="This will send an email to the guest asking them to pick a new time. Continue?"
+        confirmLabel="Send Request"
+        onConfirm={executeRequestReschedule}
+        onCancel={() => setConfirmRescheduleId(null)}
       />
       <div className="sm:flex sm:items-center sm:justify-between mb-6">
         <div>
@@ -192,6 +222,11 @@ export default function BookingsPage() {
                         Cancelled
                       </span>
                     )}
+                    {booking.status === "PENDING_RESCHEDULE" && (
+                      <span className="px-2 py-0.5 text-xs bg-amber-100 text-amber-700 rounded">
+                        Reschedule Requested
+                      </span>
+                    )}
                   </div>
                   
                   <div className="mt-2 space-y-1">
@@ -240,6 +275,13 @@ export default function BookingsPage() {
                             <RefreshCw className="w-4 h-4" />
                             Reschedule
                           </Link>
+                          <button
+                            onClick={() => handleRequestReschedule(booking.id)}
+                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-amber-600 hover:bg-amber-50"
+                          >
+                            <Mail className="w-4 h-4" />
+                            Request Reschedule
+                          </button>
                           <button
                             onClick={() => handleCancel(booking.id)}
                             className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"

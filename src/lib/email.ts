@@ -5,6 +5,7 @@ import BookingNotification from "@/emails/BookingNotification"
 import BookingReminder from "@/emails/BookingReminder"
 import BookingCancellation from "@/emails/BookingCancellation"
 import BookingReschedule from "@/emails/BookingReschedule"
+import RescheduleRequest from "@/emails/RescheduleRequest"
 import { emailLogger } from "./logger"
 import { generateBookingToken } from "./booking-tokens"
 
@@ -405,4 +406,73 @@ export async function sendBookingReschedule(data: RescheduleEmailData) {
 
   emailLogger.info("Reschedule emails sent", { bookingId: booking.id })
   return { success: true, guestResult, hostResult }
+}
+
+interface RescheduleRequestEmailData {
+  booking: {
+    id: string
+    guestName: string
+    guestEmail: string
+    guestTimezone: string
+    startTime: Date
+    endTime: Date
+  }
+  eventType: {
+    title: string
+  }
+  host: {
+    name: string | null
+    email: string
+    timezone?: string
+  }
+  rescheduleUrl: string
+}
+
+export async function sendRescheduleRequestEmail(data: RescheduleRequestEmailData) {
+  const { booking, eventType, host, rescheduleUrl } = data
+
+  emailLogger.info("Sending reschedule request email to guest", {
+    bookingId: booking.id,
+    guestEmail: booking.guestEmail,
+  })
+
+  const client = await getResend()
+  if (!client) {
+    emailLogger.warn("Email client not available, skipping reschedule request email", { bookingId: booking.id })
+    return { success: false, error: "Email not configured" }
+  }
+
+  const { startTime, endTime } = formatTimeRange(
+    booking.startTime,
+    booking.endTime,
+    booking.guestTimezone
+  )
+
+  try {
+    const result = await client.emails.send({
+      from: FROM_EMAIL,
+      to: booking.guestEmail,
+      subject: `Reschedule Requested: ${eventType.title} with ${host.name || "Host"}`,
+      react: RescheduleRequest({
+        guestName: booking.guestName,
+        hostName: host.name || "Host",
+        eventTitle: eventType.title,
+        startTime,
+        endTime,
+        timezone: booking.guestTimezone,
+        rescheduleUrl,
+      }),
+    })
+
+    emailLogger.info("Reschedule request email sent", {
+      bookingId: booking.id,
+      messageId: result.data?.id,
+    })
+    return { success: true, id: result.data?.id }
+  } catch (error) {
+    emailLogger.error("Failed to send reschedule request email", error, {
+      bookingId: booking.id,
+    })
+    return { success: false, error }
+  }
 }
