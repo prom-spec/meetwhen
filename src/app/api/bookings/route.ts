@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import * as dateFns from "date-fns"
 import prisma from "@/lib/prisma"
 import { createCalendarEvent, hasCalendarConflict, getGoogleAccessToken, BookingData } from "@/lib/calendar"
+import { sendBookingEmails } from "@/lib/email"
 import { triggerWebhook } from "@/lib/webhooks"
 import { getNextRoundRobinMember, updateLastAssignedMember, createCollectiveBooking } from "@/lib/team-scheduling"
 import { bookingLogger, apiLogger } from "@/lib/logger"
@@ -406,7 +407,8 @@ export async function POST(request: NextRequest) {
     // Create Google Calendar event if enabled
     // For Google Meet, this will generate the Meet link
     if (eventType.user.calendarSyncEnabled) {
-      getGoogleAccessToken(eventType.userId).then(async (accessToken) => {
+      try {
+        const accessToken = await getGoogleAccessToken(eventType.userId)
         if (accessToken) {
           const bookingData: BookingData = {
             id: booking.id,
@@ -442,13 +444,40 @@ export async function POST(request: NextRequest) {
               where: { id: booking.id },
               data: updateData,
             })
+            booking.meetingUrl = result.meetingUrl || booking.meetingUrl
             bookingLogger.debug("Calendar event created", { bookingId: booking.id, googleEventId: result.googleEventId })
           }
+        } else {
+          bookingLogger.warn("No Google access token available for calendar event creation", { bookingId: booking.id, hostId: eventType.userId })
         }
-      }).catch((err) => {
+      } catch (err) {
         bookingLogger.error("Calendar event creation failed", err, { bookingId: booking.id })
-      })
+      }
     }
+
+    // Send confirmation email to guest and notification to host
+    sendBookingEmails({
+      booking: {
+        id: booking.id,
+        guestName: booking.guestName,
+        guestEmail: booking.guestEmail,
+        guestTimezone: booking.guestTimezone,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        meetingUrl: booking.meetingUrl,
+      },
+      eventType: {
+        title: booking.eventType.title,
+        location: booking.eventType.location,
+      },
+      host: {
+        name: booking.host.name,
+        email: booking.host.email,
+        timezone: booking.host.timezone,
+      },
+    }).catch((err) => {
+      bookingLogger.error("Failed to send booking emails", err, { bookingId: booking.id })
+    })
 
     // Trigger webhook for booking.created event
     triggerWebhook(eventType.userId, "booking.created", {

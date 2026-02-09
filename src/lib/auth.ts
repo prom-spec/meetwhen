@@ -117,8 +117,13 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      // Note: Calendar scope removed to allow login from Workspace accounts
-      // Calendar integration will be added as optional post-login
+      authorization: {
+        params: {
+          scope: "openid email profile https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.freebusy",
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
     }),
     // Email login temporarily disabled - needs verified domain in Resend
     // EmailProvider({
