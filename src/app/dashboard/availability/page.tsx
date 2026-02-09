@@ -38,6 +38,7 @@ interface DateOverride {
   isAvailable: boolean
   startTime: string | null
   endTime: string | null
+  reason: string | null
 }
 
 export default function AvailabilityPage() {
@@ -507,6 +508,9 @@ export default function AvailabilityPage() {
                     <div>
                       <p className="font-medium text-gray-900">
                         {formatDate(override.date)}
+                        {override.reason && (
+                          <span className="ml-2 text-sm font-normal text-gray-500">— {override.reason}</span>
+                        )}
                       </p>
                       <p className="text-sm text-gray-500">
                         {override.isAvailable 

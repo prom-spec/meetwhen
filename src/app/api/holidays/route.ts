@@ -72,11 +72,13 @@ export async function POST(request: NextRequest) {
             isAvailable: false,
             startTime: null,
             endTime: null,
+            reason: holiday.name,
           },
           create: {
             userId,
             date: new Date(holiday.date),
             isAvailable: false,
+            reason: holiday.name,
           },
         })
         blockedCount++
