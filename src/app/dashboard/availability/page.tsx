@@ -101,7 +101,8 @@ export default function AvailabilityPage() {
 
   const fetchDefaults = async () => {
     try {
-      const res = await fetch("/api/availability/defaults")
+      const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      const res = await fetch(`/api/availability/defaults?browserTimezone=${encodeURIComponent(browserTz)}`)
       const data = await res.json()
       if (data.workDays) setDefaultWorkDays(data.workDays)
       if (data.label) setDefaultLabel(data.label)
