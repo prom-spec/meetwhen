@@ -12,10 +12,8 @@ interface BookingCalendarProps {
   maxDaysAhead: number
 }
 
-interface TimeSlot {
-  start: string
-  end: string
-}
+// Slots from API are "HH:mm" strings; we convert to ISO when needed
+type TimeSlot = string // "HH:mm"
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -32,8 +30,8 @@ export default function BookingCalendar({
   const router = useRouter()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [slots, setSlots] = useState<TimeSlot[]>([])
-  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null)
+  const [slots, setSlots] = useState<string[]>([])
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
   const [isLoadingSlots, setIsLoadingSlots] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [timezone, setTimezone] = useState("")
@@ -141,7 +139,8 @@ export default function BookingCalendar({
           guestName: formData.name,
           guestEmail: formData.email,
           guestTimezone: timezone,
-          startTime: selectedSlot.start,
+          date: selectedDate?.toISOString().split("T")[0],
+          time: selectedSlot,
           notes: formData.notes || null,
         }),
       })
@@ -194,10 +193,7 @@ export default function BookingCalendar({
     setSelectedDate(null)
   }
 
-  const formatTime = (isoString: string) => {
-    const date = new Date(isoString)
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-  }
+  // formatTime no longer needed — slots are already "HH:mm" strings
 
   if (showForm && selectedSlot) {
     return (
@@ -220,7 +216,7 @@ export default function BookingCalendar({
               day: "numeric" 
             })}
             {" at "}
-            {formatTime(selectedSlot.start)}
+            {selectedSlot}
           </p>
         </div>
 
@@ -400,14 +396,14 @@ export default function BookingCalendar({
             <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
               {slots.map((slot) => (
                 <button
-                  key={slot.start}
+                  key={slot}
                   onClick={() => {
                     setSelectedSlot(slot)
                     setShowForm(true)
                   }}
                   className="py-2 px-3 text-sm border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 focus:ring-2 focus:ring-[#0066FF] focus:ring-offset-2"
                 >
-                  {formatTime(slot.start)}
+                  {slot}
                 </button>
               ))}
             </div>
