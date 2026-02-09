@@ -115,6 +115,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       slots,
       eventType: { id: eventType.id, title: eventType.title, duration: eventType.duration, description: eventType.description, location: eventType.location },
+      hostName: user.name || username,
       hostTimezone: user.timezone,
     })
   } catch (error) {

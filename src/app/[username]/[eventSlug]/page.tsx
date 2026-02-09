@@ -19,6 +19,7 @@ interface EventType {
 interface SlotResponse {
   slots: string[]
   eventType: EventType
+  hostName?: string
   hostTimezone: string
 }
 
@@ -61,6 +62,7 @@ export default function BookingPage() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [slots, setSlots] = useState<string[]>([])
   const [eventType, setEventType] = useState<EventType | null>(null)
+  const [hostName, setHostName] = useState<string>("")
   const [, setHostTimezone] = useState<string>("UTC")
   const [isLoading, setIsLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -136,6 +138,7 @@ export default function BookingPage() {
       const data: SlotResponse = await res.json()
       setSlots(data.slots || [])
       setEventType(data.eventType)
+      if (data.hostName) setHostName(data.hostName)
       setHostTimezone(data.hostTimezone)
     } catch (error) {
       console.error("Error fetching slots:", error)
@@ -335,6 +338,9 @@ export default function BookingPage() {
                 </button>
                 {eventType ? (
                   <>
+                    {hostName && (
+                      <p className="text-sm text-gray-500 mb-1">{hostName}</p>
+                    )}
                     <h1 className="text-xl font-bold text-[#1a1a2e]">{eventType.title}</h1>
                     <div className="flex items-center gap-2 mt-3 text-gray-500">
                       <Clock className="w-4 h-4 text-[#0066FF]" />
