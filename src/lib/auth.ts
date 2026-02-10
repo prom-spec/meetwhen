@@ -4,6 +4,7 @@ import GoogleProvider from "next-auth/providers/google"
 import EmailProvider from "next-auth/providers/email"
 import { prisma } from "./prisma"
 import { authLogger } from "./logger"
+import { cookies } from "next/headers"
 
 // Startup check: ensure NEXTAUTH_SECRET is set in production
 if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_SECRET) {
@@ -147,12 +148,82 @@ export const authOptions: NextAuthOptions = {
       }
       return session
     },
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       authLogger.info("Sign-in attempt", { 
         provider: account?.provider,
         email: user.email,
         isNewUser: !user.id,
       })
+
+      // Handle account linking mode
+      if (account?.provider === "google") {
+        const googleEmail = (profile as { email?: string })?.email || user.email
+        
+        try {
+          const cookieStore = await cookies()
+          const linkMode = cookieStore.get("link_account_user_id")?.value
+
+          if (linkMode) {
+            // Clear the cookie immediately
+            cookieStore.delete("link_account_user_id")
+
+            // Check if this Google account is already linked to ANY user
+            const existingAccount = await prisma.account.findUnique({
+              where: {
+                provider_providerAccountId: {
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                },
+              },
+              select: { userId: true },
+            })
+
+            if (existingAccount) {
+              if (existingAccount.userId === linkMode) {
+                // Already linked to this user — just allow sign-in
+                return true
+              }
+              // Linked to a different user — reject
+              authLogger.warn("Account link rejected: Google account already belongs to another user", {
+                googleEmail,
+                existingUserId: existingAccount.userId,
+                requestingUserId: linkMode,
+              })
+              return "/dashboard/settings?error=account_already_linked"
+            }
+
+            // Link the new Google account to the existing user
+            await prisma.account.create({
+              data: {
+                userId: linkMode,
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                refresh_token: account.refresh_token,
+                access_token: account.access_token,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token as string | undefined,
+                session_state: account.session_state,
+                email: googleEmail,
+              },
+            })
+
+            authLogger.info("Account linked successfully", {
+              userId: linkMode,
+              googleEmail,
+              provider: account.provider,
+            })
+
+            // Redirect to settings instead of creating a new user
+            return "/dashboard/settings?linked=true"
+          }
+        } catch (error) {
+          authLogger.error("Error in link mode handling", error)
+          // Fall through to normal sign-in
+        }
+      }
       
       // Generate username for existing users who don't have one
       if (user.id) {
@@ -308,6 +379,28 @@ export const authOptions: NextAuthOptions = {
     },
     async linkAccount({ user, account }) {
       authLogger.info("Account linked", { visitorId: user.id, provider: account.provider })
+      
+      // Store the email associated with this OAuth account
+      if (account.provider === "google") {
+        try {
+          // Get user's email to store on the account record
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { email: true },
+          })
+          if (dbUser?.email) {
+            await prisma.account.updateMany({
+              where: {
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+              },
+              data: { email: dbUser.email },
+            })
+          }
+        } catch (error) {
+          authLogger.error("Failed to store email on account", error)
+        }
+      }
     },
   },
   debug: process.env.NODE_ENV === "development",

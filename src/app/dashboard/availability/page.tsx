@@ -352,9 +352,9 @@ export default function AvailabilityPage() {
             const daySlots = availability.filter(a => a.dayOfWeek === day.value)
             
             return (
-              <div key={day.value} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center min-w-[120px]">
+              <div key={day.value} className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="flex items-center">
                     <input
                       type="checkbox"
                       checked={daySlots.length > 0}
@@ -371,19 +371,22 @@ export default function AvailabilityPage() {
                     <span className="ml-3 text-sm font-medium text-gray-900">
                       {day.label}
                     </span>
+                    {daySlots.length === 0 && (
+                      <span className="ml-3 text-sm text-gray-400 sm:hidden">Unavailable</span>
+                    )}
                   </div>
                   
-                  <div className="flex-1 ml-4">
+                  <div className="flex-1 sm:ml-4">
                     {daySlots.length === 0 ? (
-                      <span className="text-sm text-gray-400">Unavailable</span>
+                      <span className="text-sm text-gray-400 hidden sm:block">Unavailable</span>
                     ) : (
                       <div className="space-y-2">
                         {daySlots.map((slot, index) => (
-                          <div key={index} className="flex items-center gap-2">
+                          <div key={index} className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                             <select
                               value={slot.startTime}
                               onChange={(e) => updateSlot(day.value, index, "startTime", e.target.value)}
-                              className="block w-32 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm border p-2"
+                              className="block w-[calc(50%-1.25rem)] sm:w-32 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm border p-2"
                             >
                               {TIME_OPTIONS.map((time) => (
                                 <option key={time.value} value={time.value}>
@@ -395,7 +398,7 @@ export default function AvailabilityPage() {
                             <select
                               value={slot.endTime}
                               onChange={(e) => updateSlot(day.value, index, "endTime", e.target.value)}
-                              className="block w-32 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm border p-2"
+                              className="block w-[calc(50%-1.25rem)] sm:w-32 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm border p-2"
                             >
                               {TIME_OPTIONS.map((time) => (
                                 <option key={time.value} value={time.value}>
@@ -403,21 +406,23 @@ export default function AvailabilityPage() {
                                 </option>
                               ))}
                             </select>
-                            <button
-                              onClick={() => removeSlot(day.value, index)}
-                              className="p-1 text-gray-400 hover:text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                            {index === daySlots.length - 1 && (
+                            <div className="flex items-center gap-1">
                               <button
-                                onClick={() => addSlot(day.value)}
-                                className="p-1 text-gray-400 hover:text-blue-600"
-                                title="Add another time slot"
+                                onClick={() => removeSlot(day.value, index)}
+                                className="p-1 text-gray-400 hover:text-red-600"
                               >
-                                <Plus className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4" />
                               </button>
-                            )}
+                              {index === daySlots.length - 1 && (
+                                <button
+                                  onClick={() => addSlot(day.value)}
+                                  className="p-1 text-gray-400 hover:text-blue-600"
+                                  title="Add another time slot"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>

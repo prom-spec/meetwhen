@@ -19,10 +19,12 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
+  email             String? // Email associated with this OAuth account
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
