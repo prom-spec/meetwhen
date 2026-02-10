@@ -40,6 +40,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Strip host email from guest-facing response
+    if (!isHost) {
+      const { host: { email: _hostEmail, ...hostRest }, ...bookingRest } = booking
+      return NextResponse.json({ ...bookingRest, host: hostRest })
+    }
+
     return NextResponse.json(booking)
   } catch (error) {
     console.error("Error fetching booking:", error)

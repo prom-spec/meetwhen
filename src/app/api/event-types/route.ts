@@ -55,15 +55,15 @@ export async function POST(request: NextRequest) {
     apiLogger.info("Creating event type", { visitorId: session.user.id })
 
     const body = await request.json()
+    const parsed = createEventTypeSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
+    }
     const { 
       title, slug, description, duration, color, location, locationType, locationValue, 
       bufferBefore, bufferAfter, minNotice, maxDaysAhead,
       teamId, schedulingType
-    } = body
-
-    if (!title || !slug || !duration) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
-    }
+    } = parsed.data
 
     // If teamId is provided, verify user is a team member with appropriate permissions
     if (teamId) {
