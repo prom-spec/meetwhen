@@ -3,6 +3,8 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import Link from "next/link"
 import { Calendar, Clock, Users, CalendarX } from "lucide-react"
+import BookingTrendsChart from "@/components/BookingTrendsChart"
+import BusiestTimesHeatmap from "@/components/BusiestTimesHeatmap"
 
 export const metadata = {
   title: "Dashboard",
@@ -113,6 +115,14 @@ export default async function DashboardPage() {
             ))}
           </ul>
         )}
+      </div>
+
+      {/* Charts */}
+      <div className="mt-8">
+        <BookingTrendsChart />
+      </div>
+      <div className="mt-8">
+        <BusiestTimesHeatmap />
       </div>
     </div>
   )

@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react"
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   XAxis,
@@ -11,7 +9,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts"
 import {
   TrendingUp,
@@ -23,6 +20,8 @@ import {
   XCircle,
   ArrowUpRight,
 } from "lucide-react"
+import BookingTrendsChart from "@/components/BookingTrendsChart"
+import BusiestTimesHeatmap from "@/components/BusiestTimesHeatmap"
 
 interface Summary {
   bookings: {
@@ -43,15 +42,6 @@ interface Summary {
   }
 }
 
-interface BookingTrend {
-  label: string
-  date: string
-  total: number
-  confirmed: number
-  cancelled: number
-  completed: number
-}
-
 interface EventStats {
   id: string
   title: string
@@ -63,61 +53,28 @@ interface EventStats {
   conversionRate: number
 }
 
-interface HeatmapHour {
-  hour: number
-  count: number
-  intensity: number
-}
-
-interface HeatmapDay {
-  day: string
-  dayIndex: number
-  hours: HeatmapHour[]
-}
-
-interface HeatmapData {
-  heatmap: HeatmapDay[]
-  summary: {
-    busiestDay: string
-    busiestDayCount: number
-    busiestHour: number
-    busiestHourFormatted: string
-    busiestHourCount: number
-  }
-}
-
 export default function AnalyticsPage() {
   const [summary, setSummary] = useState<Summary | null>(null)
-  const [trends, setTrends] = useState<BookingTrend[]>([])
   const [events, setEvents] = useState<EventStats[]>([])
-  const [heatmap, setHeatmap] = useState<HeatmapData | null>(null)
-  const [period, setPeriod] = useState<"week" | "month" | "year">("week")
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     fetchData()
-  }, [period])
+  }, [])
 
   const fetchData = async () => {
     setIsLoading(true)
     try {
-      const [summaryRes, trendsRes, eventsRes, heatmapRes] = await Promise.all([
+      const [summaryRes, eventsRes] = await Promise.all([
         fetch("/api/analytics/summary"),
-        fetch(`/api/analytics/bookings?period=${period}`),
         fetch("/api/analytics/events"),
-        fetch("/api/analytics/heatmap"),
       ])
 
       if (summaryRes.ok) setSummary(await summaryRes.json())
-      if (trendsRes.ok) {
-        const trendsData = await trendsRes.json()
-        setTrends(trendsData.data || [])
-      }
       if (eventsRes.ok) {
         const eventsData = await eventsRes.json()
         setEvents(eventsData.events || [])
       }
-      if (heatmapRes.ok) setHeatmap(await heatmapRes.json())
     } catch (error) {
       console.error("Error fetching analytics:", error)
     } finally {
@@ -245,56 +202,8 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Booking Trends Chart */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-[#1a1a2e]">Booking Trends</h2>
-          <div className="flex gap-2">
-            {(["week", "month", "year"] as const).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                  period === p
-                    ? "bg-[#0066FF] text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                {p.charAt(0).toUpperCase() + p.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="h-72">
-          {trends.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trends}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="#9ca3af" />
-                <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "1px solid #e5e7eb",
-                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                  }}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="total"
-                  stroke="#0066FF"
-                  strokeWidth={2}
-                  dot={{ fill: "#0066FF", r: 4 }}
-                  name="Total Bookings"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-full flex items-center justify-center text-gray-400">
-              No booking data yet
-            </div>
-          )}
-        </div>
+      <div className="mb-8">
+        <BookingTrendsChart />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -333,63 +242,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Busiest Times Heatmap */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-[#1a1a2e] mb-4">Busiest Times</h2>
-          {heatmap?.summary && (
-            <div className="mb-4 text-sm text-gray-600">
-              <p>
-                📅 Busiest day: <span className="font-medium text-[#1a1a2e]">{heatmap.summary.busiestDay}</span>
-                {" "}({heatmap.summary.busiestDayCount} bookings)
-              </p>
-              <p>
-                🕐 Peak hour: <span className="font-medium text-[#1a1a2e]">{heatmap.summary.busiestHourFormatted}</span>
-                {" "}({heatmap.summary.busiestHourCount} bookings)
-              </p>
-            </div>
-          )}
-          {heatmap?.heatmap ? (
-            <div className="overflow-x-auto">
-              <div className="min-w-[400px]">
-                {/* Hour labels */}
-                <div className="flex mb-1 ml-10">
-                  {[6, 9, 12, 15, 18, 21].map((hour) => (
-                    <div
-                      key={hour}
-                      className="text-xs text-gray-400"
-                      style={{ width: `${100 / 6}%` }}
-                    >
-                      {hour}:00
-                    </div>
-                  ))}
-                </div>
-                {/* Heatmap rows */}
-                {heatmap.heatmap.map((day) => (
-                  <div key={day.day} className="flex items-center mb-1">
-                    <div className="w-10 text-xs text-gray-500">{day.day}</div>
-                    <div className="flex flex-1 gap-0.5">
-                      {day.hours.filter((_, i) => i >= 6 && i < 22).map((hour) => (
-                        <div
-                          key={hour.hour}
-                          className="flex-1 h-4 rounded-sm transition-colors"
-                          style={{
-                            backgroundColor: hour.count === 0
-                              ? "#f3f4f6"
-                              : `rgba(0, 102, 255, ${0.2 + hour.intensity * 0.8})`,
-                          }}
-                          title={`${day.day} ${hour.hour}:00 - ${hour.count} bookings`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="h-48 flex items-center justify-center text-gray-400">
-              No booking data yet
-            </div>
-          )}
-        </div>
+        <BusiestTimesHeatmap />
       </div>
 
       {/* Event Types Table */}
