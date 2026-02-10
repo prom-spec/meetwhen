@@ -301,37 +301,57 @@ export default function EventTypesPage() {
                 </label>
               </div>
               
-              <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+              <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+                {/* Primary CTA: Share Link */}
                 <button
                   onClick={() => copyLink(eventType)}
-                  className={`p-2 ${copiedId === eventType.id ? "text-green-500" : "text-gray-400 hover:text-gray-600"}`}
-                  title="Copy link"
+                  className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    copiedId === eventType.id
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "bg-blue-600 text-white hover:bg-blue-700"
+                  }`}
                 >
-                  {copiedId === eventType.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  {copiedId === eventType.id ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Link Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      Share Booking Link
+                    </>
+                  )}
                 </button>
-                <a
-                  href={`/${username}/${eventType.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 text-gray-400 hover:text-gray-600"
-                  title="Preview"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-                <button
-                  onClick={() => openEditModal(eventType)}
-                  className="p-2 text-gray-400 hover:text-blue-600"
-                  title="Edit"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(eventType.id)}
-                  className="p-2 text-gray-400 hover:text-red-600"
-                  title="Delete"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {/* Secondary actions */}
+                <div className="flex items-center justify-center gap-1">
+                  <a
+                    href={`/${username}/${eventType.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                    title="Preview"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Preview
+                  </a>
+                  <button
+                    onClick={() => openEditModal(eventType)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                    title="Edit"
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(eventType.id)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))}
