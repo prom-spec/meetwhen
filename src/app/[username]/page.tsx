@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!user) return { title: "User Not Found" }
   
   return {
-    title: `${user.name || user.username} | letsmeet.link`,
+    title: `${user.name || user.username}`,
     description: `Schedule a meeting with ${user.name || user.username} on letsmeet.link`,
   }
 }

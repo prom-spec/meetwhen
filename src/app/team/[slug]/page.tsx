@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!team) return { title: "Team Not Found" }
   
   return {
-    title: `${team.name} | letsmeet.link`,
+    title: `${team.name}`,
     description: `Schedule a meeting with ${team.name} on letsmeet.link`,
   }
 }
