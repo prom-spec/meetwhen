@@ -141,7 +141,7 @@ export default function BookingCalendar({
           guestTimezone: timezone,
           date: selectedDate ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}` : undefined,
           time: selectedSlot,
-          notes: formData.notes || null,
+          notes: formData.notes || "",
         }),
       })
 

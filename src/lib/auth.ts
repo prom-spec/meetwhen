@@ -1,4 +1,5 @@
 import { PrismaAdapter } from "@auth/prisma-adapter"
+import type { AdapterAccount } from "next-auth/adapters"
 import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import EmailProvider from "next-auth/providers/email"
@@ -118,7 +119,7 @@ export const authOptions: NextAuthOptions = {
   adapter: {
     ...prismaAdapter,
     // Override linkAccount to use upsert so re-auth updates tokens instead of failing
-    linkAccount: (data) =>
+    linkAccount: (data: AdapterAccount) =>
       prisma.account.upsert({
         where: {
           provider_providerAccountId: {

@@ -15,7 +15,7 @@ const createBookingSchema = z.object({
   guestName: z.string().min(1).max(200).trim(),
   guestEmail: z.string().email().max(320),
   guestTimezone: z.string().max(100).optional(),
-  notes: z.string().max(2000).optional(),
+  notes: z.string().max(2000).optional().nullable().transform(v => v ?? undefined),
   date: z.string().optional(),
   time: z.string().optional(),
   startTime: z.string().optional(),

@@ -204,7 +204,7 @@ export default function BookingPage() {
           guestTimezone,
           date: formatDate(selectedDate),
           time: selectedTime,
-          notes: formData.notes || null,
+          notes: formData.notes || "",
         }),
       })
 
