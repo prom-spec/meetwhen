@@ -34,6 +34,74 @@ interface UserSettings {
   hasCalendarScope: boolean
 }
 
+function McpConfigBlock({ title, description, configPath, apiKey, config }: {
+  title: string
+  description: string
+  configPath: string
+  apiKey: string | null
+  config: (key: string) => string
+}) {
+  const [copied, setCopied] = useState(false)
+  const [open, setOpen] = useState(false)
+  const keyDisplay = apiKey || "YOUR_API_KEY"
+  const configText = config(keyDisplay)
+  const needsKey = !apiKey
+
+  const handleCopy = () => {
+    if (needsKey) return
+    navigator.clipboard.writeText(configText)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+      >
+        <div>
+          <span className="text-sm font-medium text-gray-900">{title}</span>
+          <span className="text-xs text-gray-500 ml-2">{description}</span>
+        </div>
+        <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${open ? "rotate-90" : ""}`} />
+      </button>
+      {open && (
+        <div className="p-4 border-t border-gray-200">
+          {needsKey && (
+            <div className="flex items-center gap-2 mb-3 p-2.5 bg-amber-50 border border-amber-200 rounded-md">
+              <Key className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <span className="text-xs text-amber-700">Create an API key above first — it will auto-fill here.</span>
+            </div>
+          )}
+          <div className="relative">
+            <pre className="p-3 pr-20 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap">
+              {configText}
+            </pre>
+            <button
+              onClick={handleCopy}
+              disabled={needsKey}
+              className={`absolute top-2 right-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors ${
+                needsKey
+                  ? "bg-gray-700 text-gray-500 cursor-not-allowed"
+                  : copied
+                    ? "bg-green-700 text-green-200"
+                    : "bg-gray-700 hover:bg-gray-600 text-gray-300"
+              }`}
+            >
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? "Copied!" : needsKey ? "Need key" : "Copy"}
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-gray-400">
+            Config: <code className="bg-gray-100 px-1 rounded text-gray-500">{configPath}</code>
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings | null>(null)
   const [loading, setLoading] = useState(true)
@@ -727,31 +795,119 @@ export default function SettingsPage() {
             </p>
           )}
 
-          {/* Setup Instructions */}
-          <details className="mt-4">
-            <summary className="cursor-pointer text-sm font-medium text-[#0066FF] hover:underline">
-              Setup instructions for Claude Desktop
-            </summary>
-            <div className="mt-2 p-4 bg-gray-50 rounded-lg text-sm">
-              <p className="mb-2">Add this to your Claude Desktop config file:</p>
-              <pre className="p-2 bg-gray-900 text-gray-100 rounded text-xs overflow-x-auto">
-{`{
+          {/* Setup Instructions for Multiple Clients */}
+          <div className="mt-6 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-900">Quick Setup — Copy &amp; Paste</h3>
+            <p className="text-xs text-gray-500 mb-3">
+              {showNewKey || apiKeys.length > 0
+                ? "Your API key is pre-filled in the configs below. Just copy and paste."
+                : "Create an API key above first, then your configs will be ready to copy."}
+            </p>
+
+            {/* Claude Desktop */}
+            <McpConfigBlock
+              title="Claude Desktop"
+              description="Add to Settings → Developer → MCP Servers"
+              configPath="~/Library/Application Support/Claude/claude_desktop_config.json (macOS) or %APPDATA%/Claude/claude_desktop_config.json (Windows)"
+              apiKey={showNewKey || (apiKeys.length > 0 ? `${apiKeys[0].keyPrefix}••••••••` : null)}
+              config={(key) => `{
   "mcpServers": {
     "letsmeet": {
-      "command": "npx",
-      "args": ["-y", "letsmeet-mcp"],
-      "env": {
-        "LETSMEET_API_KEY": "YOUR_API_KEY_HERE"
+      "type": "http",
+      "url": "https://www.letsmeet.link/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${key}"
       }
     }
   }
 }`}
-              </pre>
-              <p className="mt-2 text-gray-500">
-                Config location: <code className="bg-gray-200 px-1 rounded">~/.config/claude/config.json</code>
-              </p>
-            </div>
-          </details>
+            />
+
+            {/* ChatGPT */}
+            <McpConfigBlock
+              title="ChatGPT (Actions / GPTs)"
+              description="Add as an Action in your custom GPT. Use OpenAPI spec."
+              configPath="GPT Editor → Actions → Add Action"
+              apiKey={showNewKey || (apiKeys.length > 0 ? `${apiKeys[0].keyPrefix}••••••••` : null)}
+              config={(key) => `# In your GPT's Action configuration:
+Server URL: https://www.letsmeet.link/api/mcp
+Authentication: Bearer Token
+Token: ${key}
+
+# Or use the OpenAPI schema URL:
+https://www.letsmeet.link/api/mcp
+Method: POST (JSON-RPC 2.0)`}
+            />
+
+            {/* OpenClaw */}
+            <McpConfigBlock
+              title="OpenClaw"
+              description="Add to your mcporter config or use the CLI"
+              configPath="mcporter add letsmeet"
+              apiKey={showNewKey || (apiKeys.length > 0 ? `${apiKeys[0].keyPrefix}••••••••` : null)}
+              config={(key) => `# Via mcporter CLI:
+mcporter add letsmeet --type http \\
+  --url https://www.letsmeet.link/api/mcp \\
+  --header "Authorization: Bearer ${key}"
+
+# Or in config.json:
+{
+  "mcpServers": {
+    "letsmeet": {
+      "type": "http",
+      "url": "https://www.letsmeet.link/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${key}"
+      }
+    }
+  }
+}`}
+            />
+
+            {/* Cursor */}
+            <McpConfigBlock
+              title="Cursor"
+              description="Add to Cursor Settings → MCP"
+              configPath="~/.cursor/mcp.json"
+              apiKey={showNewKey || (apiKeys.length > 0 ? `${apiKeys[0].keyPrefix}••••••••` : null)}
+              config={(key) => `{
+  "mcpServers": {
+    "letsmeet": {
+      "type": "http",
+      "url": "https://www.letsmeet.link/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${key}"
+      }
+    }
+  }
+}`}
+            />
+
+            {/* Windsurf / Cline / Generic */}
+            <McpConfigBlock
+              title="Windsurf / Cline / Any MCP Client"
+              description="Standard MCP HTTP configuration"
+              configPath="Check your client's MCP settings location"
+              apiKey={showNewKey || (apiKeys.length > 0 ? `${apiKeys[0].keyPrefix}••••••••` : null)}
+              config={(key) => `{
+  "mcpServers": {
+    "letsmeet": {
+      "type": "http",
+      "url": "https://www.letsmeet.link/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${key}"
+      }
+    }
+  }
+}`}
+            />
+
+            <p className="text-xs text-gray-400 pt-2">
+              Need help? Check the{" "}
+              <Link href="/mcp" className="text-[#0066FF] hover:underline">full MCP guide</Link>{" "}
+              for detailed instructions and available tools.
+            </p>
+          </div>
         </div>
 
         {/* Save Button */}
