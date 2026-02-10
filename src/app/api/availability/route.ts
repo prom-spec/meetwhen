@@ -3,6 +3,21 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { apiLogger } from "@/lib/logger"
+import { z } from "zod"
+
+const timeRegex = /^\d{2}:\d{2}$/
+
+const scheduleItemSchema = z.object({
+  dayOfWeek: z.number().int().min(0).max(6),
+  startTime: z.string().regex(timeRegex, "Must be HH:MM format"),
+  endTime: z.string().regex(timeRegex, "Must be HH:MM format"),
+}).refine(data => data.startTime < data.endTime, {
+  message: "startTime must be before endTime",
+})
+
+const updateAvailabilitySchema = z.object({
+  schedules: z.array(scheduleItemSchema).max(21), // max 3 windows per day × 7 days
+})
 
 export async function GET() {
   try {
@@ -37,11 +52,11 @@ export async function POST(request: NextRequest) {
     apiLogger.info("Updating availability", { visitorId: session.user.id })
 
     const body = await request.json()
-    const { schedules } = body
-
-    if (!Array.isArray(schedules)) {
-      return NextResponse.json({ error: "Invalid schedules format" }, { status: 400 })
+    const parsed = updateAvailabilitySchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
     }
+    const { schedules } = parsed.data
 
     // Clear existing availability for user
     await prisma.availability.deleteMany({
@@ -51,7 +66,7 @@ export async function POST(request: NextRequest) {
     // Create new availability entries
     if (schedules.length > 0) {
       await prisma.availability.createMany({
-        data: schedules.map((s: { dayOfWeek: number; startTime: string; endTime: string }) => ({
+        data: schedules.map((s) => ({
           userId: session.user.id,
           dayOfWeek: s.dayOfWeek,
           startTime: s.startTime,

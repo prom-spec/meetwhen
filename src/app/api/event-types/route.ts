@@ -3,6 +3,24 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { apiLogger } from "@/lib/logger"
+import { z } from "zod"
+
+const createEventTypeSchema = z.object({
+  title: z.string().min(1).max(200).trim(),
+  slug: z.string().min(1).max(50).regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
+  description: z.string().max(2000).optional(),
+  duration: z.coerce.number().int().min(5).max(480),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  location: z.string().max(500).optional(),
+  locationType: z.enum(["IN_PERSON", "GOOGLE_MEET", "ZOOM", "PHONE", "CUSTOM"]).optional(),
+  locationValue: z.string().max(500).optional(),
+  bufferBefore: z.coerce.number().int().min(0).max(120).optional(),
+  bufferAfter: z.coerce.number().int().min(0).max(120).optional(),
+  minNotice: z.coerce.number().int().min(0).max(43200).optional(),
+  maxDaysAhead: z.coerce.number().int().min(1).max(365).optional(),
+  teamId: z.string().optional(),
+  schedulingType: z.enum(["INDIVIDUAL", "ROUND_ROBIN", "COLLECTIVE"]).optional(),
+})
 
 export async function GET() {
   try {

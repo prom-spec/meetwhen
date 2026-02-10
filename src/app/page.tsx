@@ -154,14 +154,14 @@ export default function Home() {
               </span>
             </div>
             <div className="flex items-center gap-6">
-              <Link href="#" className="text-sm text-gray-500 hover:text-gray-700">
+              <Link href="/about" className="text-sm text-gray-500 hover:text-gray-700">
+                About
+              </Link>
+              <Link href="/privacy" className="text-sm text-gray-500 hover:text-gray-700">
                 Privacy
               </Link>
               <Link href="#" className="text-sm text-gray-500 hover:text-gray-700">
                 Terms
-              </Link>
-              <Link href="#" className="text-sm text-gray-500 hover:text-gray-700">
-                Contact
               </Link>
             </div>
           </div>

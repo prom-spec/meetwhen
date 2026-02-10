@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
-import { WEBHOOK_EVENTS } from "@/lib/webhooks"
+import { WEBHOOK_EVENTS, isPrivateUrl } from "@/lib/webhooks"
 
 // GET /api/webhooks/[id] - Get a single webhook
 export async function GET(
@@ -84,8 +84,13 @@ export async function PATCH(
         return NextResponse.json({ error: "Invalid URL format" }, { status: 400 })
       }
 
-      if (!body.url.startsWith("https://") && !body.url.startsWith("http://localhost")) {
-        return NextResponse.json({ error: "URL must use HTTPS (except localhost)" }, { status: 400 })
+      if (!body.url.startsWith("https://")) {
+        return NextResponse.json({ error: "URL must use HTTPS" }, { status: 400 })
+      }
+
+      // SSRF protection: block private/internal URLs
+      if (isPrivateUrl(body.url)) {
+        return NextResponse.json({ error: "Webhook URL must not point to private or internal addresses" }, { status: 400 })
       }
 
       updates.url = body.url

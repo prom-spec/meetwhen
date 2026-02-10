@@ -47,8 +47,17 @@ export function middleware(request: NextRequest) {
         )
       }
     }
-    // If no Origin header, allow (same-origin requests from some clients omit it)
-    // Server-side callers (curl, etc.) also omit Origin — auth protects those routes
+    // If no Origin header, require X-Requested-With header as CSRF proof
+    // (browsers won't send custom headers in simple cross-origin requests)
+    if (!origin && !request.headers.get("x-requested-with")) {
+      // Allow if it's a NextAuth callback (server-to-server)
+      if (!pathname.startsWith("/api/auth/")) {
+        return NextResponse.json(
+          { error: "CSRF validation failed" },
+          { status: 403 }
+        )
+      }
+    }
   }
 
   const response = NextResponse.next()
