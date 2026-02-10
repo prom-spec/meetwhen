@@ -112,8 +112,32 @@ async function sendVerificationRequest({
   }
 }
 
+const prismaAdapter = PrismaAdapter(prisma)
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: {
+    ...prismaAdapter,
+    // Override linkAccount to use upsert so re-auth updates tokens instead of failing
+    linkAccount: (data) =>
+      prisma.account.upsert({
+        where: {
+          provider_providerAccountId: {
+            provider: data.provider,
+            providerAccountId: data.providerAccountId,
+          },
+        },
+        create: data as Parameters<typeof prisma.account.create>[0]["data"],
+        update: {
+          access_token: data.access_token,
+          expires_at: data.expires_at,
+          refresh_token: data.refresh_token ?? undefined,
+          token_type: data.token_type,
+          scope: data.scope,
+          id_token: data.id_token,
+          session_state: data.session_state as string | undefined,
+        },
+      }) as ReturnType<NonNullable<typeof prismaAdapter.linkAccount>>,
+  },
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
