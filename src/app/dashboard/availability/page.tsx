@@ -354,7 +354,7 @@ export default function AvailabilityPage() {
             return (
               <div key={day.value} className="p-3 sm:p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <div className="flex items-center">
+                  <div className="flex items-center w-full sm:w-[140px] flex-shrink-0">
                     <input
                       type="checkbox"
                       checked={daySlots.length > 0}
@@ -376,7 +376,7 @@ export default function AvailabilityPage() {
                     )}
                   </div>
                   
-                  <div className="flex-1 sm:ml-4">
+                  <div className="flex-1">
                     {daySlots.length === 0 ? (
                       <span className="text-sm text-gray-400 hidden sm:block">Unavailable</span>
                     ) : (

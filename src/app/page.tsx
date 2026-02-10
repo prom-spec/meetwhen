@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import MobileNav from "@/components/MobileNav";
 
 export default function Home() {
   return (
@@ -17,7 +18,8 @@ export default function Home() {
                 priority
               />
             </Link>
-            <div className="flex items-center gap-4">
+            {/* Desktop nav */}
+            <div className="hidden sm:flex items-center gap-4">
               <Link
                 href="/mcp"
                 className="text-sm font-medium text-gray-600 hover:text-gray-900"
@@ -43,6 +45,8 @@ export default function Home() {
                 Schedule with AI
               </Link>
             </div>
+            {/* Mobile hamburger */}
+            <MobileNav />
           </div>
         </div>
       </nav>
