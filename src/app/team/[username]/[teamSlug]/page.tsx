@@ -7,29 +7,18 @@ import { Users, User, RefreshCw } from "lucide-react"
 import PoweredByFooter from "@/components/PoweredByFooter"
 
 interface PageProps {
-  params: Promise<{ slug: string }>
+  params: Promise<{ username: string; teamSlug: string }>
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params
-  const team = await prisma.team.findUnique({
-    where: { slug },
-    select: { name: true, slug: true },
+async function getTeam(username: string, teamSlug: string) {
+  const owner = await prisma.user.findUnique({
+    where: { username },
+    select: { id: true },
   })
-  
-  if (!team) return { title: "Team Not Found" }
-  
-  return {
-    title: `${team.name}`,
-    description: `Schedule a meeting with ${team.name} on letsmeet.link`,
-  }
-}
+  if (!owner) return null
 
-export default async function TeamProfilePage({ params }: PageProps) {
-  const { slug } = await params
-  
-  const team = await prisma.team.findUnique({
-    where: { slug },
+  return prisma.team.findUnique({
+    where: { ownerId_slug: { ownerId: owner.id, slug: teamSlug } },
     include: {
       members: {
         include: {
@@ -45,6 +34,24 @@ export default async function TeamProfilePage({ params }: PageProps) {
       },
     },
   })
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { username, teamSlug } = await params
+  const team = await getTeam(username, teamSlug)
+
+  if (!team) return { title: "Team Not Found" }
+
+  return {
+    title: `${team.name}`,
+    description: team.description || `Schedule a meeting with ${team.name} on letsmeet.link`,
+  }
+}
+
+export default async function TeamProfilePage({ params }: PageProps) {
+  const { username, teamSlug } = await params
+
+  const team = await getTeam(username, teamSlug)
 
   if (!team) {
     notFound()
@@ -91,14 +98,28 @@ export default async function TeamProfilePage({ params }: PageProps) {
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Team Profile Header */}
         <div className="text-center mb-10">
-          <div className="w-24 h-24 rounded-full mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border-4 border-white shadow-sm">
-            <Users className="w-10 h-10 text-white" />
-          </div>
+          {team.logoUrl ? (
+            <Image
+              src={team.logoUrl}
+              alt={team.name}
+              width={96}
+              height={96}
+              className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-white shadow-sm object-cover"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-full mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border-4 border-white shadow-sm">
+              <Users className="w-10 h-10 text-white" />
+            </div>
+          )}
           <h1 className="text-2xl font-bold text-[#1a1a2e]">
             {team.name}
           </h1>
-          <p className="text-gray-500 mt-1">Select a meeting type to schedule</p>
-          
+          {team.description ? (
+            <p className="text-gray-500 mt-1">{team.description}</p>
+          ) : (
+            <p className="text-gray-500 mt-1">Select a meeting type to schedule</p>
+          )}
+
           {/* Team Members Preview */}
           <div className="flex items-center justify-center gap-1 mt-4">
             {team.members.slice(0, 5).map((member, index) => (
@@ -106,6 +127,7 @@ export default async function TeamProfilePage({ params }: PageProps) {
                 key={member.userId}
                 className="relative"
                 style={{ marginLeft: index > 0 ? "-8px" : "0", zIndex: 5 - index }}
+                title={member.user.name || "Team member"}
               >
                 {member.user.image ? (
                   <Image
@@ -141,7 +163,7 @@ export default async function TeamProfilePage({ params }: PageProps) {
             {team.eventTypes.map((eventType) => (
               <Link
                 key={eventType.id}
-                href={`/team/${slug}/${eventType.slug}`}
+                href={`/team/${username}/${teamSlug}/${eventType.slug}`}
                 className="block bg-white rounded-lg border-l-4 shadow-sm p-5 hover:shadow-md transition-shadow group"
                 style={{ borderLeftColor: eventType.color }}
               >

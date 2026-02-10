@@ -20,7 +20,7 @@ export async function GET() {
       },
       include: {
         owner: {
-          select: { id: true, name: true, email: true, image: true },
+          select: { id: true, name: true, email: true, image: true, username: true },
         },
         members: {
           include: {
@@ -76,13 +76,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Check if slug already exists
+    // Check if slug already exists for this owner
     const existingTeam = await prisma.team.findUnique({
-      where: { slug },
+      where: { ownerId_slug: { ownerId: session.user.id, slug } },
     })
 
     if (existingTeam) {
-      return NextResponse.json({ error: "Team slug already taken" }, { status: 400 })
+      return NextResponse.json({ error: "You already have a team with this slug" }, { status: 400 })
     }
 
     // Create team and add owner as member

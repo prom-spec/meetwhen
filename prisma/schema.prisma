@@ -228,11 +228,13 @@ enum TeamMemberRole {
 }
 
 model Team {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  ownerId   String
-  owner     User     @relation("teamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  name        String
+  slug        String
+  description String?
+  logoUrl     String?
+  ownerId     String
+  owner       User     @relation("teamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
   // Round-robin tracking
   lastAssignedMemberId String?
@@ -243,6 +245,7 @@ model Team {
   members    TeamMember[]
   eventTypes EventType[]  @relation("teamEventTypes")
 
+  @@unique([ownerId, slug])
   @@index([ownerId])
 }
 

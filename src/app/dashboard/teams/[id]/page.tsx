@@ -37,6 +37,10 @@ interface Team {
   name: string
   slug: string
   ownerId: string
+  owner: {
+    id: string
+    username: string | null
+  }
   members: TeamMember[]
   eventTypes: EventType[]
 }
@@ -232,9 +236,15 @@ export default function TeamSettingsPage() {
     setShowEventTypeModal(true)
   }
 
+  const getTeamUrl = () => {
+    if (!team) return ""
+    const ownerUsername = team.owner?.username || team.ownerId
+    return `/team/${ownerUsername}/${team.slug}`
+  }
+
   const copyEventLink = (slug: string) => {
     if (team) {
-      navigator.clipboard.writeText(`${window.location.origin}/team/${team.slug}/${slug}`)
+      navigator.clipboard.writeText(`${window.location.origin}${getTeamUrl()}/${slug}`)
       setCopiedSlug(slug)
       setTimeout(() => setCopiedSlug(null), 2000)
     }
@@ -292,7 +302,7 @@ export default function TeamSettingsPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{team.name}</h1>
-            <p className="text-sm text-gray-500">/team/{team.slug}</p>
+            <p className="text-sm text-gray-500">{getTeamUrl()}</p>
           </div>
         </div>
       </div>
@@ -435,7 +445,7 @@ export default function TeamSettingsPage() {
                         {copiedSlug === eventType.slug ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                       </button>
                       <a
-                        href={`/team/${team.slug}/${eventType.slug}`}
+                        href={`${getTeamUrl()}/${eventType.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-1.5 text-gray-400 hover:text-gray-600"

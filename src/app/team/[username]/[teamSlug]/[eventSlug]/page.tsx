@@ -30,7 +30,6 @@ interface SlotResponse {
   hostTimezone: string
 }
 
-// Generate a simple session ID for funnel tracking
 function getSessionId() {
   if (typeof window === "undefined") return null
   let sessionId = sessionStorage.getItem("booking_session_id")
@@ -41,7 +40,6 @@ function getSessionId() {
   return sessionId
 }
 
-// Track analytics event
 async function trackEvent(eventTypeId: string, stage: string) {
   try {
     await fetch("/api/analytics/track", {
@@ -61,7 +59,8 @@ async function trackEvent(eventTypeId: string, stage: string) {
 export default function TeamBookingPage() {
   const params = useParams()
   const router = useRouter()
-  const teamSlug = params.slug as string
+  const ownerUsername = params.username as string
+  const teamSlug = params.teamSlug as string
   const eventSlug = params.eventSlug as string
 
   const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -102,7 +101,7 @@ export default function TeamBookingPage() {
     try {
       const dateStr = formatDate(date)
       const res = await fetch(
-        `/api/slots?teamSlug=${teamSlug}&eventSlug=${eventSlug}&date=${dateStr}&timezone=${guestTimezone}`
+        `/api/slots?teamOwner=${ownerUsername}&teamSlug=${teamSlug}&eventSlug=${eventSlug}&date=${dateStr}&timezone=${guestTimezone}`
       )
       const data: SlotResponse = await res.json()
       setSlots(data.slots || [])
@@ -165,7 +164,6 @@ export default function TeamBookingPage() {
     }
   }
 
-  // Calendar helpers
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear()
     const month = date.getMonth()
@@ -229,12 +227,7 @@ export default function TeamBookingPage() {
         <header className="py-4 px-4">
           <div className="max-w-md mx-auto">
             <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
-              <Image
-                src="/logo-full.svg"
-                alt="letsmeet.link"
-                width={100}
-                height={24}
-              />
+              <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
             </Link>
           </div>
         </header>
@@ -248,7 +241,7 @@ export default function TeamBookingPage() {
             <p className="text-gray-600 mb-6">
               Your {eventType.title} with {team.name} has been scheduled.
               {assignedHost && eventType.schedulingType === "ROUND_ROBIN" && (
-                <span className="block mt-1">You'll be meeting with <strong>{assignedHost}</strong>.</span>
+                <span className="block mt-1">You&apos;ll be meeting with <strong>{assignedHost}</strong>.</span>
               )}
               {eventType.schedulingType === "COLLECTIVE" && (
                 <span className="block mt-1">All team members will attend.</span>
@@ -258,10 +251,7 @@ export default function TeamBookingPage() {
               <p className="font-semibold text-[#1a1a2e]">{eventType.title}</p>
               <p className="text-sm text-gray-500 mt-1">
                 {selectedDate.toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
+                  weekday: "long", month: "long", day: "numeric", year: "numeric",
                 })}
               </p>
               <p className="text-sm text-gray-500">{selectedTime} ({guestTimezone})</p>
@@ -290,12 +280,7 @@ export default function TeamBookingPage() {
       <header className="py-4 px-4 border-b border-gray-100 bg-white">
         <div className="max-w-4xl mx-auto">
           <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
-            <Image
-              src="/logo-full.svg"
-              alt="letsmeet.link"
-              width={100}
-              height={24}
-            />
+            <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
           </Link>
         </div>
       </header>
@@ -307,7 +292,7 @@ export default function TeamBookingPage() {
               {/* Left side - Event info */}
               <div className="md:w-1/3 p-6 border-b md:border-b-0 md:border-r border-gray-200 bg-gray-50">
                 <button
-                  onClick={() => router.push(`/team/${teamSlug}`)}
+                  onClick={() => router.push(`/team/${ownerUsername}/${teamSlug}`)}
                   className="text-sm text-[#0066FF] hover:text-[#0052cc] mb-4 font-medium"
                 >
                   ← Back
@@ -321,8 +306,7 @@ export default function TeamBookingPage() {
                       <span className="text-sm text-gray-600">{team.name}</span>
                     </div>
                     <h1 className="text-xl font-bold text-[#1a1a2e]">{eventType.title}</h1>
-                    
-                    {/* Scheduling Type Badge */}
+
                     <div className="flex items-center gap-2 mt-3">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-blue-50 text-blue-700 rounded-full font-medium">
                         {getSchedulingIcon(eventType.schedulingType)}
@@ -334,7 +318,7 @@ export default function TeamBookingPage() {
                         {getSchedulingDescription(eventType.schedulingType)}
                       </p>
                     )}
-                    
+
                     <div className="flex items-center gap-2 mt-4 text-gray-500">
                       <Clock className="w-4 h-4 text-[#0066FF]" />
                       <span>{eventType.duration} min</span>
@@ -361,15 +345,10 @@ export default function TeamBookingPage() {
               <div className="md:w-2/3 p-6">
                 {!showForm ? (
                   <div className="md:flex gap-6">
-                    {/* Calendar */}
                     <div className="flex-1 mb-6 md:mb-0">
                       <div className="flex items-center justify-between mb-4">
                         <button
-                          onClick={() =>
-                            setCurrentMonth(
-                              new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1)
-                            )
-                          }
+                          onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
                           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                           aria-label="Previous month"
                         >
@@ -379,11 +358,7 @@ export default function TeamBookingPage() {
                           {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                         </h2>
                         <button
-                          onClick={() =>
-                            setCurrentMonth(
-                              new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1)
-                            )
-                          }
+                          onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
                           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                           aria-label="Next month"
                         >
@@ -393,9 +368,7 @@ export default function TeamBookingPage() {
 
                       <div className="grid grid-cols-7 gap-1 text-center text-sm">
                         {dayNames.map((day) => (
-                          <div key={day} className="py-2 text-gray-500 font-medium">
-                            {day}
-                          </div>
+                          <div key={day} className="py-2 text-gray-500 font-medium">{day}</div>
                         ))}
                         {Array.from({ length: startingDay }).map((_, i) => (
                           <div key={`empty-${i}`} />
@@ -409,13 +382,7 @@ export default function TeamBookingPage() {
                               key={day}
                               onClick={() => {
                                 if (!disabled) {
-                                  setSelectedDate(
-                                    new Date(
-                                      currentMonth.getFullYear(),
-                                      currentMonth.getMonth(),
-                                      day
-                                    )
-                                  )
+                                  setSelectedDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day))
                                 }
                               }}
                               disabled={disabled}
@@ -432,15 +399,10 @@ export default function TeamBookingPage() {
                       </div>
                     </div>
 
-                    {/* Time slots */}
                     {selectedDate && (
                       <div className="md:w-44">
                         <h3 className="font-medium mb-3 text-sm text-[#1a1a2e]">
-                          {selectedDate.toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                          })}
+                          {selectedDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                         </h3>
                         <div className="max-h-64 overflow-y-auto space-y-2">
                           {isLoading ? (
@@ -461,10 +423,9 @@ export default function TeamBookingPage() {
                                 }}
                                 className={`
                                   w-full py-2.5 px-3 text-sm border rounded-lg font-medium transition-colors
-                                  ${
-                                    selectedTime === slot
-                                      ? "border-[#0066FF] bg-blue-50 text-[#0066FF]"
-                                      : "border-gray-200 hover:border-[#0066FF] hover:text-[#0066FF]"
+                                  ${selectedTime === slot
+                                    ? "border-[#0066FF] bg-blue-50 text-[#0066FF]"
+                                    : "border-gray-200 hover:border-[#0066FF] hover:text-[#0066FF]"
                                   }
                                 `}
                               >
@@ -477,7 +438,6 @@ export default function TeamBookingPage() {
                     )}
                   </div>
                 ) : (
-                  /* Booking Form */
                   <div>
                     <button
                       onClick={() => setShowForm(false)}
@@ -488,11 +448,7 @@ export default function TeamBookingPage() {
                     <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
                       <p className="font-semibold text-[#1a1a2e]">{eventType?.title}</p>
                       <p className="text-sm text-gray-600 mt-1">
-                        {selectedDate?.toLocaleDateString("en-US", {
-                          weekday: "long",
-                          month: "long",
-                          day: "numeric",
-                        })}
+                        {selectedDate?.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
                         {" at "}{selectedTime}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">{guestTimezone}</p>
@@ -505,9 +461,7 @@ export default function TeamBookingPage() {
                     </div>
                     <form onSubmit={handleBook} className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Your name *
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Your name *</label>
                         <input
                           type="text"
                           required
@@ -518,9 +472,7 @@ export default function TeamBookingPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Email address *
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email address *</label>
                         <input
                           type="email"
                           required

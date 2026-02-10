@@ -24,6 +24,13 @@ interface Team {
   slug: string
   ownerId: string
   createdAt: string
+  owner: {
+    id: string
+    name: string | null
+    email: string
+    image: string | null
+    username: string | null
+  }
   members: TeamMember[]
   _count: {
     members: number
@@ -109,9 +116,10 @@ export default function TeamsPage() {
     }
   }
 
-  const copyTeamLink = (slug: string) => {
-    navigator.clipboard.writeText(`${window.location.origin}/team/${slug}`)
-    setCopiedSlug(slug)
+  const copyTeamLink = (team: Team) => {
+    const ownerUsername = team.owner?.username || team.ownerId
+    navigator.clipboard.writeText(`${window.location.origin}/team/${ownerUsername}/${team.slug}`)
+    setCopiedSlug(team.slug)
     setTimeout(() => setCopiedSlug(null), 2000)
   }
 
@@ -165,7 +173,7 @@ export default function TeamsPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">{team.name}</h3>
-                    <p className="text-xs text-gray-500">/team/{team.slug}</p>
+                    <p className="text-xs text-gray-500">/team/{team.owner?.username || "..."}/{team.slug}</p>
                   </div>
                 </div>
               </div>
@@ -209,14 +217,14 @@ export default function TeamsPage() {
 
               <div className="flex items-center gap-2 pt-4 border-t border-gray-100">
                 <button
-                  onClick={() => copyTeamLink(team.slug)}
+                  onClick={() => copyTeamLink(team)}
                   className={`p-2 transition-colors ${copiedSlug === team.slug ? "text-green-500" : "text-gray-400 hover:text-gray-600"}`}
                   title="Copy team link"
                 >
                   {copiedSlug === team.slug ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </button>
                 <a
-                  href={`/team/${team.slug}`}
+                  href={`/team/${team.owner?.username || team.ownerId}/${team.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
@@ -269,8 +277,8 @@ export default function TeamsPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700">URL Slug</label>
                 <div className="mt-1 flex rounded-md shadow-sm">
-                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-                    /team/
+                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm whitespace-nowrap">
+                    /team/.../
                   </span>
                   <input
                     type="text"

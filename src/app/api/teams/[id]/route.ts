@@ -29,12 +29,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       where: { id },
       include: {
         owner: {
-          select: { id: true, name: true, email: true, image: true, timezone: true },
+          select: { id: true, name: true, email: true, image: true, timezone: true, username: true },
         },
         members: {
           include: {
             user: {
-              select: { id: true, name: true, email: true, image: true, timezone: true },
+              select: { id: true, name: true, email: true, image: true, timezone: true, username: true },
             },
           },
           orderBy: [{ role: "asc" }, { priority: "asc" }],

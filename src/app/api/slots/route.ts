@@ -11,10 +11,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const username = searchParams.get("username")
     const teamSlug = searchParams.get("teamSlug")
+    const teamOwner = searchParams.get("teamOwner")
     const eventSlug = searchParams.get("eventSlug")
     const dateStr = searchParams.get("date")
 
-    apiLogger.debug("Slots request", { username, teamSlug, eventSlug, date: dateStr })
+    apiLogger.debug("Slots request", { username, teamSlug, teamOwner, eventSlug, date: dateStr })
 
     if (!eventSlug || !dateStr) {
       apiLogger.warn("Missing required parameters for slots", { eventSlug, dateStr })
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     // Handle team event slots
     if (teamSlug) {
-      return handleTeamSlots(teamSlug, eventSlug, dateStr)
+      return handleTeamSlots(teamSlug, eventSlug, dateStr, teamOwner)
     }
 
     // Handle individual user slots
@@ -125,10 +126,31 @@ export async function GET(request: NextRequest) {
 }
 
 // Handle team event slots (round-robin or collective)
-async function handleTeamSlots(teamSlug: string, eventSlug: string, dateStr: string) {
+async function handleTeamSlots(teamSlug: string, eventSlug: string, dateStr: string, teamOwner?: string | null) {
   try {
+    // Resolve team ID from owner username + slug, or fall back to slug-only
+    let teamId: string | null = null
+    if (teamOwner) {
+      const owner = await prisma.user.findUnique({ where: { username: teamOwner }, select: { id: true } })
+      if (!owner) {
+        return NextResponse.json({ error: "Team owner not found" }, { status: 404 })
+      }
+      const found = await prisma.team.findUnique({
+        where: { ownerId_slug: { ownerId: owner.id, slug: teamSlug } },
+        select: { id: true },
+      })
+      teamId = found?.id ?? null
+    } else {
+      const found = await prisma.team.findFirst({ where: { slug: teamSlug }, select: { id: true } })
+      teamId = found?.id ?? null
+    }
+
+    if (!teamId) {
+      return NextResponse.json({ error: "Team not found" }, { status: 404 })
+    }
+
     const team = await prisma.team.findUnique({
-      where: { slug: teamSlug },
+      where: { id: teamId },
       include: {
         eventTypes: {
           where: { slug: eventSlug, isActive: true },
