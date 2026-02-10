@@ -160,7 +160,7 @@ export default function Home() {
               <Link href="/privacy" className="text-sm text-gray-500 hover:text-gray-700">
                 Privacy
               </Link>
-              <Link href="#" className="text-sm text-gray-500 hover:text-gray-700">
+              <Link href="/terms" className="text-sm text-gray-500 hover:text-gray-700">
                 Terms
               </Link>
             </div>

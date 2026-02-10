@@ -571,7 +571,7 @@ async function handleToolCall(userId: string, name: string, args: ToolArgs) {
   }
 }
 
-const CORS_ORIGIN = process.env.NEXTAUTH_URL || "https://letsmeet.app"
+const CORS_ORIGIN = process.env.NEXTAUTH_URL || "https://www.letsmeet.link"
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": CORS_ORIGIN,

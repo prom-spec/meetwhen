@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     template: "%s | LetsMeet",
   },
   description: "Simple, free scheduling for everyone. Share your availability and let others book time with you — no back-and-forth needed.",
-  metadataBase: new URL("https://letsmeet.link"),
+  metadataBase: new URL("https://www.letsmeet.link"),
   keywords: ["scheduling", "calendar", "meetings", "AI", "booking", "availability"],
   authors: [{ name: "LetsMeet" }],
   creator: "LetsMeet",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://letsmeet.app",
+    url: "https://www.letsmeet.link",
     siteName: "LetsMeet",
     title: "LetsMeet - Simple Scheduling",
     description: "Simple, free scheduling for everyone. Share your availability and let others book time with you.",

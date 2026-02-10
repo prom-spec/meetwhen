@@ -250,7 +250,7 @@ export default function SettingsPage() {
               </label>
               <div className="mt-1 flex rounded-md shadow-sm">
                 <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
-                  letsmeet.app/
+                  letsmeet.link/
                 </span>
                 <input
                   type="text"
