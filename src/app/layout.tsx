@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     template: "%s | LetsMeet",
   },
   description: "Simple, free scheduling for everyone. Share your availability and let others book time with you — no back-and-forth needed.",
-  metadataBase: new URL("https://meetwhen-production.up.railway.app"),
+  metadataBase: new URL("https://letsmeet.link"),
   keywords: ["scheduling", "calendar", "meetings", "AI", "booking", "availability"],
   authors: [{ name: "LetsMeet" }],
   creator: "LetsMeet",

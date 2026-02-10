@@ -34,7 +34,7 @@ A modern, open-source scheduling application built with Next.js 16 — similar t
 1. Clone the repository:
    ```bash
    git clone https://github.com/prom-spec/meetwhen.git
-   cd letsmeet
+   cd meetwhen
    ```
 
 2. Install dependencies:

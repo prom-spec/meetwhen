@@ -588,7 +588,7 @@ export default function SettingsPage() {
       "command": "npx",
       "args": ["-y", "letsmeet-mcp"],
       "env": {
-        "MEETWHEN_API_KEY": "YOUR_API_KEY_HERE"
+        "LETSMEET_API_KEY": "YOUR_API_KEY_HERE"
       }
     }
   }

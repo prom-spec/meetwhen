@@ -8,7 +8,7 @@ import { hashApiKey, isValidApiKeyFormat } from "@/lib/api-keys"
 import { mcpRateLimiter, getClientIp } from "@/lib/rate-limit"
 
 // Base URL for generating booking links
-const BASE_URL = process.env.NEXTAUTH_URL || "https://meetwhen-production.up.railway.app"
+const BASE_URL = process.env.NEXTAUTH_URL || "https://letsmeet.link"
 
 // Validate API key and get user ID
 async function validateApiKey(authHeader: string | null): Promise<string | null> {
