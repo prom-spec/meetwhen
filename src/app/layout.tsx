@@ -18,14 +18,14 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "MeetWhen - Simple Scheduling",
-    template: "%s | MeetWhen",
+    default: "LetsMeet - Simple Scheduling",
+    template: "%s | LetsMeet",
   },
   description: "Simple, free scheduling for everyone. Share your availability and let others book time with you — no back-and-forth needed.",
   metadataBase: new URL("https://meetwhen-production.up.railway.app"),
   keywords: ["scheduling", "calendar", "meetings", "AI", "booking", "availability"],
-  authors: [{ name: "MeetWhen" }],
-  creator: "MeetWhen",
+  authors: [{ name: "LetsMeet" }],
+  creator: "LetsMeet",
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
@@ -34,15 +34,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://meetwhen.app",
-    siteName: "MeetWhen",
-    title: "MeetWhen - Simple Scheduling",
+    url: "https://letsmeet.app",
+    siteName: "LetsMeet",
+    title: "LetsMeet - Simple Scheduling",
     description: "Simple, free scheduling for everyone. Share your availability and let others book time with you.",
     images: ["/logo.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "MeetWhen - Simple Scheduling",
+    title: "LetsMeet - Simple Scheduling",
     description: "Simple, free scheduling for everyone. Share your availability and let others book time with you.",
   },
 };

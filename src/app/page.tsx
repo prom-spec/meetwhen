@@ -11,7 +11,7 @@ export default function Home() {
             <Link href="/" className="flex items-center">
               <Image
                 src="/logo-full.svg"
-                alt="MeetWhen"
+                alt="LetsMeet"
                 width={140}
                 height={34}
                 priority
@@ -43,7 +43,7 @@ export default function Home() {
             <div className="p-4 bg-blue-50 rounded-2xl">
               <Image
                 src="/logo.svg"
-                alt="MeetWhen icon"
+                alt="LetsMeet icon"
                 width={64}
                 height={64}
               />
@@ -59,7 +59,7 @@ export default function Home() {
           {/* Tagline */}
           <p className="mt-6 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
             AI-powered scheduling that understands your availability. 
-            Share your link, let invitees pick a time, and MeetWhen handles the rest.
+            Share your link, let invitees pick a time, and LetsMeet handles the rest.
           </p>
 
           {/* CTA Buttons */}
@@ -88,7 +88,7 @@ export default function Home() {
         <section id="features" className="py-20 border-t border-gray-100">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-[#1a1a2e]">
-              Why choose MeetWhen?
+              Why choose LetsMeet?
             </h2>
             <p className="mt-4 text-gray-600">
               Simple, smart, and designed for the way you work.
@@ -145,12 +145,12 @@ export default function Home() {
             <div className="flex items-center gap-2">
               <Image
                 src="/logo.svg"
-                alt="MeetWhen"
+                alt="LetsMeet"
                 width={24}
                 height={24}
               />
               <span className="text-sm text-gray-500">
-                © {new Date().getFullYear()} MeetWhen. All rights reserved.
+                © {new Date().getFullYear()} LetsMeet. All rights reserved.
               </span>
             </div>
             <div className="flex items-center gap-6">

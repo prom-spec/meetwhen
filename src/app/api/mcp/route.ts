@@ -1,5 +1,5 @@
 /**
- * MCP HTTP Endpoint for MeetWhen
+ * MCP HTTP Endpoint for LetsMeet
  * Validates API key and handles MCP JSON-RPC requests
  */
 import { NextRequest, NextResponse } from "next/server"
@@ -78,7 +78,7 @@ const toolDefinitions = [
   },
   {
     name: "find_user",
-    description: "Search for a MeetWhen user by their username.",
+    description: "Search for a LetsMeet user by their username.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -115,7 +115,7 @@ const toolDefinitions = [
   },
   {
     name: "create_booking",
-    description: "Book a meeting with another MeetWhen user.",
+    description: "Book a meeting with another LetsMeet user.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -571,7 +571,7 @@ async function handleToolCall(userId: string, name: string, args: ToolArgs) {
   }
 }
 
-const CORS_ORIGIN = process.env.NEXTAUTH_URL || "https://meetwhen.app"
+const CORS_ORIGIN = process.env.NEXTAUTH_URL || "https://letsmeet.app"
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": CORS_ORIGIN,
@@ -627,7 +627,7 @@ export async function POST(req: NextRequest) {
         result: {
           protocolVersion: "2024-11-05",
           capabilities: { tools: {} },
-          serverInfo: { name: "meetwhen", version: "1.0.0" },
+          serverInfo: { name: "letsmeet", version: "1.0.0" },
         },
         id,
       })

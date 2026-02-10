@@ -147,7 +147,7 @@ export default function LoginPage() {
         <Link href="/" className="inline-flex">
           <Image
             src="/logo-full.svg"
-            alt="MeetWhen"
+            alt="LetsMeet"
             width={140}
             height={34}
             priority
@@ -164,7 +164,7 @@ export default function LoginPage() {
               <div className="p-3 bg-blue-50 rounded-xl">
                 <Image
                   src="/logo.svg"
-                  alt="MeetWhen"
+                  alt="LetsMeet"
                   width={40}
                   height={40}
                 />
@@ -174,7 +174,7 @@ export default function LoginPage() {
               Welcome back
             </h1>
             <p className="mt-2 text-gray-500 text-sm">
-              Sign in to your MeetWhen account
+              Sign in to your LetsMeet account
             </p>
           </div>
 
@@ -200,7 +200,7 @@ export default function LoginPage() {
       {/* Bottom Branding */}
       <footer className="py-6 text-center">
         <p className="text-xs text-gray-400">
-          AI-powered scheduling by MeetWhen
+          AI-powered scheduling by LetsMeet
         </p>
       </footer>
     </div>

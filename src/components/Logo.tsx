@@ -25,7 +25,7 @@ export default function Logo({
   const logoContent = showText ? (
     <Image
       src="/logo-full.svg"
-      alt="MeetWhen"
+      alt="LetsMeet"
       width={dimensions.full.width}
       height={dimensions.full.height}
       priority
@@ -34,7 +34,7 @@ export default function Logo({
   ) : (
     <Image
       src="/logo.svg"
-      alt="MeetWhen"
+      alt="LetsMeet"
       width={dimensions.icon}
       height={dimensions.icon}
       priority
@@ -61,7 +61,7 @@ export function LogoText({
 }) {
   return (
     <span className={`font-semibold text-[#0066FF] ${className}`}>
-      MeetWhen
+      LetsMeet
     </span>
   );
 }

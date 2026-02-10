@@ -1,4 +1,4 @@
-# MeetWhen Security Audit Report
+# LetsMeet Security Audit Report
 
 **Date:** 2026-02-09  
 **Auditor:** Automated Security Review  
@@ -67,7 +67,7 @@ export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      "Access-Control-Allow-Origin": process.env.NEXTAUTH_URL || "https://meetwhen.app",
+      "Access-Control-Allow-Origin": process.env.NEXTAUTH_URL || "https://letsmeet.app",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
     },
@@ -79,7 +79,7 @@ Also add the CORS headers to the POST response so browsers enforce it:
 ```typescript
 // In POST handler, before returning:
 const corsHeaders = {
-  "Access-Control-Allow-Origin": process.env.NEXTAUTH_URL || "https://meetwhen.app",
+  "Access-Control-Allow-Origin": process.env.NEXTAUTH_URL || "https://letsmeet.app",
 };
 return NextResponse.json(responseBody, { headers: corsHeaders });
 ```

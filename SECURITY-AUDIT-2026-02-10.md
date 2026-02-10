@@ -1,4 +1,4 @@
-# MeetWhen Security Audit — 2026-02-10
+# LetsMeet Security Audit — 2026-02-10
 
 ## Summary
 

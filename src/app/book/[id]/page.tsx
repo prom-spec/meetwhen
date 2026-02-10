@@ -212,7 +212,7 @@ export default function BookingByIdPage() {
         <header className="py-4 px-4">
           <div className="max-w-md mx-auto">
             <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
-              <Image src="/logo-full.svg" alt="MeetWhen" width={100} height={24} />
+              <Image src="/logo-full.svg" alt="LetsMeet" width={100} height={24} />
             </Link>
           </div>
         </header>
@@ -246,7 +246,7 @@ export default function BookingByIdPage() {
       <header className="py-4 px-4 border-b border-gray-100 bg-white">
         <div className="max-w-4xl mx-auto">
           <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
-            <Image src="/logo-full.svg" alt="MeetWhen" width={100} height={24} />
+            <Image src="/logo-full.svg" alt="LetsMeet" width={100} height={24} />
           </Link>
         </div>
       </header>

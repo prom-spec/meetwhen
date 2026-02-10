@@ -220,7 +220,7 @@ export default function EventTypesPage() {
   }
 
   const getBaseUrl = () => {
-    if (typeof window === "undefined") return "meetwhen.com"
+    if (typeof window === "undefined") return "letsmeet.com"
     return window.location.host
   }
 

@@ -1,4 +1,4 @@
-# MeetWhen
+# LetsMeet
 
 A modern, open-source scheduling application built with Next.js 16 — similar to Calendly.
 
@@ -34,7 +34,7 @@ A modern, open-source scheduling application built with Next.js 16 — similar t
 1. Clone the repository:
    ```bash
    git clone https://github.com/prom-spec/meetwhen.git
-   cd meetwhen
+   cd letsmeet
    ```
 
 2. Install dependencies:
@@ -139,7 +139,7 @@ src/
 
 ## MCP Server
 
-MeetWhen includes an MCP (Model Context Protocol) server for AI agent integrations. Start it with:
+LetsMeet includes an MCP (Model Context Protocol) server for AI agent integrations. Start it with:
 
 ```bash
 pnpm mcp

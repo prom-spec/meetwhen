@@ -20,8 +20,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!team) return { title: "Team Not Found" }
   
   return {
-    title: `${team.name} | MeetWhen`,
-    description: `Schedule a meeting with ${team.name} on MeetWhen`,
+    title: `${team.name} | LetsMeet`,
+    description: `Schedule a meeting with ${team.name} on LetsMeet`,
   }
 }
 
@@ -80,7 +80,7 @@ export default async function TeamProfilePage({ params }: PageProps) {
           <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
             <Image
               src="/logo-full.svg"
-              alt="MeetWhen"
+              alt="LetsMeet"
               width={100}
               height={24}
             />

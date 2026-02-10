@@ -25,7 +25,7 @@ async function getResend(): Promise<Resend | null> {
   return resendInstance
 }
 
-const FROM_EMAIL = process.env.EMAIL_FROM || "MeetWhen <onboarding@resend.dev>"
+const FROM_EMAIL = process.env.EMAIL_FROM || "LetsMeet <onboarding@resend.dev>"
 
 interface BookingEmailData {
   booking: {

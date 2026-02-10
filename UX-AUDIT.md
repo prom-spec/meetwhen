@@ -1,4 +1,4 @@
-# MeetWhen UX Audit Report
+# LetsMeet UX Audit Report
 
 **Date:** 2026-02-09  
 **Reviewer:** AI UX Reviewer  
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-MeetWhen has a solid foundation with clean visual design and good component structure. The main areas needing attention are: **error handling UX** (uses `alert()` throughout), **accessibility gaps** (missing aria labels, no focus management), **duplicate booking flows** (two competing calendar implementations), and **mobile polish** (chat widget overlap, time slot scrolling). Below are 28 findings ranked by user impact.
+LetsMeet has a solid foundation with clean visual design and good component structure. The main areas needing attention are: **error handling UX** (uses `alert()` throughout), **accessibility gaps** (missing aria labels, no focus management), **duplicate booking flows** (two competing calendar implementations), and **mobile polish** (chat widget overlap, time slot scrolling). Below are 28 findings ranked by user impact.
 
 ---
 
@@ -265,7 +265,7 @@ const copyLink = (slug: string) => {
 </div>
 ```
 
-### 23. "Powered by MeetWhen" footer repeated inconsistently
+### 23. "Powered by LetsMeet" footer repeated inconsistently
 **Files:** Public pages  
 **Problem:** The footer markup is copy-pasted across `[username]/page.tsx`, `[username]/[eventSlug]/page.tsx`, `booking/[id]/page.tsx` with slightly different wrappers.  
 **Fix:** Extract to a `<PoweredByFooter />` component.

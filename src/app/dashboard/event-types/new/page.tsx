@@ -79,7 +79,7 @@ export default function NewEventTypePage() {
     }
   }
 
-  const baseUrl = typeof window !== "undefined" ? window.location.host : "meetwhen.com"
+  const baseUrl = typeof window !== "undefined" ? window.location.host : "letsmeet.com"
 
   return (
     <div className="min-h-screen bg-gray-50">

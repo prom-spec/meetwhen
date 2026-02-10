@@ -250,7 +250,7 @@ export default function SettingsPage() {
               </label>
               <div className="mt-1 flex rounded-md shadow-sm">
                 <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
-                  meetwhen.app/
+                  letsmeet.app/
                 </span>
                 <input
                   type="text"
@@ -584,9 +584,9 @@ export default function SettingsPage() {
               <pre className="p-2 bg-gray-900 text-gray-100 rounded text-xs overflow-x-auto">
 {`{
   "mcpServers": {
-    "meetwhen": {
+    "letsmeet": {
       "command": "npx",
-      "args": ["-y", "meetwhen-mcp"],
+      "args": ["-y", "letsmeet-mcp"],
       "env": {
         "MEETWHEN_API_KEY": "YOUR_API_KEY_HERE"
       }

@@ -81,7 +81,7 @@ export default function BookingReminder({
           <Hr style={hr} />
 
           <Text style={footerText}>
-            — MeetWhen
+            — LetsMeet
           </Text>
         </Container>
       </Body>

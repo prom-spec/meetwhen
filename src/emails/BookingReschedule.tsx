@@ -104,7 +104,7 @@ export default function BookingReschedule({
           </Text>
 
           <Text style={footerText}>
-            — MeetWhen
+            — LetsMeet
           </Text>
         </Container>
       </Body>

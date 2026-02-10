@@ -12,7 +12,7 @@ export default function VerifyRequestPage() {
         <Link href="/" className="inline-flex">
           <Image
             src="/logo-full.svg"
-            alt="MeetWhen"
+            alt="LetsMeet"
             width={140}
             height={34}
             priority
@@ -65,7 +65,7 @@ export default function VerifyRequestPage() {
       {/* Footer */}
       <footer className="py-6 text-center">
         <p className="text-xs text-gray-400">
-          AI-powered scheduling by MeetWhen
+          AI-powered scheduling by LetsMeet
         </p>
       </footer>
     </div>

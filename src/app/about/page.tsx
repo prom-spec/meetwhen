@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const metadata = {
-  title: "About MeetWhen — Built in a Day with AI",
+  title: "About LetsMeet — Built in a Day with AI",
   description:
-    "MeetWhen was designed, coded, and deployed in a single day by an AI agent and a human using OpenClaw.",
+    "LetsMeet was designed, coded, and deployed in a single day by an AI agent and a human using OpenClaw.",
 };
 
 export default function AboutPage() {
@@ -17,7 +17,7 @@ export default function AboutPage() {
             <Link href="/" className="flex items-center">
               <Image
                 src="/logo-full.svg"
-                alt="MeetWhen"
+                alt="LetsMeet"
                 width={140}
                 height={34}
                 priority
@@ -46,7 +46,7 @@ export default function AboutPage() {
             <span className="text-[#0066FF]">One AI. One human. One day.</span>
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            MeetWhen isn&apos;t just a scheduling tool — it&apos;s a proof of concept for what
+            LetsMeet isn&apos;t just a scheduling tool — it&apos;s a proof of concept for what
             happens when you give an AI agent real autonomy over a software project.
           </p>
         </div>
@@ -56,7 +56,7 @@ export default function AboutPage() {
           <div className="bg-white rounded-2xl border border-gray-200 p-8 sm:p-12 mb-10">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 !mt-0">The Story</h2>
             <p className="text-gray-600 leading-relaxed">
-              MeetWhen was built using{" "}
+              LetsMeet was built using{" "}
               <a
                 href="https://openclaw.ai"
                 target="_blank"
@@ -141,7 +141,7 @@ export default function AboutPage() {
               something that would have taken a small team weeks.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              MeetWhen is real software used by real people. It handles edge cases, sends
+              LetsMeet is real software used by real people. It handles edge cases, sends
               proper emails, respects timezones, and integrates with Google&apos;s OAuth
               ecosystem. The fact that it was built in a day doesn&apos;t make it a toy —
               it makes it a signal of where software development is heading.
@@ -160,7 +160,7 @@ export default function AboutPage() {
                 href="/login"
                 className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 text-sm"
               >
-                Try MeetWhen for free →
+                Try LetsMeet for free →
               </Link>
             </div>
           </div>
@@ -172,9 +172,9 @@ export default function AboutPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Image src="/logo.svg" alt="MeetWhen" width={24} height={24} />
+              <Image src="/logo.svg" alt="LetsMeet" width={24} height={24} />
               <span className="text-sm text-gray-500">
-                © {new Date().getFullYear()} MeetWhen. All rights reserved.
+                © {new Date().getFullYear()} LetsMeet. All rights reserved.
               </span>
             </div>
             <div className="flex items-center gap-6">

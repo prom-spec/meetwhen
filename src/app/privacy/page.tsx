@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "MeetWhen Privacy Policy - How we collect, use, and protect your data.",
+  description: "LetsMeet Privacy Policy - How we collect, use, and protect your data.",
 }
 
 export default function PrivacyPage() {
@@ -11,7 +11,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-16">
         <Link href="/" className="text-[#0066FF] hover:underline text-sm mb-8 inline-block">
-          ← Back to MeetWhen
+          ← Back to LetsMeet
         </Link>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
         <p className="text-sm text-gray-500 mb-8">Last updated: February 10, 2026</p>
@@ -20,7 +20,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">1. Information We Collect</h2>
             <p className="text-gray-600 leading-relaxed">
-              When you use MeetWhen, we collect the following information:
+              When you use LetsMeet, we collect the following information:
             </p>
             <ul className="list-disc pl-6 text-gray-600 space-y-1 mt-2">
               <li><strong>Account information:</strong> Your name, email address, and profile picture (provided via Google Sign-In).</li>
@@ -49,7 +49,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">3. Third-Party Services</h2>
             <p className="text-gray-600 leading-relaxed">
-              MeetWhen integrates with the following third-party services:
+              LetsMeet integrates with the following third-party services:
             </p>
             <ul className="list-disc pl-6 text-gray-600 space-y-1 mt-2">
               <li><strong>Google Calendar:</strong> To read your availability and create events. Governed by <a href="https://policies.google.com/privacy" className="text-[#0066FF] hover:underline" target="_blank" rel="noopener noreferrer">Google&apos;s Privacy Policy</a>.</li>
@@ -67,7 +67,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">5. Your Rights</h2>
             <p className="text-gray-600 leading-relaxed">
-              You have the right to access, correct, or delete your personal data. You can revoke Google Calendar access at any time through your Google Account settings. To delete your MeetWhen account and data, contact us at the address below.
+              You have the right to access, correct, or delete your personal data. You can revoke Google Calendar access at any time through your Google Account settings. To delete your LetsMeet account and data, contact us at the address below.
             </p>
           </section>
 
@@ -75,8 +75,8 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">6. Contact Us</h2>
             <p className="text-gray-600 leading-relaxed">
               If you have questions about this Privacy Policy, contact us at{" "}
-              <a href="mailto:support@meetwhen.com" className="text-[#0066FF] hover:underline">
-                support@meetwhen.com
+              <a href="mailto:support@letsmeet.link" className="text-[#0066FF] hover:underline">
+                support@letsmeet.link
               </a>.
             </p>
           </section>

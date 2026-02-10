@@ -77,7 +77,7 @@ export default function BookingCancellation({
           </Text>
 
           <Text style={footerText}>
-            — MeetWhen
+            — LetsMeet
           </Text>
         </Container>
       </Body>

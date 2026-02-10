@@ -66,7 +66,7 @@ export default async function ReschedulePage({ params, searchParams }: PageProps
           <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
             <Image
               src="/logo-full.svg"
-              alt="MeetWhen"
+              alt="LetsMeet"
               width={100}
               height={24}
             />

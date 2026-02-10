@@ -109,7 +109,7 @@ async function deliverWebhook(
         "X-Webhook-Signature": signature,
         "X-Webhook-Timestamp": timestamp.toString(),
         "X-Webhook-Event": payload.event,
-        "User-Agent": "MeetWhen-Webhooks/1.0",
+        "User-Agent": "LetsMeet-Webhooks/1.0",
       },
       body: payloadString,
       signal: AbortSignal.timeout(30000), // 30 second timeout
@@ -229,7 +229,7 @@ export async function sendTestWebhook(webhookId: string): Promise<{ success: boo
     timestamp: new Date().toISOString(),
     data: {
       test: true,
-      message: "This is a test webhook delivery from MeetWhen",
+      message: "This is a test webhook delivery from LetsMeet",
       booking: {
         id: "test_booking_123",
         eventType: { title: "Test Event", duration: 30 },
@@ -263,7 +263,7 @@ export async function sendTestWebhook(webhookId: string): Promise<{ success: boo
         "X-Webhook-Signature": signature,
         "X-Webhook-Timestamp": timestamp.toString(),
         "X-Webhook-Event": testPayload.event,
-        "User-Agent": "MeetWhen-Webhooks/1.0",
+        "User-Agent": "LetsMeet-Webhooks/1.0",
       },
       body: payloadString,
       signal: AbortSignal.timeout(30000),

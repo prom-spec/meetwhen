@@ -86,7 +86,7 @@ export default function BookingNotification({
           </Text>
 
           <Text style={footerText}>
-            — MeetWhen
+            — LetsMeet
           </Text>
         </Container>
       </Body>
