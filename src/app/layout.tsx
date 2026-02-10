@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 import Providers from "@/components/Providers";
 
@@ -17,10 +18,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "MeetWhen - AI-Powered Scheduling",
+    default: "MeetWhen - Simple Scheduling",
     template: "%s | MeetWhen",
   },
-  description: "Effortlessly schedule meetings with AI-powered availability detection. The smarter way to book time.",
+  description: "Simple, free scheduling for everyone. Share your availability and let others book time with you — no back-and-forth needed.",
+  metadataBase: new URL("https://meetwhen-production.up.railway.app"),
   keywords: ["scheduling", "calendar", "meetings", "AI", "booking", "availability"],
   authors: [{ name: "MeetWhen" }],
   creator: "MeetWhen",
@@ -34,13 +36,14 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://meetwhen.app",
     siteName: "MeetWhen",
-    title: "MeetWhen - AI-Powered Scheduling",
-    description: "Effortlessly schedule meetings with AI-powered availability detection. The smarter way to book time.",
+    title: "MeetWhen - Simple Scheduling",
+    description: "Simple, free scheduling for everyone. Share your availability and let others book time with you.",
+    images: ["/logo.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "MeetWhen - AI-Powered Scheduling",
-    description: "Effortlessly schedule meetings with AI-powered availability detection.",
+    title: "MeetWhen - Simple Scheduling",
+    description: "Simple, free scheduling for everyone. Share your availability and let others book time with you.",
   },
 };
 
@@ -52,7 +55,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <footer className="py-6 text-center text-sm text-gray-400 space-x-4">
+            <Link href="/privacy" className="hover:text-gray-600 transition-colors">Privacy Policy</Link>
+            <span>·</span>
+            <Link href="/terms" className="hover:text-gray-600 transition-colors">Terms of Service</Link>
+          </footer>
+        </Providers>
       </body>
     </html>
   );
