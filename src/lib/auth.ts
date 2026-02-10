@@ -161,11 +161,29 @@ export const authOptions: NextAuthOptions = {
         
         try {
           const cookieStore = await cookies()
-          const linkMode = cookieStore.get("link_account_user_id")?.value
+          const linkTokenValue = cookieStore.get("link_token")?.value
 
-          if (linkMode) {
+          if (linkTokenValue) {
             // Clear the cookie immediately
-            cookieStore.delete("link_account_user_id")
+            cookieStore.delete("link_token")
+
+            // Look up and validate the linking token from DB
+            const linkingToken = await prisma.linkingToken.findUnique({
+              where: { token: linkTokenValue },
+            })
+
+            // Delete the token (single-use) regardless of validity
+            if (linkingToken) {
+              await prisma.linkingToken.delete({ where: { id: linkingToken.id } })
+            }
+
+            // Validate: token must exist and not be expired
+            if (!linkingToken || linkingToken.expiresAt < new Date()) {
+              authLogger.warn("Invalid or expired linking token", { tokenExists: !!linkingToken })
+              return "/dashboard/settings?error=link_expired"
+            }
+
+            const linkMode = linkingToken.userId
 
             // Check if this Google account is already linked to ANY user
             const existingAccount = await prisma.account.findUnique({
