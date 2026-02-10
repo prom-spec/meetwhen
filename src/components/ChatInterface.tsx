@@ -115,7 +115,7 @@ export default function ChatInterface() {
       <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-blue-600 text-white rounded-t-lg">
         <div className="flex items-center gap-2">
           <MessageSquare size={20} />
-          <span className="font-semibold">letsmeet.link Assistant</span>
+          <span className="font-semibold">AI Scheduler</span>
         </div>
         <button onClick={() => setIsOpen(false)} className="hover:bg-blue-700 p-1 rounded">
           <X size={20} />
@@ -126,12 +126,13 @@ export default function ChatInterface() {
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 && (
           <div className="text-center text-gray-500 py-8">
-            <p>Hi! I can help you with:</p>
-            <ul className="text-sm mt-2 space-y-1">
-              <li>📅 Viewing your bookings</li>
-              <li>📆 Managing event types</li>
-              <li>⏰ Setting availability</li>
-              <li>🚇 Blocking dates</li>
+            <p className="font-medium">Hey! I&apos;m your AI scheduling assistant.</p>
+            <p className="text-sm mt-1 mb-3">Just tell me what you need:</p>
+            <ul className="text-sm space-y-1">
+              <li>📅 &quot;Show my upcoming meetings&quot;</li>
+              <li>📆 &quot;Create a 30-min meeting type&quot;</li>
+              <li>⏰ &quot;Set me as available 9-5 weekdays&quot;</li>
+              <li>🚫 &quot;Block next Friday off&quot;</li>
             </ul>
           </div>
         )}
@@ -178,7 +179,7 @@ export default function ChatInterface() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about your schedule..."
+            placeholder="Tell me what to schedule..."
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             disabled={isLoading}
           />

@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const metadata = {
-  title: "About letsmeet.link — Built in a Day with AI",
+  title: "About letsmeet.link — AI-First Scheduling, Built in a Day",
   description:
-    "letsmeet.link was designed, coded, and deployed in a single day by an AI agent and a human using OpenClaw.",
+    "letsmeet.link is an AI-first scheduling platform — built in a day by an AI agent, and usable by AI agents via MCP.",
 };
 
 export default function AboutPage() {
@@ -27,7 +27,7 @@ export default function AboutPage() {
               href="/login"
               className="text-sm font-medium text-white bg-[#0066FF] hover:bg-[#0052cc] px-4 py-2 rounded-lg transition-colors"
             >
-              Get started free
+              Schedule with AI
             </Link>
           </div>
         </div>
@@ -41,13 +41,13 @@ export default function AboutPage() {
             Built in a single day
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 tracking-tight mb-6">
-            An entire scheduling platform.
+            Built by AI. Used by AI.
             <br />
-            <span className="text-[#0066FF]">One AI. One human. One day.</span>
+            <span className="text-[#0066FF]">Shipped in a single day.</span>
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            letsmeet.link isn&apos;t just a scheduling tool — it&apos;s a proof of concept for what
-            happens when you give an AI agent real autonomy over a software project.
+            letsmeet.link is an AI-first scheduling platform — built from scratch by an AI agent, 
+            and designed so AI agents can use it too, via MCP.
           </p>
         </div>
 
@@ -135,23 +135,30 @@ export default function AboutPage() {
               Why This Matters
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              This isn&apos;t about replacing developers. It&apos;s about showing that
-              the barrier between &quot;idea&quot; and &quot;shipped product&quot; is
-              collapsing. A single person with the right AI tooling can build and launch
-              something that would have taken a small team weeks.
+              The AI that built letsmeet.link can also <em>use</em> it. Through MCP 
+              (Model Context Protocol), any AI agent can check availability, book meetings, 
+              and manage calendars programmatically. The platform was built AI-first — 
+              not as an afterthought, but as the core design principle.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              letsmeet.link is real software used by real people. It handles edge cases, sends
-              proper emails, respects timezones, and integrates with Google&apos;s OAuth
-              ecosystem. The fact that it was built in a day doesn&apos;t make it a toy —
-              it makes it a signal of where software development is heading.
+              letsmeet.link is real software used by real people and real AI agents. It handles 
+              edge cases, sends proper emails, respects timezones, and integrates with 
+              Google&apos;s OAuth ecosystem. The fact that it was built in a day doesn&apos;t 
+              make it a toy — it makes it a signal of where software is heading.
             </p>
             <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center gap-4">
+              <Link
+                href="/mcp"
+                className="inline-flex items-center gap-2 text-[#0066FF] font-medium hover:underline text-sm"
+              >
+                Connect your AI via MCP →
+              </Link>
+              <span className="text-gray-300 hidden sm:inline">·</span>
               <Link
                 href="https://openclaw.ai"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-[#0066FF] font-medium hover:underline text-sm"
+                className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 text-sm"
               >
                 Learn more about OpenClaw →
               </Link>
@@ -178,6 +185,12 @@ export default function AboutPage() {
               </span>
             </div>
             <div className="flex items-center gap-6">
+              <Link
+                href="/mcp"
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                MCP Guide
+              </Link>
               <Link
                 href="/about"
                 className="text-sm text-gray-500 hover:text-gray-700"

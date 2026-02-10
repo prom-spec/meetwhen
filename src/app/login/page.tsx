@@ -174,7 +174,7 @@ export default function LoginPage() {
               Welcome back
             </h1>
             <p className="mt-2 text-gray-500 text-sm">
-              Sign in to your letsmeet.link account
+              Sign in to let AI handle your scheduling
             </p>
           </div>
 
@@ -200,7 +200,7 @@ export default function LoginPage() {
       {/* Bottom Branding */}
       <footer className="py-6 text-center">
         <p className="text-xs text-gray-400">
-          AI-powered scheduling by letsmeet.link
+          AI-first scheduling — letsmeet.link
         </p>
       </footer>
     </div>

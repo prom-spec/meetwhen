@@ -18,12 +18,12 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "letsmeet.link - Simple Scheduling",
+    default: "letsmeet.link - AI-First Scheduling",
     template: "%s | letsmeet.link",
   },
-  description: "Simple, free scheduling for everyone. Share your availability and let others book time with you — no back-and-forth needed.",
+  description: "The scheduling platform built for AI agents. AI chat built in, MCP integration ready. Any AI can manage your calendar, book meetings, and handle scheduling.",
   metadataBase: new URL("https://www.letsmeet.link"),
-  keywords: ["scheduling", "calendar", "meetings", "AI", "booking", "availability"],
+  keywords: ["scheduling", "calendar", "meetings", "AI", "MCP", "AI agent", "booking", "availability"],
   authors: [{ name: "letsmeet.link" }],
   creator: "letsmeet.link",
   icons: {
@@ -36,14 +36,14 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://www.letsmeet.link",
     siteName: "letsmeet.link",
-    title: "letsmeet.link - Simple Scheduling",
-    description: "Simple, free scheduling for everyone. Share your availability and let others book time with you.",
+    title: "letsmeet.link - AI-First Scheduling",
+    description: "The scheduling platform built for AI agents. AI chat, MCP integration, and smart calendar management.",
     images: ["/logo.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "letsmeet.link - Simple Scheduling",
-    description: "Simple, free scheduling for everyone. Share your availability and let others book time with you.",
+    title: "letsmeet.link - AI-First Scheduling",
+    description: "The scheduling platform built for AI agents. AI chat, MCP integration, and smart calendar management.",
   },
 };
 

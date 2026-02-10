@@ -619,12 +619,15 @@ export default function SettingsPage() {
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
             <Bot className="h-5 w-5" />
-            AI Assistant
+            Connect Your AI Agent
           </h2>
 
           <p className="text-sm text-gray-600 mb-4">
-            Connect your AI assistant (like Claude or ChatGPT) to manage your calendar through natural conversation.
-            Create an API key below and add it to your AI app.
+            Give any AI agent the power to manage your calendar via MCP. Create an API key, 
+            add it to your AI&apos;s config, and it can book, cancel, and check meetings for you.{" "}
+            <Link href="/mcp" className="text-[#0066FF] hover:underline font-medium">
+              Read the full MCP setup guide →
+            </Link>
           </p>
 
           {/* New Key Created Alert */}
