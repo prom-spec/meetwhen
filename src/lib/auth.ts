@@ -243,6 +243,44 @@ export const authOptions: NextAuthOptions = {
         }
       }
       
+      // Update existing account tokens and scope on re-sign-in
+      // NextAuth's PrismaAdapter doesn't update tokens for existing accounts
+      if (account?.provider === "google" && user.id) {
+        try {
+          const existingAccount = await prisma.account.findUnique({
+            where: {
+              provider_providerAccountId: {
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+              },
+            },
+            select: { id: true },
+          })
+
+          if (existingAccount) {
+            await prisma.account.update({
+              where: { id: existingAccount.id },
+              data: {
+                access_token: account.access_token,
+                expires_at: account.expires_at,
+                refresh_token: account.refresh_token ?? undefined,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token as string | undefined,
+                session_state: account.session_state,
+              },
+            })
+            authLogger.info("Updated existing account tokens/scope on re-sign-in", {
+              accountId: existingAccount.id,
+              hasRefreshToken: !!account.refresh_token,
+              scope: account.scope,
+            })
+          }
+        } catch (error) {
+          authLogger.error("Failed to update account tokens on re-sign-in", error)
+        }
+      }
+
       // Generate username for existing users who don't have one
       if (user.id) {
         try {
