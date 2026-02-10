@@ -119,7 +119,7 @@ export const authOptions: NextAuthOptions = {
   adapter: {
     ...prismaAdapter,
     // Override linkAccount to use upsert so re-auth updates tokens instead of failing
-    linkAccount: (data: AdapterAccount) =>
+    linkAccount: (data: any) =>
       prisma.account.upsert({
         where: {
           provider_providerAccountId: {
