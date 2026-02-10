@@ -115,7 +115,7 @@ export default function ChatInterface() {
       <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-blue-600 text-white rounded-t-lg">
         <div className="flex items-center gap-2">
           <MessageSquare size={20} />
-          <span className="font-semibold">AI Scheduler</span>
+          <span className="font-semibold">Real Help</span>
         </div>
         <button onClick={() => setIsOpen(false)} className="hover:bg-blue-700 p-1 rounded">
           <X size={20} />

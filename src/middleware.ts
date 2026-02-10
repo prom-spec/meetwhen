@@ -14,6 +14,7 @@ const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"])
 const CSRF_EXEMPT_PATHS = [
   "/api/mcp",           // Uses Bearer token auth
   "/api/analytics/track", // Public endpoint
+  "/api/chat",          // Session-authenticated, called from same origin
 ]
 
 function isCsrfExempt(pathname: string): boolean {
