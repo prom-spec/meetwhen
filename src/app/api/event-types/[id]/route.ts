@@ -2,6 +2,23 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { z } from "zod"
+
+const updateEventTypeSchema = z.object({
+  title: z.string().min(1).max(200).trim().optional(),
+  slug: z.string().min(1).max(50).regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens").optional(),
+  description: z.string().max(2000).optional().nullable(),
+  duration: z.coerce.number().int().min(5).max(480).optional(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
+  location: z.string().max(500).optional().nullable(),
+  locationType: z.enum(["IN_PERSON", "GOOGLE_MEET", "ZOOM", "PHONE", "CUSTOM"]).optional().nullable(),
+  locationValue: z.string().max(500).optional().nullable(),
+  isActive: z.boolean().optional(),
+  bufferBefore: z.coerce.number().int().min(0).max(120).optional(),
+  bufferAfter: z.coerce.number().int().min(0).max(120).optional(),
+  minNotice: z.coerce.number().int().min(0).max(43200).optional(),
+  maxDaysAhead: z.coerce.number().int().min(1).max(365).optional(),
+})
 
 export async function GET(
   request: NextRequest,
@@ -56,8 +73,12 @@ export async function PATCH(
       return NextResponse.json({ error: "Event type not found" }, { status: 404 })
     }
 
-    const body = await request.json()
-    const { title, slug, description, duration, color, location, locationType, locationValue, isActive, bufferBefore, bufferAfter, minNotice, maxDaysAhead } = body
+    const rawBody = await request.json()
+    const parsed = updateEventTypeSchema.safeParse(rawBody)
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }, { status: 400 })
+    }
+    const { title, slug, description, duration, color, location, locationType, locationValue, isActive, bufferBefore, bufferAfter, minNotice, maxDaysAhead } = parsed.data
 
     if (slug && slug !== existingEventType.slug) {
       const slugExists = await prisma.eventType.findFirst({
@@ -73,23 +94,26 @@ export async function PATCH(
       }
     }
 
+    // Build update data, only including fields that were provided
+    const updateData: Record<string, unknown> = {}
+    if (title !== undefined) updateData.title = title
+    if (slug !== undefined) updateData.slug = slug
+    if (description !== undefined) updateData.description = description
+    if (duration !== undefined) updateData.duration = duration
+    if (color !== undefined) updateData.color = color
+    if (location !== undefined) updateData.location = location
+    if (locationType !== undefined) updateData.locationType = locationType
+    if (locationValue !== undefined) updateData.locationValue = locationValue
+    if (isActive !== undefined) updateData.isActive = isActive
+    if (bufferBefore !== undefined) updateData.bufferBefore = bufferBefore
+    if (bufferAfter !== undefined) updateData.bufferAfter = bufferAfter
+    if (minNotice !== undefined) updateData.minNotice = minNotice
+    if (maxDaysAhead !== undefined) updateData.maxDaysAhead = maxDaysAhead
+
     const eventType = await prisma.eventType.update({
       where: { id },
-      data: {
-        ...(title !== undefined && { title }),
-        ...(slug !== undefined && { slug }),
-        ...(description !== undefined && { description }),
-        ...(duration !== undefined && { duration: Number(duration) }),
-        ...(color !== undefined && { color }),
-        ...(location !== undefined && { location }),
-        ...(locationType !== undefined && { locationType }),
-        ...(locationValue !== undefined && { locationValue }),
-        ...(isActive !== undefined && { isActive }),
-        ...(bufferBefore !== undefined && { bufferBefore: Number(bufferBefore) }),
-        ...(bufferAfter !== undefined && { bufferAfter: Number(bufferAfter) }),
-        ...(minNotice !== undefined && { minNotice: Number(minNotice) }),
-        ...(maxDaysAhead !== undefined && { maxDaysAhead: Number(maxDaysAhead) }),
-      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data: updateData as any,
     })
 
     return NextResponse.json(eventType)

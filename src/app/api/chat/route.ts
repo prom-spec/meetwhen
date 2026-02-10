@@ -187,7 +187,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { messages } = await request.json()
+    const body = await request.json()
+
+    // Validate messages input
+    const messages = body?.messages
+    if (!Array.isArray(messages) || messages.length === 0 || messages.length > 20) {
+      return NextResponse.json({ error: "Invalid messages: must be 1-20 messages" }, { status: 400 })
+    }
+    // Sanitize: only allow user/assistant roles from client, strip anything else
+    const sanitizedMessages = messages
+      .filter((m: { role?: string }) => m.role === "user" || m.role === "assistant")
+      .map((m: { role: string; content: unknown }) => ({
+        role: m.role,
+        content: typeof m.content === "string" ? m.content.slice(0, 4000) : "",
+      }))
+
+    if (sanitizedMessages.length === 0) {
+      return NextResponse.json({ error: "No valid messages" }, { status: 400 })
+    }
 
     const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
     const aiToken = process.env.CLOUDFLARE_AI_TOKEN
@@ -197,7 +214,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare messages with system prompt
-    const allMessages = [{ role: "system", content: SYSTEM_PROMPT }, ...messages]
+    const allMessages = [{ role: "system", content: SYSTEM_PROMPT }, ...sanitizedMessages]
 
     // Call Cloudflare Workers AI
     const response = await fetch(
