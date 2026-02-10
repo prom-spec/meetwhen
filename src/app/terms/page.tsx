@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "LetsMeet Terms of Service - Rules and guidelines for using our scheduling platform.",
+  description: "letsmeet.link Terms of Service - Rules and guidelines for using our scheduling platform.",
 }
 
 export default function TermsPage() {
@@ -11,7 +11,7 @@ export default function TermsPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-16">
         <Link href="/" className="text-[#0066FF] hover:underline text-sm mb-8 inline-block">
-          ← Back to LetsMeet
+          ← Back to letsmeet.link
         </Link>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Terms of Service</h1>
         <p className="text-sm text-gray-500 mb-8">Last updated: February 10, 2026</p>
@@ -20,14 +20,14 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">1. Acceptance of Terms</h2>
             <p className="text-gray-600 leading-relaxed">
-              By accessing or using LetsMeet (&quot;the Service&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.
+              By accessing or using letsmeet.link (&quot;the Service&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">2. Description of Service</h2>
             <p className="text-gray-600 leading-relaxed">
-              LetsMeet is a scheduling platform that allows users to share their availability and let others book meetings with them. The Service integrates with Google Calendar to detect availability and create events.
+              letsmeet.link is a scheduling platform that allows users to share their availability and let others book meetings with them. The Service integrates with Google Calendar to detect availability and create events.
             </p>
           </section>
 
@@ -55,14 +55,14 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">5. Intellectual Property</h2>
             <p className="text-gray-600 leading-relaxed">
-              The Service, including its design, code, and branding, is owned by LetsMeet. You retain ownership of any content you provide (such as your availability settings and profile information).
+              The Service, including its design, code, and branding, is owned by letsmeet.link. You retain ownership of any content you provide (such as your availability settings and profile information).
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">6. Limitation of Liability</h2>
             <p className="text-gray-600 leading-relaxed">
-              The Service is provided &quot;as is&quot; without warranties of any kind. LetsMeet is not liable for missed meetings, scheduling errors, or any damages arising from use of the Service. We do our best to ensure reliability, but cannot guarantee uninterrupted service.
+              The Service is provided &quot;as is&quot; without warranties of any kind. letsmeet.link is not liable for missed meetings, scheduling errors, or any damages arising from use of the Service. We do our best to ensure reliability, but cannot guarantee uninterrupted service.
             </p>
           </section>
 

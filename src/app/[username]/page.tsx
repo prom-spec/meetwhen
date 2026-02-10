@@ -19,8 +19,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!user) return { title: "User Not Found" }
   
   return {
-    title: `${user.name || user.username} | LetsMeet`,
-    description: `Schedule a meeting with ${user.name || user.username} on LetsMeet`,
+    title: `${user.name || user.username} | letsmeet.link`,
+    description: `Schedule a meeting with ${user.name || user.username} on letsmeet.link`,
   }
 }
 
@@ -49,7 +49,7 @@ export default async function UserProfilePage({ params }: PageProps) {
           <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
             <Image
               src="/logo-full.svg"
-              alt="LetsMeet"
+              alt="letsmeet.link"
               width={100}
               height={24}
             />

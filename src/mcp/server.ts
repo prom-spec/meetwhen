@@ -1,5 +1,5 @@
 /**
- * LetsMeet MCP Server
+ * letsmeet.link MCP Server
  * Run with: npx tsx src/mcp/server.ts
  */
 import { Server } from "@modelcontextprotocol/sdk/server/index.js"
@@ -447,7 +447,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport()
   await server.connect(transport)
-  console.error("LetsMeet MCP Server running on stdio")
+  console.error("letsmeet.link MCP Server running on stdio")
 }
 
 main().catch((error) => {

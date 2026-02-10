@@ -1,5 +1,5 @@
 /**
- * MCP HTTP Endpoint for LetsMeet
+ * MCP HTTP Endpoint for letsmeet.link
  * Validates API key and handles MCP JSON-RPC requests
  */
 import { NextRequest, NextResponse } from "next/server"
@@ -78,7 +78,7 @@ const toolDefinitions = [
   },
   {
     name: "find_user",
-    description: "Search for a LetsMeet user by their username.",
+    description: "Search for a letsmeet.link user by their username.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -115,7 +115,7 @@ const toolDefinitions = [
   },
   {
     name: "create_booking",
-    description: "Book a meeting with another LetsMeet user.",
+    description: "Book a meeting with another letsmeet.link user.",
     inputSchema: {
       type: "object" as const,
       properties: {

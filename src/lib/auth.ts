@@ -40,7 +40,7 @@ async function sendVerificationRequest({
   // If EMAIL_FROM is not set or invalid, use the Resend test address
   const fromAddress = from && from.includes("@") && !from.includes("example.com")
     ? from 
-    : "LetsMeet <onboarding@resend.dev>"
+    : "letsmeet.link <onboarding@resend.dev>"
   
   authLogger.debug("Sending email", { fromAddress, toEmail: email })
 
@@ -54,18 +54,18 @@ async function sendVerificationRequest({
       body: JSON.stringify({
         from: fromAddress,
         to: email,
-        subject: "Sign in to LetsMeet",
+        subject: "Sign in to letsmeet.link",
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <div style="text-align: center; margin-bottom: 32px;">
-              <h1 style="color: #1a1a2e; font-size: 24px; margin: 0;">Sign in to LetsMeet</h1>
+              <h1 style="color: #1a1a2e; font-size: 24px; margin: 0;">Sign in to letsmeet.link</h1>
             </div>
             <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
-              Click the button below to sign in to your LetsMeet account. This link will expire in 24 hours.
+              Click the button below to sign in to your letsmeet.link account. This link will expire in 24 hours.
             </p>
             <div style="text-align: center; margin: 32px 0;">
               <a href="${url}" style="display: inline-block; padding: 14px 32px; background-color: #0066FF; color: white; text-decoration: none; border-radius: 8px; font-weight: 500; font-size: 16px;">
-                Sign In to LetsMeet
+                Sign In to letsmeet.link
               </a>
             </div>
             <p style="color: #718096; font-size: 14px; line-height: 1.5; margin-top: 32px;">
@@ -73,7 +73,7 @@ async function sendVerificationRequest({
             </p>
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 32px 0;" />
             <p style="color: #a0aec0; font-size: 12px; text-align: center;">
-              LetsMeet - AI-Powered Scheduling
+              letsmeet.link - AI-Powered Scheduling
             </p>
           </div>
         `,
@@ -128,7 +128,7 @@ export const authOptions: NextAuthOptions = {
     }),
     // Email login temporarily disabled - needs verified domain in Resend
     // EmailProvider({
-    //   from: process.env.EMAIL_FROM || "LetsMeet <onboarding@resend.dev>",
+    //   from: process.env.EMAIL_FROM || "letsmeet.link <onboarding@resend.dev>",
     //   sendVerificationRequest,
     // }),
   ],

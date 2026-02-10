@@ -1,4 +1,4 @@
-// API Key utilities for LetsMeet MCP integration
+// API Key utilities for letsmeet.link MCP integration
 import { createHash, randomBytes } from "node:crypto"
 
 const API_KEY_PREFIX = "mk_"

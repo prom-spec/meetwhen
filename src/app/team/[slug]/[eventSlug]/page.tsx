@@ -231,7 +231,7 @@ export default function TeamBookingPage() {
             <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
               <Image
                 src="/logo-full.svg"
-                alt="LetsMeet"
+                alt="letsmeet.link"
                 width={100}
                 height={24}
               />
@@ -292,7 +292,7 @@ export default function TeamBookingPage() {
           <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
             <Image
               src="/logo-full.svg"
-              alt="LetsMeet"
+              alt="letsmeet.link"
               width={100}
               height={24}
             />

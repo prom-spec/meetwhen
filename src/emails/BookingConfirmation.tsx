@@ -97,7 +97,7 @@ export default function BookingConfirmation({
           </Text>
 
           <Text style={footerText}>
-            — LetsMeet
+            — letsmeet.link
           </Text>
         </Container>
       </Body>

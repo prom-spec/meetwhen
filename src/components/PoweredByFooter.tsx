@@ -10,12 +10,12 @@ export default function PoweredByFooter({ className = "" }: { className?: string
       >
         <Image
           src="/logo.svg"
-          alt="LetsMeet"
+          alt="letsmeet.link"
           width={16}
           height={16}
           className="opacity-50"
         />
-        <span>Powered by <span className="font-semibold">LetsMeet</span></span>
+        <span>Powered by <span className="font-semibold">letsmeet.link</span></span>
       </Link>
     </div>
   )

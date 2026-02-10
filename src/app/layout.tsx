@@ -18,14 +18,14 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "LetsMeet - Simple Scheduling",
-    template: "%s | LetsMeet",
+    default: "letsmeet.link - Simple Scheduling",
+    template: "%s | letsmeet.link",
   },
   description: "Simple, free scheduling for everyone. Share your availability and let others book time with you — no back-and-forth needed.",
   metadataBase: new URL("https://www.letsmeet.link"),
   keywords: ["scheduling", "calendar", "meetings", "AI", "booking", "availability"],
-  authors: [{ name: "LetsMeet" }],
-  creator: "LetsMeet",
+  authors: [{ name: "letsmeet.link" }],
+  creator: "letsmeet.link",
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
@@ -35,14 +35,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://www.letsmeet.link",
-    siteName: "LetsMeet",
-    title: "LetsMeet - Simple Scheduling",
+    siteName: "letsmeet.link",
+    title: "letsmeet.link - Simple Scheduling",
     description: "Simple, free scheduling for everyone. Share your availability and let others book time with you.",
     images: ["/logo.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LetsMeet - Simple Scheduling",
+    title: "letsmeet.link - Simple Scheduling",
     description: "Simple, free scheduling for everyone. Share your availability and let others book time with you.",
   },
 };

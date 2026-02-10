@@ -483,7 +483,7 @@ export default function TeamSettingsPage() {
                   placeholder="member@example.com"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  The user must have an account on LetsMeet
+                  The user must have an account on letsmeet.link
                 </p>
               </div>
               <div>

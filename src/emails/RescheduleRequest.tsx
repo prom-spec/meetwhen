@@ -68,7 +68,7 @@ export default function RescheduleRequest({
             If you have any questions, reply directly to {hostName}.
           </Text>
 
-          <Text style={footerText}>— LetsMeet</Text>
+          <Text style={footerText}>— letsmeet.link</Text>
         </Container>
       </Body>
     </Html>

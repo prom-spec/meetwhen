@@ -74,7 +74,7 @@ export default function DashboardLayout({
                 <Link href="/dashboard">
                   <Image
                     src="/logo-full.svg"
-                    alt="LetsMeet"
+                    alt="letsmeet.link"
                     width={130}
                     height={32}
                     priority
