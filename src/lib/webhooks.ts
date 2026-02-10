@@ -84,6 +84,11 @@ export function isPrivateUrl(urlString: string): boolean {
     return true
   }
 
+  // Only allow http/https schemes
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return true
+  }
+
   return false
 }
 
@@ -100,6 +105,19 @@ async function deliverWebhook(
   const payloadString = JSON.stringify(payload)
   const signature = signPayload(payloadString, secret)
   const timestamp = Math.floor(Date.now() / 1000)
+
+  // SSRF check at delivery time (defense in depth)
+  if (isPrivateUrl(url)) {
+    await prisma.webhookDelivery.update({
+      where: { id: deliveryId },
+      data: {
+        status: DeliveryStatus.FAILED,
+        responseBody: "Error: URL points to a private/internal address",
+        attempts: attempt,
+      },
+    })
+    return false
+  }
 
   try {
     const response = await fetch(url, {
