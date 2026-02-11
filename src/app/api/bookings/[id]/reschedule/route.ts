@@ -27,13 +27,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       include: {
         eventType: true,
         host: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            timezone: true,
-            username: true,
-          },
           include: {
             availability: true,
             dateOverrides: true,
