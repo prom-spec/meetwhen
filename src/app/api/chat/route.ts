@@ -1,41 +1,42 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import prisma from "@/lib/prisma"
+import { getFunctionDefinitions, executeAction } from "@/lib/chat-actions"
 
-const SYSTEM_PROMPT = `You are letsmeet.link's AI Scheduler — a smart scheduling assistant built into an AI-first platform. Help users manage their meetings and calendar through natural conversation.
+const SYSTEM_PROMPT = `You are letsmeet.link's AI Scheduler — a smart scheduling assistant that can take REAL actions. You help users manage meetings, availability, workflows, and teams through natural conversation.
 
-TONE: Warm, simple, conversational. Write like you're helping a friend. No jargon.
+TONE: Warm, concise, conversational. No jargon. Use emoji sparingly 📅
 
-WHAT YOU HELP WITH:
-- Setting up meeting types (like "30-min call" or "Coffee chat")
-- Checking upcoming meetings
-- Managing when you're available
-- Blocking off dates
+CAPABILITIES — You can execute these actions via function calls:
+• Event Types: create, list, update, delete, toggle active/inactive
+• Availability: set weekly schedule, view current schedule, add date overrides (block days, custom hours)
+• Bookings: list upcoming/past, cancel (with confirmation)
+• Settings: view/update profile, timezone, branding, holiday blocking
+• Workflows: create, list, toggle — triggers: BOOKING_CREATED, BOOKING_CANCELLED, BOOKING_RESCHEDULED, BEFORE_MEETING, AFTER_MEETING
+• Teams: list, create
+• Analytics: get booking stats summary
 
-PLATFORM CONTEXT: letsmeet.link is built for AI agents. If a user seems technical or asks about integrations, mention: "Did you know you can connect any AI agent (Claude, ChatGPT, etc.) to manage your calendar via MCP? Check out the [MCP guide](/mcp) to set it up in under a minute."
+WORKFLOW:
+1. When user requests an action, use the appropriate function call
+2. For destructive actions (delete, cancel), ask for confirmation first by calling the function with confirmed=false, then with confirmed=true when user confirms
+3. When creating event types, if user doesn't specify all details, use sensible defaults (30 min, Google Meet, etc.) — don't ask for every field
+4. Show results clearly with links to relevant dashboard pages
 
-OFF-TOPIC: Politely say "I'm here to help with your scheduling! For that, you might want to check [topic]."
+NAVIGATION LINKS (include when relevant):
+- [Dashboard](/dashboard)
+- [Event Types](/dashboard/event-types)
+- [Availability](/dashboard/availability)
+- [Bookings](/dashboard/bookings)
+- [Workflows](/dashboard/workflows)
+- [Settings](/dashboard/settings)
+- [Teams](/dashboard/teams)
+- [Analytics](/dashboard/analytics)
 
-NAVIGATION - Always include helpful links:
-- [Dashboard](/dashboard) - Your home base
-- [Event Types](/dashboard/event-types) - Create/edit meeting types
-- [Create New Event](/dashboard/event-types/new) - Set up a new meeting type
-- [Availability](/dashboard/availability) - Set your working hours
-- [Bookings](/dashboard/bookings) - See your scheduled meetings
-- [Settings](/dashboard/settings) - Update your profile & get API keys
-- [MCP Guide](/mcp) - Connect your AI agent
+OFF-TOPIC: Politely redirect — "I'm here to help with your scheduling!"
 
-STYLE RULES:
-- Use "you" and "your" (not "the user")
-- Say "meetings" not "bookings" or "events"
-- Keep answers short and friendly
-- Include a relevant link when helpful
-- Use emoji sparingly for warmth 📅
+STYLE: Keep answers short. Use bullet points for lists. Include links when helpful.`
 
-Example good response: "You have 3 meetings coming up this week! Check them all in [your bookings](/dashboard/bookings). Need to block some time off?"`
-
-// Rate limiting: 10 messages per user per hour
+// Rate limiting: 30 messages per user per hour
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 
 function checkRateLimit(userId: string): { allowed: boolean; remaining: number; resetAt: number } {
@@ -45,126 +46,45 @@ function checkRateLimit(userId: string): { allowed: boolean; remaining: number; 
 
   if (!limit || now > limit.resetAt) {
     rateLimitMap.set(userId, { count: 1, resetAt: now + hourInMs })
-    return { allowed: true, remaining: 9, resetAt: now + hourInMs }
+    return { allowed: true, remaining: 29, resetAt: now + hourInMs }
   }
 
-  if (limit.count >= 10) {
+  if (limit.count >= 30) {
     return { allowed: false, remaining: 0, resetAt: limit.resetAt }
   }
 
   limit.count++
-  return { allowed: true, remaining: 10 - limit.count, resetAt: limit.resetAt }
+  return { allowed: true, remaining: 30 - limit.count, resetAt: limit.resetAt }
 }
 
-// Function handlers
-async function executeFunction(name: string, args: Record<string, unknown>, userId: string) {
-  switch (name) {
-    case "get_event_types": {
-      const eventTypes = await prisma.eventType.findMany({
-        where: { userId },
-        select: { id: true, title: true, slug: true, duration: true, isActive: true },
-      })
-      return { eventTypes }
-    }
+async function callAI(
+  accountId: string,
+  aiToken: string,
+  messages: Array<{ role: string; content: string | null; tool_calls?: unknown; tool_call_id?: string }>,
+  tools?: unknown[]
+) {
+  const body: Record<string, unknown> = { messages }
+  if (tools && tools.length > 0) body.tools = tools
 
-    case "get_bookings": {
-      const bookings = await prisma.booking.findMany({
-        where: { hostId: userId, status: { not: "CANCELLED" }, startTime: { gte: new Date() } },
-        orderBy: { startTime: "asc" },
-        take: 10,
-        include: { eventType: { select: { title: true } } },
-      })
-      return {
-        bookings: bookings.map((b) => ({
-          id: b.id,
-          eventType: b.eventType.title,
-          guestName: b.guestName,
-          startTime: b.startTime.toISOString(),
-          status: b.status,
-        })),
-      }
+  const response = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.1-8b-instruct`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${aiToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
     }
+  )
 
-    case "toggle_availability": {
-      const { dayOfWeek, enabled, startTime = "09:00", endTime = "17:00" } = args as {
-        dayOfWeek: number
-        enabled: boolean
-        startTime?: string
-        endTime?: string
-      }
-      if (!enabled) {
-        await prisma.availability.deleteMany({ where: { userId, dayOfWeek } })
-        return { success: true, message: `Disabled availability for day ${dayOfWeek}` }
-      }
-      await prisma.availability.deleteMany({ where: { userId, dayOfWeek } })
-      await prisma.availability.create({
-        data: { userId, dayOfWeek, startTime, endTime },
-      })
-      return { success: true, message: `Set availability for day ${dayOfWeek}: ${startTime}-${endTime}` }
-    }
-
-    case "add_date_override": {
-      const { date, isAvailable, startTime, endTime } = args as {
-        date: string
-        isAvailable: boolean
-        startTime?: string
-        endTime?: string
-      }
-      const dateObj = new Date(date)
-      await prisma.dateOverride.upsert({
-        where: { userId_date: { userId, date: dateObj } },
-        update: { isAvailable, startTime: startTime || null, endTime: endTime || null },
-        create: { userId, date: dateObj, isAvailable, startTime: startTime || null, endTime: endTime || null },
-      })
-      return { success: true, message: isAvailable ? `Set custom hours for ${date}` : `Blocked ${date}` }
-    }
-
-    default:
-      return { error: `Unknown function: ${name}` }
+  const data = await response.json()
+  if (!response.ok) {
+    console.error("Cloudflare AI error:", JSON.stringify(data))
+    throw new Error("AI service error")
   }
+  return data.result
 }
-
-// Function definitions for Cloudflare AI
-const functions = [
-  {
-    name: "get_event_types",
-    description: "List all event types configured by the user",
-    parameters: { type: "object", properties: {}, required: [] },
-  },
-  {
-    name: "get_bookings",
-    description: "Get upcoming bookings",
-    parameters: { type: "object", properties: {}, required: [] },
-  },
-  {
-    name: "toggle_availability",
-    description: "Enable or disable availability for a day of the week",
-    parameters: {
-      type: "object",
-      properties: {
-        dayOfWeek: { type: "number", description: "Day of week (0=Sunday..6=Saturday)" },
-        enabled: { type: "boolean", description: "Whether to enable availability" },
-        startTime: { type: "string", description: "Start time (HH:mm)" },
-        endTime: { type: "string", description: "End time (HH:mm)" },
-      },
-      required: ["dayOfWeek", "enabled"],
-    },
-  },
-  {
-    name: "add_date_override",
-    description: "Block a specific date or set custom hours",
-    parameters: {
-      type: "object",
-      properties: {
-        date: { type: "string", description: "Date (YYYY-MM-DD)" },
-        isAvailable: { type: "boolean", description: "Whether available on this date" },
-        startTime: { type: "string", description: "Custom start time" },
-        endTime: { type: "string", description: "Custom end time" },
-      },
-      required: ["date", "isAvailable"],
-    },
-  },
-]
 
 export async function POST(request: NextRequest) {
   try {
@@ -174,27 +94,20 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = session.user.id
-
-    // Check rate limit
     const rateLimit = checkRateLimit(userId)
     if (!rateLimit.allowed) {
       return NextResponse.json(
-        {
-          error: "Rate limit exceeded. Max 10 messages per hour.",
-          resetAt: new Date(rateLimit.resetAt).toISOString(),
-        },
+        { error: "Rate limit exceeded. Max 30 messages per hour.", resetAt: new Date(rateLimit.resetAt).toISOString() },
         { status: 429 }
       )
     }
 
     const body = await request.json()
-
-    // Validate messages input
     const messages = body?.messages
-    if (!Array.isArray(messages) || messages.length === 0 || messages.length > 20) {
-      return NextResponse.json({ error: "Invalid messages: must be 1-20 messages" }, { status: 400 })
+    if (!Array.isArray(messages) || messages.length === 0 || messages.length > 50) {
+      return NextResponse.json({ error: "Invalid messages: must be 1-50 messages" }, { status: 400 })
     }
-    // Sanitize: only allow user/assistant roles from client, strip anything else
+
     const sanitizedMessages = messages
       .filter((m: { role?: string }) => m.role === "user" || m.role === "assistant")
       .map((m: { role: string; content: unknown }) => ({
@@ -213,75 +126,66 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "AI service not configured" }, { status: 500 })
     }
 
-    // Prepare messages with system prompt
+    const tools = getFunctionDefinitions()
     const allMessages = [{ role: "system", content: SYSTEM_PROMPT }, ...sanitizedMessages]
 
-    // Call Cloudflare Workers AI
-    const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3-8b-instruct`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${aiToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messages: allMessages,
-          tools: functions.map((f) => ({
-            type: "function",
-            function: { name: f.name, description: f.description, parameters: f.parameters },
-          })),
-        }),
-      }
-    )
+    let result = await callAI(accountId, aiToken, allMessages, tools)
 
-    const data = await response.json()
+    // Handle up to 3 sequential tool calls (for multi-step conversations)
+    let actionResults: Array<{ action: string; result: unknown }> = []
+    let iterations = 0
 
-    if (!response.ok) {
-      console.error("Cloudflare AI error:", data)
-      return NextResponse.json({ error: "AI service error" }, { status: 500 })
-    }
-
-    const result = data.result
-
-    // Handle function calls
-    if (result.tool_calls && result.tool_calls.length > 0) {
+    while (result.tool_calls && result.tool_calls.length > 0 && iterations < 3) {
+      iterations++
       const toolCall = result.tool_calls[0]
-      const functionName = toolCall.function.name
-      const functionArgs = JSON.parse(toolCall.function.arguments || "{}")
+      const functionName = toolCall.function?.name || toolCall.name
+      let functionArgs: Record<string, unknown> = {}
 
-      // Execute the function
-      const functionResult = await executeFunction(functionName, functionArgs, userId)
+      try {
+        const rawArgs = toolCall.function?.arguments || toolCall.arguments || "{}"
+        functionArgs = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs
+      } catch {
+        functionArgs = {}
+      }
 
-      // Make another call with the function result
+      const actionResult = await executeAction(functionName, functionArgs, userId)
+      actionResults.push({ action: functionName, result: actionResult })
+
+      // Build follow-up messages with tool result
       const followUpMessages = [
         ...allMessages,
-        { role: "assistant", content: null, tool_calls: [toolCall] },
-        { role: "tool", tool_call_id: toolCall.id, content: JSON.stringify(functionResult) },
+        {
+          role: "assistant",
+          content: null,
+          tool_calls: [toolCall],
+        },
+        {
+          role: "tool",
+          tool_call_id: toolCall.id || `call_${iterations}`,
+          content: JSON.stringify(actionResult),
+        },
       ]
 
-      const followUpResponse = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3-8b-instruct`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${aiToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ messages: followUpMessages }),
-        }
-      )
+      result = await callAI(accountId, aiToken, followUpMessages)
+    }
 
-      const followUpData = await followUpResponse.json()
-      return NextResponse.json({
-        response: followUpData.result?.response || "Action completed.",
-        functionResult,
-        remainingMessages: rateLimit.remaining,
-      })
+    const responseText =
+      result.response ||
+      (actionResults.length > 0 ? actionResults[actionResults.length - 1].result : "I couldn't process that. Try again?")
+
+    // If AI didn't produce a text response but we have action results, summarize
+    let finalResponse: string
+    if (typeof responseText === "string") {
+      finalResponse = responseText
+    } else {
+      const lastAction = actionResults[actionResults.length - 1]
+      const r = lastAction?.result as { message?: string } | undefined
+      finalResponse = r?.message || "Done!"
     }
 
     return NextResponse.json({
-      response: result.response,
+      response: finalResponse,
+      actions: actionResults.length > 0 ? actionResults : undefined,
       remainingMessages: rateLimit.remaining,
     })
   } catch (error) {
