@@ -369,6 +369,26 @@ export const authOptions: NextAuthOptions = {
           authLogger.error("Failed to generate username for existing user", error, { visitorId: user.id })
         }
       }
+
+      // Ensure the Google account record stores the email from the profile
+      if (account?.provider === "google" && account.providerAccountId) {
+        const googleEmail = (profile as { email?: string })?.email || user.email
+        if (googleEmail) {
+          try {
+            await prisma.account.update({
+              where: {
+                provider_providerAccountId: {
+                  provider: "google",
+                  providerAccountId: account.providerAccountId,
+                },
+              },
+              data: { email: googleEmail },
+            })
+          } catch (e) {
+            authLogger.error("Failed to update account email", e)
+          }
+        }
+      }
       
       return true
     },
