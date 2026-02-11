@@ -19,6 +19,9 @@ interface EventType {
 interface Host {
   name: string | null
   username: string | null
+  brandColor?: string | null
+  brandLogo?: string | null
+  hidePoweredBy?: boolean
 }
 
 interface SlotResponse {
@@ -69,6 +72,8 @@ export default function BookingByIdPage() {
   const [guestTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone)
   const hasTrackedView = useRef(false)
   const hasTrackedSlot = useRef(false)
+
+  const accent = host?.brandColor || "#0066FF"
 
   const { toast } = useToast()
   const [formData, setFormData] = useState({ name: "", email: "" })
@@ -211,9 +216,13 @@ export default function BookingByIdPage() {
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <header className="py-4 px-4">
           <div className="max-w-md mx-auto">
-            <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
-              <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
-            </Link>
+            {host?.brandLogo ? (
+              <img src={host.brandLogo} alt="Logo" className="h-6 object-contain opacity-60" />
+            ) : (
+              <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
+                <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
+              </Link>
+            )}
           </div>
         </header>
         <main className="flex-1 flex items-center justify-center p-4">
@@ -230,13 +239,13 @@ export default function BookingByIdPage() {
             </div>
             <p className="text-sm text-gray-500 mb-6">A confirmation email has been sent to {formData.email}</p>
             {bookingId && (
-              <Link href={`/booking/${bookingId}`} className="inline-flex items-center justify-center w-full py-3 px-4 bg-[#0066FF] text-white rounded-lg font-medium hover:bg-[#0052cc] transition-colors">
+              <Link href={`/booking/${bookingId}`} className="inline-flex items-center justify-center w-full py-3 px-4 text-white rounded-lg font-medium transition-colors" style={{ backgroundColor: accent }}>
                 View Booking Details
               </Link>
             )}
           </div>
         </main>
-        <PoweredByFooter />
+        <PoweredByFooter hidden={host?.hidePoweredBy} />
       </div>
     )
   }
@@ -245,9 +254,13 @@ export default function BookingByIdPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="py-4 px-4 border-b border-gray-100 bg-white">
         <div className="max-w-4xl mx-auto">
-          <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
-            <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
-          </Link>
+          {host?.brandLogo ? (
+            <img src={host.brandLogo} alt="Logo" className="h-6 object-contain opacity-60" />
+          ) : (
+            <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
+              <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
+            </Link>
+          )}
         </div>
       </header>
 
@@ -350,7 +363,7 @@ export default function BookingByIdPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Email address *</label>
                         <input type="email" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066FF] focus:border-transparent transition-shadow" placeholder="you@example.com" />
                       </div>
-                      <button type="submit" disabled={isLoading} className="w-full py-3 bg-[#0066FF] text-white font-medium rounded-lg hover:bg-[#0052cc] disabled:opacity-50 transition-colors">
+                      <button type="submit" disabled={isLoading} className="w-full py-3 text-white font-medium rounded-lg disabled:opacity-50 transition-colors" style={{ backgroundColor: accent }}>
                         {isLoading ? "Booking..." : "Confirm Booking"}
                       </button>
                     </form>
@@ -362,7 +375,7 @@ export default function BookingByIdPage() {
         </div>
       </main>
 
-      <PoweredByFooter className="border-t border-gray-100" />
+      <PoweredByFooter className="border-t border-gray-100" hidden={host?.hidePoweredBy} />
     </div>
   )
 }

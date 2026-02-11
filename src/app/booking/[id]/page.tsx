@@ -33,6 +33,7 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
   }
 
   const isCancelled = booking.status === "CANCELLED"
+  const accent = booking.host.brandColor || "#0066FF"
 
   const formatDate = (date: Date, tz: string) => {
     return date.toLocaleDateString(undefined, {
@@ -68,14 +69,18 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
       {/* Header */}
       <header className="py-4 px-4">
         <div className="max-w-md mx-auto">
-          <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
-            <Image
-              src="/logo-full.svg"
-              alt="letsmeet.link"
-              width={100}
-              height={24}
-            />
-          </Link>
+          {booking.host.brandLogo ? (
+            <img src={booking.host.brandLogo} alt="Logo" className="h-6 object-contain opacity-60" />
+          ) : (
+            <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
+              <Image
+                src="/logo-full.svg"
+                alt="letsmeet.link"
+                width={100}
+                height={24}
+              />
+            </Link>
+          )}
         </div>
       </header>
 
@@ -231,7 +236,8 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
                 href={generateGoogleCalendarUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-[#0066FF] text-white rounded-lg font-medium hover:bg-[#0052cc] transition-colors"
+                className="flex items-center justify-center gap-2 w-full py-3 px-4 text-white rounded-lg font-medium transition-colors"
+                style={{ backgroundColor: accent }}
               >
                 <Calendar className="w-4 h-4" />
                 Add to Google Calendar
@@ -261,7 +267,8 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
               </p>
               <a
                 href="https://letsmeet.link/?ref=guest-confirm"
-                className="inline-flex items-center justify-center px-5 py-2.5 bg-[#0066FF] text-white text-sm font-medium rounded-lg hover:bg-[#0052cc] transition-colors"
+                className="inline-flex items-center justify-center px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-colors"
+                style={{ backgroundColor: accent }}
               >
                 Get my free booking link →
               </a>
@@ -284,7 +291,7 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
       </main>
 
       {/* Footer */}
-      <PoweredByFooter />
+      <PoweredByFooter hidden={booking.host.hidePoweredBy} />
     </div>
   )
 }

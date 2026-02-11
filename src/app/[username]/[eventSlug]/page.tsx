@@ -16,6 +16,12 @@ interface EventType {
   location: string | null
 }
 
+interface Branding {
+  brandColor: string | null
+  brandLogo: string | null
+  hidePoweredBy: boolean
+}
+
 interface SlotResponse {
   slots: string[]
   eventType: EventType
@@ -73,6 +79,7 @@ export default function BookingPage() {
   const [timezoneSearch, setTimezoneSearch] = useState("")
   const [availableDates, setAvailableDates] = useState<Set<string>>(new Set())
   const [isLoadingMonth, setIsLoadingMonth] = useState(false)
+  const [branding, setBranding] = useState<Branding>({ brandColor: null, brandLogo: null, hidePoweredBy: false })
   const hasTrackedView = useRef(false)
   const hasTrackedSlot = useRef(false)
   const hasAutoSelected = useRef(false)
@@ -112,6 +119,17 @@ export default function BookingPage() {
     if (showTimezoneSelector) document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
   }, [showTimezoneSelector])
+
+  // Fetch host branding
+  useEffect(() => {
+    fetch(`/api/branding?username=${username}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data) setBranding(data) })
+      .catch(() => {})
+  }, [username])
+
+  const accent = branding.brandColor || "#0066FF"
+  const accentHover = branding.brandColor ? branding.brandColor + "dd" : "#0052cc"
 
   // Track page view once when event type is loaded
   useEffect(() => {
@@ -271,9 +289,13 @@ export default function BookingPage() {
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <header className="py-4 px-4">
           <div className="max-w-md mx-auto">
-            <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
-              <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
-            </Link>
+            {branding.brandLogo ? (
+              <img src={branding.brandLogo} alt="Logo" className="h-6 object-contain opacity-60" />
+            ) : (
+              <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
+                <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
+              </Link>
+            )}
           </div>
         </header>
 
@@ -301,7 +323,8 @@ export default function BookingPage() {
             {bookingId && (
               <Link
                 href={`/booking/${bookingId}`}
-                className="inline-flex items-center justify-center w-full py-3 px-4 bg-[#0066FF] text-white rounded-lg font-medium hover:bg-[#0052cc] transition-colors"
+                className="inline-flex items-center justify-center w-full py-3 px-4 text-white rounded-lg font-medium transition-colors"
+                style={{ backgroundColor: accent }}
               >
                 View Booking Details
               </Link>
@@ -309,7 +332,7 @@ export default function BookingPage() {
           </div>
         </main>
 
-        <PoweredByFooter />
+        <PoweredByFooter hidden={branding.hidePoweredBy} />
       </div>
     )
   }
@@ -318,9 +341,13 @@ export default function BookingPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="py-4 px-4 border-b border-gray-100 bg-white">
         <div className="max-w-4xl mx-auto">
-          <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
-            <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
-          </Link>
+          {branding.brandLogo ? (
+            <img src={branding.brandLogo} alt="Logo" className="h-6 object-contain opacity-60" />
+          ) : (
+            <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
+              <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
+            </Link>
+          )}
         </div>
       </header>
 
@@ -332,7 +359,8 @@ export default function BookingPage() {
               <div className="md:w-1/3 p-6 border-b md:border-b-0 md:border-r border-gray-200 bg-gray-50">
                 <button
                   onClick={() => router.push(`/${username}`)}
-                  className="text-sm text-[#0066FF] hover:text-[#0052cc] mb-4 font-medium"
+                  className="text-sm mb-4 font-medium"
+                  style={{ color: accent }}
                 >
                   ← Back
                 </button>
@@ -343,12 +371,12 @@ export default function BookingPage() {
                     )}
                     <h1 className="text-xl font-bold text-[#1a1a2e]">{eventType.title}</h1>
                     <div className="flex items-center gap-2 mt-3 text-gray-500">
-                      <Clock className="w-4 h-4 text-[#0066FF]" />
+                      <Clock className="w-4 h-4" style={{ color: accent }} />
                       <span>{eventType.duration} min</span>
                     </div>
                     {eventType.location && (
                       <div className="flex items-center gap-2 mt-2 text-gray-500">
-                        <MapPin className="w-4 h-4 text-[#0066FF]" />
+                        <MapPin className="w-4 h-4" style={{ color: accent }} />
                         <span>{eventType.location}</span>
                       </div>
                     )}
@@ -548,7 +576,8 @@ export default function BookingPage() {
                   <div>
                     <button
                       onClick={() => setShowForm(false)}
-                      className="text-sm text-[#0066FF] hover:text-[#0052cc] mb-4 font-medium"
+                      className="text-sm mb-4 font-medium"
+                      style={{ color: accent }}
                     >
                       ← Change time
                     </button>
@@ -606,7 +635,8 @@ export default function BookingPage() {
                       <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-3 bg-[#0066FF] text-white font-medium rounded-lg hover:bg-[#0052cc] disabled:opacity-50 transition-colors"
+                        className="w-full py-3 text-white font-medium rounded-lg disabled:opacity-50 transition-colors"
+                        style={{ backgroundColor: accent }}
                       >
                         {isLoading ? "Booking..." : "Confirm Booking"}
                       </button>
@@ -619,7 +649,7 @@ export default function BookingPage() {
         </div>
       </main>
 
-      <PoweredByFooter className="border-t border-gray-100" />
+      <PoweredByFooter className="border-t border-gray-100" hidden={branding.hidePoweredBy} />
     </div>
   )
 }

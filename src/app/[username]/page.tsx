@@ -41,19 +41,25 @@ export default async function UserProfilePage({ params }: PageProps) {
     notFound()
   }
 
+  const accent = user.brandColor || "#0066FF"
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header with Logo */}
       <header className="py-4 px-4">
         <div className="max-w-2xl mx-auto">
-          <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
-            <Image
-              src="/logo-full.svg"
-              alt="letsmeet.link"
-              width={100}
-              height={24}
-            />
-          </Link>
+          {user.brandLogo ? (
+            <img src={user.brandLogo} alt="Logo" className="h-6 object-contain opacity-60" />
+          ) : (
+            <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
+              <Image
+                src="/logo-full.svg"
+                alt="letsmeet.link"
+                width={100}
+                height={24}
+              />
+            </Link>
+          )}
         </div>
       </header>
 
@@ -91,7 +97,7 @@ export default async function UserProfilePage({ params }: PageProps) {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="font-semibold text-[#1a1a2e] group-hover:text-[#0066FF] transition-colors">
+                    <h2 className="font-semibold text-[#1a1a2e] transition-colors" style={{ ["--accent" as string]: accent }}>
                       {eventType.title}
                     </h2>
                     <p className="text-sm text-gray-500 mt-1">
@@ -104,7 +110,7 @@ export default async function UserProfilePage({ params }: PageProps) {
                     )}
                   </div>
                   <svg 
-                    className="w-5 h-5 text-gray-400 group-hover:text-[#0066FF] transition-colors" 
+                    className="w-5 h-5 text-gray-400 transition-colors" 
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
@@ -118,7 +124,7 @@ export default async function UserProfilePage({ params }: PageProps) {
         )}
 
         {/* Footer */}
-        <PoweredByFooter className="mt-12" />
+        <PoweredByFooter className="mt-12" hidden={user.hidePoweredBy} />
       </div>
     </div>
   )

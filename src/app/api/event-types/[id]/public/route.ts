@@ -16,6 +16,9 @@ export async function GET(
             name: true,
             username: true,
             timezone: true,
+            brandColor: true,
+            brandLogo: true,
+            hidePoweredBy: true,
           },
         },
       },
@@ -36,6 +39,9 @@ export async function GET(
       host: {
         name: eventType.user.name,
         username: eventType.user.username,
+        brandColor: eventType.user.brandColor,
+        brandLogo: eventType.user.brandLogo,
+        hidePoweredBy: eventType.user.hidePoweredBy,
       },
       hostTimezone: eventType.user.timezone,
     })
