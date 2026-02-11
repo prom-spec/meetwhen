@@ -424,10 +424,8 @@ function extractParamsForAction(action: string, text: string): Record<string, un
 
   switch (action) {
     case "create_event_type": {
-      const title = extractTitle(text)
-      if (title) params.title = title
-      const duration = extractDuration(text)
-      if (duration) params.duration = duration
+      params.title = extractTitle(text) || "Meeting"
+      params.duration = extractDuration(text) || 30
       const color = extractColor(text)
       if (color) params.color = color
       // Location type
@@ -651,7 +649,6 @@ export function formatPendingMetadata(pending: PendingAction): string {
  */
 export function getMissingParams(action: string, params: Record<string, unknown>): string | null {
   const required: Record<string, string[]> = {
-    create_event_type: ["title", "duration"],
     create_team: ["name"],
     create_api_key: ["name"],
     create_webhook: ["url"],
