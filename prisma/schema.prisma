@@ -83,6 +83,7 @@ model User {
   linkingTokens LinkingToken[]
   meetingPolls  MeetingPoll[]
   routingForms  RoutingForm[]
+  workflows     Workflow[]
 }
 
 model LinkingToken {
@@ -418,6 +419,99 @@ model PollVote {
 
   @@unique([optionId, voterEmail])
   @@index([pollId])
+}
+
+// ── Workflow Automations ──
+
+enum WorkflowTrigger {
+  BOOKING_CREATED
+  BOOKING_CANCELLED
+  BOOKING_RESCHEDULED
+  BEFORE_MEETING
+  AFTER_MEETING
+}
+
+enum WorkflowAction {
+  SEND_EMAIL
+  SEND_WEBHOOK
+  WAIT
+}
+
+enum WorkflowExecutionStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum WorkflowStepRunStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
+model Workflow {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  isActive  Boolean         @default(true)
+  trigger   WorkflowTrigger
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  steps      WorkflowStep[]
+  executions WorkflowExecution[]
+
+  @@index([userId])
+  @@index([userId, trigger])
+}
+
+model WorkflowStep {
+  id         String         @id @default(cuid())
+  workflowId String
+  workflow   Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  order      Int
+  action     WorkflowAction
+  config     Json           // For SEND_EMAIL: {subject, body}, SEND_WEBHOOK: {url, method, headers}, WAIT: {}
+  delay      Int            @default(0) // delay in minutes before executing this step
+
+  @@index([workflowId])
+  @@unique([workflowId, order])
+}
+
+model WorkflowExecution {
+  id         String                  @id @default(cuid())
+  workflowId String
+  workflow   Workflow                @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  bookingId  String
+  status     WorkflowExecutionStatus @default(RUNNING)
+  error      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stepRuns WorkflowStepRun[]
+
+  @@index([workflowId])
+  @@index([bookingId])
+}
+
+model WorkflowStepRun {
+  id          String               @id @default(cuid())
+  executionId String
+  execution   WorkflowExecution    @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  stepOrder   Int
+  action      WorkflowAction
+  status      WorkflowStepRunStatus @default(PENDING)
+  scheduledAt DateTime             // when this step should execute
+  executedAt  DateTime?
+  error       String?
+
+  @@index([executionId])
+  @@index([status, scheduledAt])
 }
 
 model RoutingForm {

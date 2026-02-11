@@ -190,8 +190,72 @@ export async function createCalendarEvent(
 }
 
 /**
- * Gets free/busy information for a time range using access token
- * Returns busy time periods from the user's calendar
+ * Refreshes the access token for a specific Account record.
+ * Returns the new access token or null if refresh fails.
+ */
+async function refreshAccountToken(account: {
+  id: string
+  refresh_token: string | null
+  access_token: string | null
+  expires_at: number | null
+}): Promise<string | null> {
+  try {
+    const isExpired = account.expires_at && account.expires_at * 1000 < Date.now()
+    if (!isExpired && account.access_token) {
+      return account.access_token
+    }
+
+    if (!account.refresh_token) {
+      return account.access_token
+    }
+
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET
+    )
+    oauth2Client.setCredentials({ refresh_token: account.refresh_token })
+
+    const { credentials } = await oauth2Client.refreshAccessToken()
+
+    await prisma.account.update({
+      where: { id: account.id },
+      data: {
+        access_token: credentials.access_token,
+        expires_at: credentials.expiry_date
+          ? Math.floor(credentials.expiry_date / 1000)
+          : undefined,
+      },
+    })
+
+    return credentials.access_token || null
+  } catch (error) {
+    calendarLogger.error("Failed to refresh token for account", error, { accountId: account.id })
+    return null
+  }
+}
+
+/**
+ * Gets all calendar IDs for a given access token using calendarList.list()
+ */
+async function getAllCalendarIds(accessToken: string): Promise<string[]> {
+  try {
+    const calendar = getGoogleCalendarClient(accessToken)
+    const response = await calendar.calendarList.list({
+      minAccessRole: "freeBusyReader",
+    })
+
+    return (response.data.items || [])
+      .filter((cal) => cal.id)
+      .map((cal) => cal.id!)
+  } catch (error) {
+    calendarLogger.error("Error listing calendars", error)
+    return ["primary"]
+  }
+}
+
+/**
+ * Gets free/busy information for a time range using access token.
+ * Checks ALL calendars the account has access to.
  */
 export async function getFreeBusyTimesWithToken(
   accessToken: string,
@@ -200,22 +264,36 @@ export async function getFreeBusyTimesWithToken(
 ): Promise<{ start: Date; end: Date }[]> {
   try {
     const calendar = getGoogleCalendarClient(accessToken)
+    const calendarIds = await getAllCalendarIds(accessToken)
+
+    if (calendarIds.length === 0) {
+      return []
+    }
 
     const response = await calendar.freebusy.query({
       requestBody: {
         timeMin: start.toISOString(),
         timeMax: end.toISOString(),
-        items: [{ id: "primary" }],
+        items: calendarIds.map((id) => ({ id })),
       },
     })
 
-    const busyTimes = response.data.calendars?.primary?.busy || []
-    return busyTimes
-      .filter((period) => period.start && period.end)
-      .map((period) => ({
-        start: new Date(period.start!),
-        end: new Date(period.end!),
-      }))
+    const allBusyTimes: { start: Date; end: Date }[] = []
+    const calendars = response.data.calendars || {}
+
+    for (const calId of Object.keys(calendars)) {
+      const busy = calendars[calId]?.busy || []
+      for (const period of busy) {
+        if (period.start && period.end) {
+          allBusyTimes.push({
+            start: new Date(period.start),
+            end: new Date(period.end),
+          })
+        }
+      }
+    }
+
+    return allBusyTimes
   } catch (error) {
     calendarLogger.error("Error getting free/busy times", error)
     return []
@@ -223,8 +301,8 @@ export async function getFreeBusyTimesWithToken(
 }
 
 /**
- * Gets free/busy information for a user (by userId)
- * Returns busy time periods from the user's calendar
+ * Gets free/busy information across ALL linked Google accounts for a user.
+ * Each account's calendars are checked independently; failed accounts are skipped.
  */
 export async function getFreeBusyTimes(
   userId: string,
@@ -232,12 +310,47 @@ export async function getFreeBusyTimes(
   end: Date
 ): Promise<{ start: Date; end: Date }[]> {
   try {
-    const accessToken = await getGoogleAccessToken(userId)
-    if (!accessToken) {
-      // No calendar connected
+    const accounts = await prisma.account.findMany({
+      where: {
+        userId,
+        provider: "google",
+      },
+      select: {
+        id: true,
+        access_token: true,
+        refresh_token: true,
+        expires_at: true,
+        email: true,
+      },
+    })
+
+    if (accounts.length === 0) {
       return []
     }
-    return getFreeBusyTimesWithToken(accessToken, start, end)
+
+    const results = await Promise.allSettled(
+      accounts.map(async (account) => {
+        const accessToken = await refreshAccountToken(account)
+        if (!accessToken) {
+          calendarLogger.warn("Skipping account with no valid token", {
+            accountId: account.id,
+            email: account.email,
+          })
+          return []
+        }
+        return getFreeBusyTimesWithToken(accessToken, start, end)
+      })
+    )
+
+    const allBusyTimes: { start: Date; end: Date }[] = []
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        allBusyTimes.push(...result.value)
+      }
+      // Rejected promises are silently skipped — don't break the whole check
+    }
+
+    return allBusyTimes
   } catch (error) {
     calendarLogger.error("Error getting free/busy times for user", error, { visitorId: userId })
     return []
@@ -246,6 +359,7 @@ export async function getFreeBusyTimes(
 
 /**
  * Checks if there's a calendar conflict for a given time range
+ * across ALL linked Google accounts and ALL their calendars.
  */
 export async function hasCalendarConflict(
   userId: string,
@@ -259,6 +373,73 @@ export async function hasCalendarConflict(
     calendarLogger.error("Error checking calendar conflict", error, { visitorId: userId })
     // On error, don't block booking
     return false
+  }
+}
+
+/**
+ * Lists all calendars across all linked Google accounts for a user.
+ * Used for the settings UI to show which calendars are being checked.
+ */
+export async function listAllUserCalendars(userId: string): Promise<{
+  accounts: {
+    id: string
+    email: string | null
+    calendars: { id: string; summary: string; primary: boolean; backgroundColor: string | null }[]
+    error?: string
+  }[]
+}> {
+  const accounts = await prisma.account.findMany({
+    where: { userId, provider: "google" },
+    select: {
+      id: true,
+      email: true,
+      access_token: true,
+      refresh_token: true,
+      expires_at: true,
+    },
+  })
+
+  const results = await Promise.allSettled(
+    accounts.map(async (account) => {
+      const accessToken = await refreshAccountToken(account)
+      if (!accessToken) {
+        return {
+          id: account.id,
+          email: account.email,
+          calendars: [],
+          error: "Token expired or revoked",
+        }
+      }
+
+      const calendar = getGoogleCalendarClient(accessToken)
+      const response = await calendar.calendarList.list({
+        minAccessRole: "freeBusyReader",
+      })
+
+      return {
+        id: account.id,
+        email: account.email,
+        calendars: (response.data.items || []).map((cal) => ({
+          id: cal.id || "",
+          summary: cal.summary || cal.id || "Unnamed",
+          primary: cal.primary || false,
+          backgroundColor: cal.backgroundColor || null,
+        })),
+      }
+    })
+  )
+
+  return {
+    accounts: results.map((r, i) =>
+      r.status === "fulfilled"
+        ? r.value
+        : {
+            id: accounts[i].id,
+            email: accounts[i].email,
+            calendars: [],
+            error: "Failed to fetch calendars",
+          }
+    ),
   }
 }
 
