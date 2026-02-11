@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma"
 import { createCalendarEvent, hasCalendarConflict, getGoogleAccessToken, BookingData } from "@/lib/calendar"
 import { sendBookingEmails } from "@/lib/email"
 import { triggerWebhook } from "@/lib/webhooks"
+import { executeWorkflow } from "@/lib/workflows"
 import { getNextRoundRobinMember, updateLastAssignedMember, createCollectiveBooking } from "@/lib/team-scheduling"
 import { bookingLogger, apiLogger } from "@/lib/logger"
 import { z } from "zod"
@@ -559,6 +560,11 @@ export async function POST(request: NextRequest) {
       },
     }).catch((err) => {
       bookingLogger.error("Failed to send booking emails", err, { bookingId: booking.id })
+    })
+
+    // Trigger workflow automations
+    executeWorkflow("BOOKING_CREATED", booking.id).catch((err) => {
+      bookingLogger.error("Workflow execution failed", err, { bookingId: booking.id })
     })
 
     // Trigger webhook for booking.created event

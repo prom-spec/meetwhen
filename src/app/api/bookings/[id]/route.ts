@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma"
 import { getGoogleAccessToken, deleteCalendarEvent, createCalendarEvent, hasCalendarConflict, BookingData } from "@/lib/calendar"
 import { sendBookingCancellation, sendBookingReschedule } from "@/lib/email"
 import { triggerWebhook } from "@/lib/webhooks"
+import { executeWorkflow } from "@/lib/workflows"
 import { verifyBookingToken } from "@/lib/booking-tokens"
 
 interface RouteParams {
@@ -158,6 +159,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       },
       cancelledBy,
     })
+
+    // Trigger workflow automations
+    executeWorkflow("BOOKING_CANCELLED", booking.id).catch((err) =>
+      console.error("Workflow execution failed:", err)
+    )
 
     // Trigger webhook for booking.cancelled event
     triggerWebhook(booking.hostId, "booking.cancelled", {
@@ -345,6 +351,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       oldEndTime,
       rescheduledBy,
     })
+
+    // Trigger workflow automations
+    executeWorkflow("BOOKING_RESCHEDULED", updatedBooking.id).catch((err) =>
+      console.error("Workflow execution failed:", err)
+    )
 
     // Trigger webhook for booking.rescheduled event
     triggerWebhook(booking.hostId, "booking.rescheduled", {

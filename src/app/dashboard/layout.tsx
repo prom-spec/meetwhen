@@ -16,6 +16,7 @@ const primaryLinks = [
 ]
 
 const moreLinks = [
+  { href: "/dashboard/workflows", label: "Workflows" },
   { href: "/dashboard/polls", label: "Polls" },
   { href: "/dashboard/teams", label: "Teams" },
   { href: "/dashboard/routing", label: "Routing" },
