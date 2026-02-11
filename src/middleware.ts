@@ -64,8 +64,33 @@ const CSP_POLICY = [
   "frame-src 'self' https://accounts.google.com",
 ].join("; ")
 
-export function middleware(request: NextRequest) {
+// Known app hostnames that should NOT trigger custom domain routing
+const APP_HOSTS = new Set([
+  "letsmeet.link",
+  "www.letsmeet.link",
+  "localhost",
+  "localhost:3000",
+])
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const host = request.headers.get("host") || ""
+
+  // Custom domain routing: if the host isn't our app, look up the user
+  if (!APP_HOSTS.has(host) && !host.endsWith(".vercel.app") && !host.endsWith(".railway.app")) {
+    // Only rewrite public-facing pages, not API/static routes
+    if (!pathname.startsWith("/api/") && !pathname.startsWith("/_next/") && !pathname.startsWith("/dashboard")) {
+      // Rewrite to /_custom-domain/[host]/[...path]
+      // The actual lookup happens in the page component via a server-side DB query
+      const url = request.nextUrl.clone()
+      url.pathname = `/_custom-domain${pathname}`
+      url.searchParams.set("__domain", host)
+      const response = NextResponse.rewrite(url)
+      // Add security headers on the rewritten response too
+      addSecurityHeaders(response)
+      return response
+    }
+  }
 
   // Rate limit auth endpoints
   if (pathname.startsWith("/api/auth/")) {
@@ -116,16 +141,17 @@ export function middleware(request: NextRequest) {
   }
 
   const response = NextResponse.next()
+  addSecurityHeaders(response)
+  return response
+}
 
-  // Security headers
+function addSecurityHeaders(response: NextResponse) {
   response.headers.set("X-Frame-Options", "DENY")
   response.headers.set("X-Content-Type-Options", "nosniff")
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
   response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
   response.headers.set("Content-Security-Policy", CSP_POLICY)
-
-  // Strip infrastructure headers
   response.headers.delete("x-powered-by")
   response.headers.delete("server")
   for (const key of response.headers.keys()) {
@@ -133,8 +159,6 @@ export function middleware(request: NextRequest) {
       response.headers.delete(key)
     }
   }
-
-  return response
 }
 
 export const config = {

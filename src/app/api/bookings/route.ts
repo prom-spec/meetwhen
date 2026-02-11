@@ -41,6 +41,10 @@ export async function GET() {
         eventType: {
           select: { title: true, duration: true, color: true },
         },
+        recurrenceChildren: {
+          select: { id: true, startTime: true, endTime: true, status: true },
+          orderBy: { startTime: "asc" },
+        },
       },
       orderBy: { startTime: "desc" },
     })
@@ -454,6 +458,9 @@ export async function POST(request: NextRequest) {
       bookingLogger.info("Recurring series created", { requestId, parentId: booking.id, childCount: childBookings.length })
     }
 
+    // Store all bookings (parent + children) for calendar event creation
+    const allBookings = [booking, ...childBookings]
+
     bookingLogger.info("Booking created successfully", { 
       requestId, 
       bookingId: booking.id, 
@@ -480,51 +487,50 @@ export async function POST(request: NextRequest) {
       booking.meetingUrl = meetingUrl
     }
 
-    // Create Google Calendar event if enabled
-    // For Google Meet, this will generate the Meet link
+    // Create Google Calendar events for all bookings in series
     if (eventType.user.calendarSyncEnabled) {
       try {
         const accessToken = await getGoogleAccessToken(eventType.userId)
         if (accessToken) {
-          const bookingData: BookingData = {
-            id: booking.id,
-            guestName: booking.guestName,
-            guestEmail: booking.guestEmail,
-            startTime: booking.startTime,
-            endTime: booking.endTime,
-            eventType: {
-              title: booking.eventType.title,
-              description: booking.eventType.description,
-              location: booking.eventType.location,
-              locationType: eventType.locationType,
-              locationValue: eventType.locationValue,
-            },
-            host: {
-              name: booking.host.name,
-              email: booking.host.email,
-            },
-          }
-          const result = await createCalendarEvent(accessToken, bookingData)
-          
-          // Update booking with Google Calendar event ID and meeting URL
-          const updateData: { googleEventId?: string; meetingUrl?: string } = {}
-          if (result.googleEventId) {
-            updateData.googleEventId = result.googleEventId
-          }
-          if (result.meetingUrl) {
-            updateData.meetingUrl = result.meetingUrl
-          }
-          
-          if (Object.keys(updateData).length > 0) {
-            await prisma.booking.update({
-              where: { id: booking.id },
-              data: updateData,
-            })
-            booking.meetingUrl = result.meetingUrl || booking.meetingUrl
-            bookingLogger.debug("Calendar event created", { bookingId: booking.id, googleEventId: result.googleEventId })
+          for (const b of allBookings) {
+            try {
+              const bookingData: BookingData = {
+                id: b.id,
+                guestName: b.guestName,
+                guestEmail: b.guestEmail,
+                startTime: b.startTime,
+                endTime: b.endTime,
+                eventType: {
+                  title: b.eventType.title,
+                  description: b.eventType.description,
+                  location: b.eventType.location,
+                  locationType: eventType.locationType,
+                  locationValue: eventType.locationValue,
+                },
+                host: {
+                  name: b.host.name,
+                  email: b.host.email,
+                },
+              }
+              const result = await createCalendarEvent(accessToken, bookingData)
+              
+              const calUpdateData: { googleEventId?: string; meetingUrl?: string } = {}
+              if (result.googleEventId) calUpdateData.googleEventId = result.googleEventId
+              if (result.meetingUrl) calUpdateData.meetingUrl = result.meetingUrl
+              
+              if (Object.keys(calUpdateData).length > 0) {
+                await prisma.booking.update({ where: { id: b.id }, data: calUpdateData })
+                if (b.id === booking.id) {
+                  booking.meetingUrl = result.meetingUrl || booking.meetingUrl
+                }
+                bookingLogger.debug("Calendar event created", { bookingId: b.id, googleEventId: result.googleEventId })
+              }
+            } catch (err) {
+              bookingLogger.error("Calendar event creation failed for booking in series", err, { bookingId: b.id })
+            }
           }
         } else {
-          bookingLogger.warn("No Google access token available for calendar event creation", { bookingId: booking.id, hostId: eventType.userId })
+          bookingLogger.warn("No Google access token available", { bookingId: booking.id, hostId: eventType.userId })
         }
       } catch (err) {
         bookingLogger.error("Calendar event creation failed", err, { bookingId: booking.id })

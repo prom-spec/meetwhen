@@ -127,6 +127,12 @@ export default function SettingsPage() {
   const [linkingAccount, setLinkingAccount] = useState(false)
   const [confirmUnlinkId, setConfirmUnlinkId] = useState<string | null>(null)
 
+  // Custom Domain state
+  const [customDomain, setCustomDomain] = useState("")
+  const [domainVerified, setDomainVerified] = useState(false)
+  const [domainLoading, setDomainLoading] = useState(false)
+  const [domainSaving, setDomainSaving] = useState(false)
+
   // API Keys state
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([])
   const [loadingKeys, setLoadingKeys] = useState(false)
@@ -135,10 +141,53 @@ export default function SettingsPage() {
   const [creatingKey, setCreatingKey] = useState(false)
   const [confirmRevokeKey, setConfirmRevokeKey] = useState<string | null>(null)
 
+  async function fetchCustomDomain() {
+    setDomainLoading(true)
+    try {
+      const res = await fetch("/api/user/custom-domain")
+      if (res.ok) {
+        const data = await res.json()
+        setCustomDomain(data.customDomain || "")
+        setDomainVerified(data.verified || false)
+      }
+    } catch (e) {
+      console.error("Error fetching custom domain:", e)
+    } finally {
+      setDomainLoading(false)
+    }
+  }
+
+  async function saveCustomDomain() {
+    setDomainSaving(true)
+    setMessage(null)
+    try {
+      const res = await fetch("/api/user/custom-domain", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain: customDomain.trim() || null }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to save domain")
+      setCustomDomain(data.customDomain || "")
+      setDomainVerified(data.verified || false)
+      setMessage({
+        type: data.verified ? "success" : "error",
+        text: data.verified
+          ? "Custom domain verified and active!"
+          : "Domain saved but CNAME not yet verified. Make sure your DNS CNAME points to letsmeet.link",
+      })
+    } catch (e) {
+      setMessage({ type: "error", text: e instanceof Error ? e.message : "Failed to save domain" })
+    } finally {
+      setDomainSaving(false)
+    }
+  }
+
   useEffect(() => {
     fetchSettings()
     fetchApiKeys()
     fetchLinkedAccounts()
+    fetchCustomDomain()
     
     // Check for link result in URL params
     const params = new URLSearchParams(window.location.search)
@@ -722,6 +771,80 @@ export default function SettingsPage() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Custom Domain Section */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            Custom Domain
+          </h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Use your own domain for your booking page instead of letsmeet.link/{settings?.username || "username"}.
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="customDomain" className="block text-sm font-medium text-gray-700">
+                Domain
+              </label>
+              <div className="mt-1 flex gap-2">
+                <input
+                  type="text"
+                  id="customDomain"
+                  value={customDomain}
+                  onChange={(e) => setCustomDomain(e.target.value.toLowerCase())}
+                  placeholder="meet.yourdomain.com"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0066FF] focus:border-[#0066FF] sm:text-sm"
+                />
+                <button
+                  onClick={saveCustomDomain}
+                  disabled={domainSaving}
+                  className="px-4 py-2 bg-[#0066FF] text-white rounded-md text-sm font-medium hover:bg-[#0052CC] disabled:opacity-50 flex items-center gap-2"
+                >
+                  {domainSaving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                  {domainSaving ? "Verifying..." : "Save & Verify"}
+                </button>
+              </div>
+            </div>
+
+            {customDomain && (
+              <div className={`flex items-center gap-2 p-3 rounded-lg border ${
+                domainVerified
+                  ? "bg-green-50 border-green-200 text-green-800"
+                  : "bg-yellow-50 border-yellow-200 text-yellow-800"
+              }`}>
+                {domainVerified ? (
+                  <Check className="h-4 w-4 flex-shrink-0" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 flex-shrink-0" />
+                )}
+                <span className="text-sm">
+                  {domainVerified ? "✓ Domain verified and active" : "⏳ Pending — CNAME not yet detected"}
+                </span>
+              </div>
+            )}
+
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-sm font-medium text-gray-900 mb-2">Setup Instructions</p>
+              <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+                <li>Go to your DNS provider (e.g. Cloudflare, Namecheap, GoDaddy)</li>
+                <li>Add a <strong>CNAME</strong> record:</li>
+              </ol>
+              <div className="mt-2 p-2 bg-gray-900 text-gray-100 rounded text-xs font-mono">
+                Type: CNAME<br />
+                Name: {customDomain ? customDomain.split(".")[0] : "meet"}<br />
+                Target: letsmeet.link
+              </div>
+              <ol start={3} className="text-sm text-gray-600 space-y-1 list-decimal list-inside mt-2">
+                <li>Wait for DNS propagation (usually a few minutes)</li>
+                <li>Click &quot;Save &amp; Verify&quot; again to confirm</li>
+              </ol>
+              <p className="text-xs text-gray-500 mt-3">
+                <strong>SSL:</strong> If you use Cloudflare, SSL is automatic via their proxy. Otherwise, your hosting platform (Railway) handles SSL for custom domains.
+              </p>
+            </div>
           </div>
         </div>
 

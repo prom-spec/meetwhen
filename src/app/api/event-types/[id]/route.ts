@@ -18,6 +18,8 @@ const updateEventTypeSchema = z.object({
   bufferAfter: z.coerce.number().int().min(0).max(120).optional(),
   minNotice: z.coerce.number().int().min(0).max(43200).optional(),
   maxDaysAhead: z.coerce.number().int().min(1).max(365).optional(),
+  allowRecurring: z.boolean().optional(),
+  recurrenceOptions: z.string().nullable().optional(),
   maxBookingsPerDay: z.coerce.number().int().min(1).nullable().optional(),
   maxBookingsPerWeek: z.coerce.number().int().min(1).nullable().optional(),
   redirectUrl: z.string().url().max(2000).nullable().optional(),
@@ -86,7 +88,7 @@ export async function PATCH(
     if (!parsed.success) {
       return NextResponse.json({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }, { status: 400 })
     }
-    const { title, slug, description, duration, color, location, locationType, locationValue, isActive, bufferBefore, bufferAfter, minNotice, maxDaysAhead, maxBookingsPerDay, maxBookingsPerWeek, redirectUrl, visibility, maxAttendees, customQuestions, price, currency } = parsed.data
+    const { title, slug, description, duration, color, location, locationType, locationValue, isActive, bufferBefore, bufferAfter, minNotice, maxDaysAhead, allowRecurring, recurrenceOptions, maxBookingsPerDay, maxBookingsPerWeek, redirectUrl, visibility, maxAttendees, customQuestions, price, currency } = parsed.data
 
     if (slug && slug !== existingEventType.slug) {
       const slugExists = await prisma.eventType.findFirst({
@@ -117,6 +119,8 @@ export async function PATCH(
     if (bufferAfter !== undefined) updateData.bufferAfter = bufferAfter
     if (minNotice !== undefined) updateData.minNotice = minNotice
     if (maxDaysAhead !== undefined) updateData.maxDaysAhead = maxDaysAhead
+    if (allowRecurring !== undefined) updateData.allowRecurring = allowRecurring
+    if (recurrenceOptions !== undefined) updateData.recurrenceOptions = recurrenceOptions
     if (maxBookingsPerDay !== undefined) updateData.maxBookingsPerDay = maxBookingsPerDay
     if (maxBookingsPerWeek !== undefined) updateData.maxBookingsPerWeek = maxBookingsPerWeek
     if (redirectUrl !== undefined) updateData.redirectUrl = redirectUrl

@@ -20,6 +20,8 @@ const createEventTypeSchema = z.object({
   maxDaysAhead: z.coerce.number().int().min(1).max(365).optional(),
   teamId: z.string().optional(),
   schedulingType: z.enum(["INDIVIDUAL", "ROUND_ROBIN", "COLLECTIVE"]).optional(),
+  allowRecurring: z.boolean().optional(),
+  recurrenceOptions: z.string().nullable().optional(), // JSON array
   maxBookingsPerDay: z.coerce.number().int().min(1).nullable().optional(),
   maxBookingsPerWeek: z.coerce.number().int().min(1).nullable().optional(),
   redirectUrl: z.string().url().max(2000).nullable().optional(),
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
     const { 
       title, slug, description, duration, color, location, locationType, locationValue, 
       bufferBefore, bufferAfter, minNotice, maxDaysAhead,
-      teamId, schedulingType,
+      teamId, schedulingType, allowRecurring, recurrenceOptions,
       maxBookingsPerDay, maxBookingsPerWeek, redirectUrl, visibility, maxAttendees,
       customQuestions, price, currency
     } = parsed.data
@@ -124,6 +126,8 @@ export async function POST(request: NextRequest) {
         bufferAfter: bufferAfter ? Number(bufferAfter) : 0,
         minNotice: minNotice ? Number(minNotice) : 240,
         maxDaysAhead: maxDaysAhead ? Number(maxDaysAhead) : 60,
+        allowRecurring: allowRecurring || false,
+        recurrenceOptions: recurrenceOptions || null,
         maxBookingsPerDay: maxBookingsPerDay || null,
         maxBookingsPerWeek: maxBookingsPerWeek || null,
         redirectUrl: redirectUrl || null,

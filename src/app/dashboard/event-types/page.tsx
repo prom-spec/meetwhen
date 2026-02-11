@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Plus, Edit, Trash2, Copy, ExternalLink, Video, MapPin, Phone, Link2, Check, ChevronRight, X, Loader2, CalendarPlus, Share2 } from "lucide-react"
+import { Plus, Edit, Trash2, Copy, ExternalLink, Video, MapPin, Phone, Link2, Check, ChevronRight, X, Loader2, CalendarPlus, Share2, Repeat } from "lucide-react"
 import { useToast } from "@/components/ToastProvider"
 import ConfirmDialog from "@/components/ConfirmDialog"
 import ShareModal from "@/components/ShareModal"
@@ -88,6 +88,8 @@ export default function EventTypesPage() {
     visibility: "public",
     maxAttendees: "1",
     customQuestions: "[]",
+    allowRecurring: false,
+    recurrenceOptions: "[]",
   })
 
   useEffect(() => {

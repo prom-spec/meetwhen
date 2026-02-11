@@ -53,18 +53,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// DELETE /api/bookings/[id] - Cancel a booking
+// DELETE /api/bookings/[id] - Cancel a booking (or entire series with ?cancelSeries=true)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const token = searchParams.get("token")
+    const cancelSeries = searchParams.get("cancelSeries") === "true"
 
     const booking = await prisma.booking.findUnique({
       where: { id },
       include: {
         eventType: true,
         host: { select: { id: true, name: true, email: true, timezone: true } },
+        recurrenceChildren: { select: { id: true, googleEventId: true, status: true } },
       },
     })
 
@@ -87,17 +89,51 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     const cancelledBy = isHost ? "host" : "guest"
 
-    // Update booking status
-    await prisma.booking.update({
-      where: { id },
+    // Determine which bookings to cancel
+    let bookingsToCancelIds = [id]
+    let extraGoogleEventIds: string[] = []
+
+    if (cancelSeries) {
+      // If this is a parent, cancel all children
+      if (booking.recurrenceChildren && booking.recurrenceChildren.length > 0) {
+        const activeChildren = booking.recurrenceChildren.filter(c => c.status !== "CANCELLED")
+        bookingsToCancelIds.push(...activeChildren.map(c => c.id))
+        extraGoogleEventIds = activeChildren.filter(c => c.googleEventId).map(c => c.googleEventId!)
+      }
+      // If this is a child, also cancel parent + siblings
+      if (booking.recurrenceParentId) {
+        const parent = await prisma.booking.findUnique({
+          where: { id: booking.recurrenceParentId },
+          include: { recurrenceChildren: { select: { id: true, googleEventId: true, status: true } } },
+        })
+        if (parent && parent.status !== "CANCELLED") {
+          bookingsToCancelIds.push(parent.id)
+          if (parent.googleEventId) extraGoogleEventIds.push(parent.googleEventId)
+        }
+        if (parent?.recurrenceChildren) {
+          const siblings = parent.recurrenceChildren.filter(c => c.id !== id && c.status !== "CANCELLED")
+          bookingsToCancelIds.push(...siblings.map(c => c.id))
+          extraGoogleEventIds.push(...siblings.filter(c => c.googleEventId).map(c => c.googleEventId!))
+        }
+      }
+    }
+
+    // Update all booking statuses
+    await prisma.booking.updateMany({
+      where: { id: { in: bookingsToCancelIds } },
       data: { status: "CANCELLED" },
     })
 
-    // Delete Google Calendar event if exists
-    if (booking.googleEventId) {
-      const accessToken = await getGoogleAccessToken(booking.hostId)
-      if (accessToken) {
-        await deleteCalendarEvent(accessToken, booking.googleEventId)
+    // Delete Google Calendar events
+    const accessToken = await getGoogleAccessToken(booking.hostId)
+    if (accessToken) {
+      const allGoogleEventIds = [booking.googleEventId, ...extraGoogleEventIds].filter(Boolean) as string[]
+      for (const gEventId of allGoogleEventIds) {
+        try {
+          await deleteCalendarEvent(accessToken, gEventId)
+        } catch (err) {
+          console.error("Failed to delete calendar event:", gEventId, err)
+        }
       }
     }
 
@@ -145,9 +181,15 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         email: booking.host.email,
       },
       cancelledBy,
+      cancelledSeries: cancelSeries,
+      cancelledCount: bookingsToCancelIds.length,
     }).catch((err) => console.error("Webhook trigger failed:", err))
 
-    return NextResponse.json({ success: true, message: "Booking cancelled successfully" })
+    return NextResponse.json({ 
+      success: true, 
+      message: cancelSeries ? `Series cancelled (${bookingsToCancelIds.length} bookings)` : "Booking cancelled successfully",
+      cancelledCount: bookingsToCancelIds.length,
+    })
   } catch (error) {
     console.error("Error cancelling booking:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
