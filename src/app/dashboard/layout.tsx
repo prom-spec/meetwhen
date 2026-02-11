@@ -4,22 +4,26 @@ import { usePathname, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import Image from "next/image"
-import { useState, useEffect } from "react"
-import { Menu, X, Loader2 } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Menu, X, Loader2, ChevronDown } from "lucide-react"
 import ChatInterface from "@/components/ChatInterface"
 
-const navLinks = [
+const primaryLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/event-types", label: "Event Types" },
   { href: "/dashboard/availability", label: "Availability" },
   { href: "/dashboard/bookings", label: "Bookings" },
+]
+
+const moreLinks = [
   { href: "/dashboard/polls", label: "Polls" },
   { href: "/dashboard/teams", label: "Teams" },
   { href: "/dashboard/routing", label: "Routing" },
   { href: "/dashboard/analytics", label: "Analytics" },
   { href: "/dashboard/embed", label: "Embed" },
-  { href: "/dashboard/settings", label: "Settings" },
 ]
+
+const navLinks = [...primaryLinks, ...moreLinks, { href: "/dashboard/settings", label: "Settings" }]
 
 export default function DashboardLayout({
   children,
@@ -30,11 +34,25 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
+  const moreRef = useRef<HTMLDivElement>(null)
 
   // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false)
+    setMoreOpen(false)
   }, [pathname])
+
+  // Close "More" dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [])
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -85,13 +103,13 @@ export default function DashboardLayout({
                 </Link>
               </div>
               
-              {/* Desktop Navigation - visible from md (768px) */}
-              <div className="hidden md:ml-6 md:flex md:space-x-2 lg:ml-8 lg:space-x-4">
-                {navLinks.map((link) => (
+              {/* Desktop Navigation */}
+              <div className="hidden md:ml-6 md:flex md:items-center md:space-x-1 lg:ml-8 lg:space-x-2">
+                {primaryLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`inline-flex items-center px-2 pt-1 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${
+                    className={`inline-flex items-center px-3 pt-1 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${
                       isActiveLink(link.href)
                         ? "border-[#0066FF] text-[#0066FF]"
                         : "border-transparent text-gray-500 hover:text-[#0066FF] hover:border-[#0066FF]/30"
@@ -100,6 +118,49 @@ export default function DashboardLayout({
                     {link.label}
                   </Link>
                 ))}
+
+                {/* More dropdown */}
+                <div className="relative" ref={moreRef}>
+                  <button
+                    onClick={() => setMoreOpen(!moreOpen)}
+                    className={`inline-flex items-center gap-1 px-3 pt-1 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${
+                      moreLinks.some((l) => isActiveLink(l.href))
+                        ? "border-[#0066FF] text-[#0066FF]"
+                        : "border-transparent text-gray-500 hover:text-[#0066FF] hover:border-[#0066FF]/30"
+                    }`}
+                  >
+                    More
+                    <ChevronDown className={`w-4 h-4 transition-transform ${moreOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {moreOpen && (
+                    <div className="absolute left-0 top-full mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                      {moreLinks.map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          className={`block px-4 py-2 text-sm transition-colors ${
+                            isActiveLink(link.href)
+                              ? "text-[#0066FF] bg-blue-50"
+                              : "text-gray-700 hover:bg-gray-50 hover:text-[#0066FF]"
+                          }`}
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Link
+                  href="/dashboard/settings"
+                  className={`inline-flex items-center px-3 pt-1 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${
+                    isActiveLink("/dashboard/settings")
+                      ? "border-[#0066FF] text-[#0066FF]"
+                      : "border-transparent text-gray-500 hover:text-[#0066FF] hover:border-[#0066FF]/30"
+                  }`}
+                >
+                  Settings
+                </Link>
               </div>
             </div>
 
