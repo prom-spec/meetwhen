@@ -39,7 +39,6 @@ export const metadata: Metadata = {
     siteName: "letsmeet.link",
     title: "letsmeet.link - AI-First Scheduling",
     description: "The scheduling platform built for AI agents. AI chat, MCP integration, and smart calendar management.",
-    images: ["/logo.png"],
   },
   twitter: {
     card: "summary_large_image",
