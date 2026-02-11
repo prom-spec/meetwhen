@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar, Check, X, RefreshCw, Settings, User, Globe, Webhook, ChevronRight, Key, Copy, Trash2, Plus, Bot, Link2, Unlink } from "lucide-react"
+import { Calendar, Check, X, RefreshCw, Settings, User, Globe, Webhook, ChevronRight, Key, Copy, Trash2, Plus, Bot, Link2, Unlink, Palette } from "lucide-react"
 import Link from "next/link"
 import ConfirmDialog from "@/components/ConfirmDialog"
 
@@ -30,6 +30,9 @@ interface UserSettings {
   calendarSyncEnabled: boolean
   blockHolidays: boolean
   holidayCountry: string | null
+  brandColor: string | null
+  brandLogo: string | null
+  hidePoweredBy: boolean
   googleConnected: boolean
   hasCalendarScope: boolean
 }
@@ -114,6 +117,9 @@ export default function SettingsPage() {
   const [timezone, setTimezone] = useState("")
   const [calendarSyncEnabled, setCalendarSyncEnabled] = useState(true)
   const [blockHolidays, setBlockHolidays] = useState(false)
+  const [brandColor, setBrandColor] = useState("")
+  const [brandLogo, setBrandLogo] = useState("")
+  const [hidePoweredBy, setHidePoweredBy] = useState(false)
 
   // Linked accounts state
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([])
@@ -156,6 +162,9 @@ export default function SettingsPage() {
       setTimezone(data.timezone || "UTC")
       setCalendarSyncEnabled(data.calendarSyncEnabled)
       setBlockHolidays(data.blockHolidays ?? false)
+      setBrandColor(data.brandColor || "")
+      setBrandLogo(data.brandLogo || "")
+      setHidePoweredBy(data.hidePoweredBy ?? false)
     } catch (error) {
       console.error("Error fetching settings:", error)
       setMessage({ type: "error", text: "Failed to load settings" })
@@ -294,6 +303,9 @@ export default function SettingsPage() {
           timezone,
           calendarSyncEnabled,
           blockHolidays,
+          brandColor: brandColor || null,
+          brandLogo: brandLogo || null,
+          hidePoweredBy,
         }),
       })
 
@@ -628,6 +640,108 @@ export default function SettingsPage() {
             )}
             Link Another Google Account
           </button>
+        </div>
+
+        {/* Branding Section */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+            <Palette className="h-5 w-5" />
+            Branding
+          </h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Customize how your public booking pages look to guests.
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="brandColor" className="block text-sm font-medium text-gray-700">
+                Brand Color
+              </label>
+              <div className="mt-1 flex items-center gap-3">
+                <input
+                  type="color"
+                  id="brandColor"
+                  value={brandColor || "#0066FF"}
+                  onChange={(e) => setBrandColor(e.target.value)}
+                  className="h-10 w-10 rounded border border-gray-300 cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={brandColor || ""}
+                  onChange={(e) => setBrandColor(e.target.value)}
+                  placeholder="#0066FF"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0066FF] focus:border-[#0066FF] sm:text-sm font-mono"
+                />
+                {brandColor && (
+                  <button
+                    onClick={() => setBrandColor("")}
+                    className="text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Applied to buttons and accent elements on your booking page
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="brandLogo" className="block text-sm font-medium text-gray-700">
+                Logo URL
+              </label>
+              <input
+                type="url"
+                id="brandLogo"
+                value={brandLogo}
+                onChange={(e) => setBrandLogo(e.target.value)}
+                placeholder="https://example.com/logo.png"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0066FF] focus:border-[#0066FF] sm:text-sm"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Replaces the letsmeet.link logo on your booking pages
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-gray-900">Hide &quot;Powered by letsmeet.link&quot;</p>
+                <p className="text-sm text-gray-500">
+                  Remove the footer from your booking pages
+                </p>
+              </div>
+              <button
+                onClick={() => setHidePoweredBy(!hidePoweredBy)}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#0066FF] focus:ring-offset-2 ${
+                  hidePoweredBy ? "bg-[#0066FF]" : "bg-gray-200"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    hidePoweredBy ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Preview */}
+            {(brandColor || brandLogo) && (
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <p className="text-xs font-medium text-gray-500 mb-3">Preview</p>
+                <div className="flex items-center gap-3 mb-3">
+                  {brandLogo && (
+                    <img src={brandLogo} alt="Logo preview" className="h-8 max-w-[120px] object-contain" />
+                  )}
+                </div>
+                <button
+                  className="px-4 py-2 text-white text-sm font-medium rounded-lg"
+                  style={{ backgroundColor: brandColor || "#0066FF" }}
+                >
+                  Confirm Booking
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Holiday Blocking Section */}

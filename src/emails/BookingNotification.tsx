@@ -182,6 +182,34 @@ const hr = {
   margin: "24px 0",
 }
 
+const referralBox = {
+  backgroundColor: "#f0f9ff",
+  border: "1px solid #bae6fd",
+  borderRadius: "8px",
+  padding: "20px",
+  margin: "24px 0",
+  textAlign: "center" as const,
+}
+
+const referralText = {
+  color: "#0c4a6e",
+  fontSize: "14px",
+  lineHeight: "22px",
+  margin: "0 0 12px",
+  fontWeight: "500" as const,
+}
+
+const referralButton = {
+  backgroundColor: "#0ea5e9",
+  borderRadius: "6px",
+  color: "#fff",
+  fontSize: "13px",
+  fontWeight: "600",
+  textDecoration: "none",
+  textAlign: "center" as const,
+  padding: "10px 20px",
+}
+
 const footerText = {
   color: "#6b7280",
   fontSize: "14px",

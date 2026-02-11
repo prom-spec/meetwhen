@@ -35,6 +35,9 @@ export async function GET() {
         calendarSyncEnabled: true,
         blockHolidays: true,
         holidayCountry: true,
+        brandColor: true,
+        brandLogo: true,
+        hidePoweredBy: true,
       },
     })
 
@@ -109,6 +112,9 @@ export async function PATCH(request: NextRequest) {
     if (calendarSyncEnabled !== undefined) updateData.calendarSyncEnabled = calendarSyncEnabled
     if (blockHolidays !== undefined) updateData.blockHolidays = blockHolidays
     if (holidayCountry !== undefined) updateData.holidayCountry = holidayCountry
+    if (brandColor !== undefined) updateData.brandColor = brandColor
+    if (brandLogo !== undefined) updateData.brandLogo = brandLogo
+    if (hidePoweredBy !== undefined) updateData.hidePoweredBy = hidePoweredBy
 
     const user = await prisma.user.update({
       where: { id: session.user.id },
@@ -122,6 +128,9 @@ export async function PATCH(request: NextRequest) {
         calendarSyncEnabled: true,
         blockHolidays: true,
         holidayCountry: true,
+        brandColor: true,
+        brandLogo: true,
+        hidePoweredBy: true,
       },
     })
 

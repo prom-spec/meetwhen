@@ -1,7 +1,9 @@
 import Link from "next/link"
 import Image from "next/image"
 
-export default function PoweredByFooter({ className = "" }: { className?: string }) {
+export default function PoweredByFooter({ className = "", hidden = false }: { className?: string; hidden?: boolean }) {
+  if (hidden) return null
+  
   return (
     <div className={`py-6 text-center ${className}`}>
       <div className="inline-flex items-center gap-2 text-sm text-gray-400">
