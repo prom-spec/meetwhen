@@ -282,7 +282,7 @@ export default function ChatInterface() {
             <Bot size={18} />
           </div>
           <div>
-            <span className="font-semibold text-sm">AI Scheduler</span>
+            <span className="font-semibold text-sm">Assistant</span>
             <div className="flex items-center gap-1 text-xs text-blue-100">
               <span className="w-1.5 h-1.5 bg-green-300 rounded-full" />
               Online · can take actions
@@ -301,8 +301,8 @@ export default function ChatInterface() {
             <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
               <Bot size={24} className="text-blue-600" />
             </div>
-            <p className="font-medium text-gray-800 text-sm">Hey! I&apos;m your AI scheduling assistant.</p>
-            <p className="text-xs text-gray-500 mt-1 mb-4">I can take real actions — create events, manage bookings, and more.</p>
+            <p className="font-medium text-gray-800 text-sm">Hey! I&apos;m your assistant.</p>
+            <p className="text-xs text-gray-500 mt-1 mb-4">I can help you manage your schedule — create events, handle bookings, update settings, and more.</p>
             <div className="flex flex-wrap gap-1.5 justify-center">
               {QUICK_ACTIONS.map((qa) => (
                 <button
