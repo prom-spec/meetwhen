@@ -1,56 +1,31 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { getFunctionDefinitions, executeAction } from "@/lib/chat-actions"
+import { executeAction } from "@/lib/chat-actions"
+import {
+  parseIntent,
+  handleMultiTurn,
+  getMissingParams,
+  formatActionResult,
+  formatMissingParamPrompt,
+} from "@/lib/chat-intent"
 
-const SYSTEM_PROMPT = `You are letsmeet.link's AI Scheduler — a smart scheduling assistant that can take REAL actions. You help users manage meetings, availability, workflows, and teams through natural conversation.
+const QA_SYSTEM_PROMPT = `You are letsmeet.link's AI Scheduler — a friendly scheduling assistant.
+You help users understand the platform's features. Keep answers short and conversational.
+Use emoji sparingly 📅. If the user wants to take an action (create, delete, etc.), tell them to describe what they want naturally.
 
-TONE: Warm, concise, conversational. No jargon. Use emoji sparingly 📅
+Features: event types, availability scheduling, bookings, workflows, teams, polls, routing forms, webhooks, API keys, custom domains, embed widgets, analytics, holiday blocking, branding.
 
-CAPABILITIES — You can execute these actions via function calls:
-• Event Types: create, list, update, delete, toggle active/inactive
-• Availability: set weekly schedule, view current schedule, add date overrides (block days, custom hours)
-• Bookings: list upcoming/past, cancel (with confirmation)
-• Settings: view/update profile, timezone, branding, holiday blocking
-• Workflows: create, list, toggle — triggers: BOOKING_CREATED, BOOKING_CANCELLED, BOOKING_RESCHEDULED, BEFORE_MEETING, AFTER_MEETING
-• Teams: list, create
-• Analytics: get booking stats summary
-• Polls: create, list, delete, close voting, get results
-• Routing Forms: list, create, delete
-• Embed: generate embed code (inline/popup/floating) for event types
-• Custom Domain: view, set, verify DNS
-• Holidays: view/set holiday blocking and country
-• Branding: view/update brand color, logo, powered-by badge
-• Linked Accounts: list OAuth accounts, view calendar sync status
-• API Keys: list, create, revoke
-• Webhooks: list, create, delete, test delivery
-• Recurring Meetings: list series, cancel entire series
-• Group Events: view attendees per slot
-• Custom Questions: view/set custom booking questions per event type
-
-WORKFLOW:
-1. When user requests an action, use the appropriate function call
-2. For destructive actions (delete, cancel), ask for confirmation first by calling the function with confirmed=false, then with confirmed=true when user confirms
-3. When creating event types, if user doesn't specify all details, use sensible defaults (30 min, Google Meet, etc.) — don't ask for every field
-4. Show results clearly with links to relevant dashboard pages
-
-NAVIGATION LINKS (include when relevant):
-- [Dashboard](/dashboard)
+Dashboard links:
 - [Event Types](/dashboard/event-types)
 - [Availability](/dashboard/availability)
 - [Bookings](/dashboard/bookings)
 - [Workflows](/dashboard/workflows)
 - [Settings](/dashboard/settings)
-- [Teams](/dashboard/teams)
-- [Analytics](/dashboard/analytics)
-- [Polls](/dashboard/polls)
-- [Routing Forms](/dashboard/routing)
-- [Webhooks](/dashboard/webhooks)
-- [API Keys](/dashboard/api-keys)
 
-OFF-TOPIC: Politely redirect — "I'm here to help with your scheduling!"
+Off-topic: Politely redirect — "I'm here to help with your scheduling!"`
 
-STYLE: Keep answers short. Use bullet points for lists. Include links when helpful.`
+const QA_MODEL = "@cf/meta/llama-3.1-8b-instruct"
 
 // Rate limiting: 30 messages per user per hour
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
@@ -73,35 +48,20 @@ function checkRateLimit(userId: string): { allowed: boolean; remaining: number; 
   return { allowed: true, remaining: 30 - limit.count, resetAt: limit.resetAt }
 }
 
-// Detect if message looks like an action request vs general question
-function looksLikeAction(message: string): boolean {
-  const actionPatterns = /\b(create|make|add|delete|remove|cancel|update|change|set|toggle|enable|disable|turn on|turn off|show me|list|get|generate|verify|block|close|revoke|test)\b/i
-  return actionPatterns.test(message)
-}
-
-const QA_MODEL = "@cf/meta/llama-3.1-8b-instruct"
-const TOOL_MODEL = "@hf/nousresearch/hermes-2-pro-mistral-7b"
-
-async function callAI(
+async function callQA(
   accountId: string,
   aiToken: string,
-  messages: Array<{ role: string; content: string | null; tool_calls?: unknown; tool_call_id?: string }>,
-  tools?: unknown[],
-  model?: string
-) {
-  const body: Record<string, unknown> = { messages }
-  if (tools && tools.length > 0) body.tools = tools
-  const selectedModel = model || (tools && tools.length > 0 ? TOOL_MODEL : QA_MODEL)
-
+  messages: Array<{ role: string; content: string }>
+): Promise<string> {
   const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${selectedModel}`,
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${QA_MODEL}`,
     {
       method: "POST",
       headers: {
         Authorization: `Bearer ${aiToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ messages }),
     }
   )
 
@@ -110,7 +70,7 @@ async function callAI(
     console.error("Cloudflare AI error:", JSON.stringify(data))
     throw new Error("AI service error")
   }
-  return data.result
+  return data.result?.response || "I'm not sure how to answer that. Could you rephrase?"
 }
 
 export async function POST(request: NextRequest) {
@@ -146,79 +106,63 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No valid messages" }, { status: 400 })
     }
 
-    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
-    const aiToken = process.env.CLOUDFLARE_AI_TOKEN
+    const lastUserMessage = sanitizedMessages.filter((m: { role: string }) => m.role === "user").pop()?.content || ""
 
-    if (!accountId || !aiToken) {
-      return NextResponse.json({ error: "AI service not configured" }, { status: 500 })
+    // Step 1: Check multi-turn context (confirmations, missing params)
+    let intent = handleMultiTurn(lastUserMessage, sanitizedMessages)
+
+    // Step 2: If no multi-turn match, parse fresh intent
+    if (!intent) {
+      intent = parseIntent(lastUserMessage)
     }
 
-    const lastUserMessage = sanitizedMessages.filter((m: { role: string }) => m.role === "user").pop()?.content || ""
-    const useTools = looksLikeAction(lastUserMessage as string)
-    const tools = useTools ? getFunctionDefinitions() : undefined
-    const allMessages = [{ role: "system", content: SYSTEM_PROMPT }, ...sanitizedMessages]
+    console.log(`[Chat] Intent: ${JSON.stringify(intent)}, message="${lastUserMessage.slice(0, 80)}"`)
 
-    console.log(`[Chat] useTools=${useTools}, model=${useTools ? TOOL_MODEL : QA_MODEL}, message="${(lastUserMessage as string).slice(0, 80)}"`)
-    let result = await callAI(accountId, aiToken, allMessages, tools)
+    // Step 3: No action detected → Q&A mode (LLM, no tools)
+    if (!intent.action) {
+      const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
+      const aiToken = process.env.CLOUDFLARE_AI_TOKEN
 
-    // Handle up to 3 sequential tool calls (for multi-step conversations)
-    let actionResults: Array<{ action: string; result: unknown }> = []
-    let iterations = 0
-
-    while (result.tool_calls && result.tool_calls.length > 0 && iterations < 3) {
-      iterations++
-      const toolCall = result.tool_calls[0]
-      const functionName = toolCall.function?.name || toolCall.name
-      console.log(`[Chat] Tool call #${iterations}: ${functionName}`, JSON.stringify(toolCall))
-      let functionArgs: Record<string, unknown> = {}
-
-      try {
-        const rawArgs = toolCall.function?.arguments || toolCall.arguments || "{}"
-        functionArgs = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs
-      } catch {
-        functionArgs = {}
+      if (!accountId || !aiToken) {
+        return NextResponse.json({ error: "AI service not configured" }, { status: 500 })
       }
 
-      console.log(`[Chat] Executing ${functionName} with args:`, JSON.stringify(functionArgs))
-      const actionResult = await executeAction(functionName, functionArgs, userId)
-      console.log(`[Chat] Action result:`, JSON.stringify(actionResult))
-      actionResults.push({ action: functionName, result: actionResult })
+      // Strip pending metadata from messages before sending to LLM
+      const cleanMessages = sanitizedMessages.map((m: { role: string; content: string }) => ({
+        role: m.role,
+        content: m.content.replace(/<!-- PENDING:.*? -->/g, "").trim(),
+      }))
 
-      // Build follow-up messages with tool result
-      const followUpMessages = [
-        ...allMessages,
-        {
-          role: "assistant",
-          content: null,
-          tool_calls: [toolCall],
-        },
-        {
-          role: "tool",
-          tool_call_id: toolCall.id || `call_${iterations}`,
-          content: JSON.stringify(actionResult),
-        },
-      ]
+      const qaMessages = [{ role: "system", content: QA_SYSTEM_PROMPT }, ...cleanMessages]
+      const response = await callQA(accountId, aiToken, qaMessages)
 
-      result = await callAI(accountId, aiToken, followUpMessages)
+      return NextResponse.json({
+        response,
+        remainingMessages: rateLimit.remaining,
+      })
     }
 
-    const responseText =
-      result.response ||
-      (actionResults.length > 0 ? actionResults[actionResults.length - 1].result : "I couldn't process that. Try again?")
-
-    // If AI didn't produce a text response but we have action results, summarize
-    let finalResponse: string
-    if (typeof responseText === "string") {
-      finalResponse = responseText
-    } else {
-      const lastAction = actionResults[actionResults.length - 1]
-      const r = lastAction?.result as { message?: string } | undefined
-      finalResponse = r?.message || "Done!"
+    // Step 4: Action detected — check for missing required params
+    const missingParam = getMissingParams(intent.action, intent.params)
+    if (missingParam) {
+      const prompt = formatMissingParamPrompt(intent.action, missingParam, intent.params)
+      return NextResponse.json({
+        response: prompt,
+        remainingMessages: rateLimit.remaining,
+      })
     }
+
+    // Step 5: Execute the action
+    console.log(`[Chat] Executing ${intent.action} with params:`, JSON.stringify(intent.params))
+    const result = await executeAction(intent.action, intent.params, userId)
+    console.log(`[Chat] Result:`, JSON.stringify(result))
+
+    // Step 6: Format and return
+    const response = formatActionResult(intent.action, result)
 
     return NextResponse.json({
-      response: finalResponse,
-      actions: actionResults.length > 0 ? actionResults : undefined,
+      response,
+      actions: [{ action: intent.action, result }],
       remainingMessages: rateLimit.remaining,
     })
   } catch (error) {
