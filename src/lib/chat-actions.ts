@@ -687,6 +687,683 @@ export const chatActions: Record<
     },
   },
 
+  // ── Polls ──────────────────────────────────────────────────────
+  list_polls: {
+    description: "List user's meeting polls",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params, userId) => {
+      const polls = await prisma.meetingPoll.findMany({
+        where: { createdBy: userId },
+        orderBy: { createdAt: "desc" },
+        include: { _count: { select: { options: true, votes: true } } },
+      })
+      return {
+        success: true,
+        message: polls.length ? `Found ${polls.length} poll(s).` : "No polls yet.",
+        data: {
+          polls: polls.map((p) => ({
+            id: p.id, title: p.title, status: p.status, duration: p.duration,
+            options: p._count.options, votes: p._count.votes, createdAt: p.createdAt.toISOString(),
+          })),
+        },
+      }
+    },
+  },
+
+  create_poll: {
+    description: "Create a new meeting poll with title, options (dates/times), and optional description",
+    parameters: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Poll title" },
+        description: { type: "string" },
+        duration: { type: "number", description: "Meeting duration in minutes" },
+        timezone: { type: "string", description: "Timezone, defaults to user timezone" },
+        options: {
+          type: "array", description: "Array of {startTime, endTime} ISO strings",
+          items: { type: "object", properties: { startTime: { type: "string" }, endTime: { type: "string" } } },
+        },
+      },
+      required: ["title", "options"],
+    },
+    execute: async (params, userId) => {
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { timezone: true } })
+      const options = params.options as Array<{ startTime: string; endTime: string }>
+      const poll = await prisma.meetingPoll.create({
+        data: {
+          title: params.title as string,
+          description: (params.description as string) || null,
+          duration: (params.duration as number) || 30,
+          timezone: (params.timezone as string) || user?.timezone || "UTC",
+          createdBy: userId,
+          options: { create: options.map((o) => ({ startTime: new Date(o.startTime), endTime: new Date(o.endTime) })) },
+        },
+      })
+      return { success: true, message: `Created poll "${poll.title}" with ${options.length} option(s).`, data: { pollId: poll.id } }
+    },
+  },
+
+  delete_poll: {
+    description: "Delete a meeting poll. Requires confirmation.",
+    parameters: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Poll ID" },
+        confirmed: { type: "boolean", description: "Must be true to delete" },
+      },
+      required: ["id"],
+    },
+    execute: async (params, userId) => {
+      const poll = await prisma.meetingPoll.findFirst({ where: { id: params.id as string, createdBy: userId } })
+      if (!poll) return { success: false, message: "Poll not found." }
+      if (!params.confirmed) {
+        return { success: false, confirmationRequired: true, confirmationMessage: `Delete poll "${poll.title}"?`, message: "Please confirm deletion.", data: { pollId: poll.id } }
+      }
+      await prisma.meetingPoll.delete({ where: { id: poll.id } })
+      return { success: true, message: `Deleted poll "${poll.title}".` }
+    },
+  },
+
+  close_poll: {
+    description: "Close voting on a poll and optionally pick the winning option",
+    parameters: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Poll ID" },
+        finalOptionId: { type: "string", description: "Winning option ID (optional, auto-picks most voted)" },
+      },
+      required: ["id"],
+    },
+    execute: async (params, userId) => {
+      const poll = await prisma.meetingPoll.findFirst({
+        where: { id: params.id as string, createdBy: userId },
+        include: { options: { include: { votes: true } } },
+      })
+      if (!poll) return { success: false, message: "Poll not found." }
+      if (poll.status !== "open") return { success: false, message: "Poll is already closed." }
+
+      let finalOptionId = params.finalOptionId as string | undefined
+      if (!finalOptionId) {
+        const sorted = poll.options.map((o) => ({ id: o.id, yesCount: o.votes.filter((v) => v.availability === "yes").length })).sort((a, b) => b.yesCount - a.yesCount)
+        finalOptionId = sorted[0]?.id
+      }
+
+      await prisma.meetingPoll.update({ where: { id: poll.id }, data: { status: "closed", finalOptionId } })
+      return { success: true, message: `Closed poll "${poll.title}".`, data: { finalOptionId } }
+    },
+  },
+
+  get_poll_results: {
+    description: "Show votes/results for a meeting poll",
+    parameters: {
+      type: "object",
+      properties: { id: { type: "string", description: "Poll ID" } },
+      required: ["id"],
+    },
+    execute: async (params, userId) => {
+      const poll = await prisma.meetingPoll.findFirst({
+        where: { id: params.id as string, createdBy: userId },
+        include: { options: { include: { votes: true } } },
+      })
+      if (!poll) return { success: false, message: "Poll not found." }
+      const results = poll.options.map((o) => ({
+        optionId: o.id, startTime: o.startTime.toISOString(), endTime: o.endTime.toISOString(),
+        yes: o.votes.filter((v) => v.availability === "yes").length,
+        maybe: o.votes.filter((v) => v.availability === "maybe").length,
+        no: o.votes.filter((v) => v.availability === "no").length,
+      }))
+      return { success: true, message: `Results for "${poll.title}" (${poll.status}).`, data: { results, status: poll.status, finalOptionId: poll.finalOptionId } }
+    },
+  },
+
+  // ── Routing Forms ────────────────────────────────────────────
+  list_routing_forms: {
+    description: "List routing forms",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params, userId) => {
+      const forms = await prisma.routingForm.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        include: { _count: { select: { fields: true, rules: true } } },
+      })
+      return {
+        success: true,
+        message: forms.length ? `Found ${forms.length} routing form(s).` : "No routing forms yet.",
+        data: { forms: forms.map((f) => ({ id: f.id, title: f.title, fields: f._count.fields, rules: f._count.rules })) },
+      }
+    },
+  },
+
+  create_routing_form: {
+    description: "Create a routing form with fields and rules",
+    parameters: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        description: { type: "string" },
+        fields: { type: "array", items: { type: "object", properties: { label: { type: "string" }, type: { type: "string" }, required: { type: "boolean" }, options: { type: "string" }, order: { type: "number" } } } },
+        rules: { type: "array", items: { type: "object", properties: { fieldId: { type: "string" }, operator: { type: "string" }, value: { type: "string" }, eventTypeId: { type: "string" }, order: { type: "number" } } } },
+        fallbackEventTypeId: { type: "string" },
+      },
+      required: ["title", "fields"],
+    },
+    execute: async (params, userId) => {
+      const fields = params.fields as Array<{ label: string; type: string; required?: boolean; options?: string; order?: number }>
+      const form = await prisma.routingForm.create({
+        data: {
+          title: params.title as string,
+          description: (params.description as string) || null,
+          userId,
+          fallbackEventTypeId: (params.fallbackEventTypeId as string) || null,
+          fields: { create: fields.map((f, i) => ({ label: f.label, type: f.type, required: f.required !== false, options: f.options || null, order: f.order || i })) },
+        },
+      })
+      return { success: true, message: `Created routing form "${form.title}" with ${fields.length} field(s).`, data: { formId: form.id } }
+    },
+  },
+
+  delete_routing_form: {
+    description: "Delete a routing form. Requires confirmation.",
+    parameters: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Routing form ID" },
+        confirmed: { type: "boolean", description: "Must be true to delete" },
+      },
+      required: ["id"],
+    },
+    execute: async (params, userId) => {
+      const form = await prisma.routingForm.findFirst({ where: { id: params.id as string, userId } })
+      if (!form) return { success: false, message: "Routing form not found." }
+      if (!params.confirmed) {
+        return { success: false, confirmationRequired: true, confirmationMessage: `Delete routing form "${form.title}"?`, message: "Please confirm deletion.", data: { formId: form.id } }
+      }
+      await prisma.routingForm.delete({ where: { id: form.id } })
+      return { success: true, message: `Deleted routing form "${form.title}".` }
+    },
+  },
+
+  // ── Embed ────────────────────────────────────────────────────
+  get_embed_code: {
+    description: "Generate embed code for an event type (inline, popup, or floating button)",
+    parameters: {
+      type: "object",
+      properties: {
+        eventTypeId: { type: "string" },
+        eventTypeTitle: { type: "string", description: "Find by title if ID not provided" },
+        style: { type: "string", enum: ["inline", "popup", "floating"], description: "Embed style, defaults to inline" },
+      },
+      required: [],
+    },
+    execute: async (params, userId) => {
+      let eventType
+      if (params.eventTypeId) {
+        eventType = await prisma.eventType.findFirst({ where: { id: params.eventTypeId as string, userId } })
+      } else if (params.eventTypeTitle) {
+        eventType = await prisma.eventType.findFirst({ where: { userId, title: { contains: params.eventTypeTitle as string, mode: "insensitive" } } })
+      }
+      if (!eventType) return { success: false, message: "Event type not found." }
+
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { username: true, customDomain: true, customDomainVerified: true } })
+      const baseUrl = user?.customDomain && user.customDomainVerified ? `https://${user.customDomain}` : "https://letsmeet.link"
+      const url = `${baseUrl}/${user?.username}/${eventType.slug}`
+      const style = (params.style as string) || "inline"
+
+      let code: string
+      if (style === "inline") {
+        code = `<iframe src="${url}?embed=true" style="width:100%;height:700px;border:none;" loading="lazy"></iframe>`
+      } else if (style === "popup") {
+        code = `<button onclick="window.open('${url}?embed=true','letsmeet','width=600,height=700')">Book a meeting</button>`
+      } else {
+        code = `<div style="position:fixed;bottom:20px;right:20px;z-index:9999"><button onclick="window.open('${url}?embed=true','letsmeet','width=600,height=700')" style="background:${eventType.color};color:white;border:none;padding:12px 24px;border-radius:24px;cursor:pointer;font-size:16px">📅 Book a meeting</button></div>`
+      }
+
+      return { success: true, message: `Here's your ${style} embed code:`, data: { code, url, style } }
+    },
+  },
+
+  // ── Custom Domain ────────────────────────────────────────────
+  get_custom_domain: {
+    description: "Show current custom domain settings",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params, userId) => {
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { customDomain: true, customDomainVerified: true } })
+      if (!user?.customDomain) return { success: true, message: "No custom domain configured.", data: { customDomain: null } }
+      return { success: true, message: `Custom domain: ${user.customDomain} (${user.customDomainVerified ? "verified ✅" : "not verified ❌"}).`, data: { customDomain: user.customDomain, verified: user.customDomainVerified } }
+    },
+  },
+
+  set_custom_domain: {
+    description: "Set or update custom domain",
+    parameters: { type: "object", properties: { domain: { type: "string", description: "Domain name e.g. meet.example.com" } }, required: ["domain"] },
+    execute: async (params, userId) => {
+      const domain = (params.domain as string).toLowerCase().replace(/^https?:\/\//, "").replace(/\/+$/, "")
+      await prisma.user.update({ where: { id: userId }, data: { customDomain: domain, customDomainVerified: false } })
+      return { success: true, message: `Custom domain set to "${domain}". Add a CNAME record pointing to letsmeet.link, then verify.`, data: { domain, dnsRecord: { type: "CNAME", name: domain, value: "letsmeet.link" } } }
+    },
+  },
+
+  verify_custom_domain: {
+    description: "Check DNS verification for custom domain",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params, userId) => {
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { customDomain: true, customDomainVerified: true } })
+      if (!user?.customDomain) return { success: false, message: "No custom domain configured." }
+      if (user.customDomainVerified) return { success: true, message: `Domain "${user.customDomain}" is already verified ✅.` }
+
+      // Simple DNS check
+      try {
+        const { promises: dns } = require("dns")
+        const records = await dns.resolveCname(user.customDomain)
+        const isValid = records.some((r: string) => r.includes("letsmeet.link"))
+        if (isValid) {
+          await prisma.user.update({ where: { id: userId }, data: { customDomainVerified: true } })
+          return { success: true, message: `Domain "${user.customDomain}" verified ✅!` }
+        }
+        return { success: false, message: `CNAME not found. Please add a CNAME record for "${user.customDomain}" pointing to "letsmeet.link".`, data: { records } }
+      } catch {
+        return { success: false, message: `DNS lookup failed for "${user.customDomain}". Make sure the CNAME record is set correctly.` }
+      }
+    },
+  },
+
+  // ── Holidays ─────────────────────────────────────────────────
+  get_holidays: {
+    description: "Show blocked holidays settings",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params, userId) => {
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { blockHolidays: true, holidayCountry: true } })
+      return { success: true, message: user?.blockHolidays ? `Holiday blocking enabled for ${user.holidayCountry || "no country set"}.` : "Holiday blocking is disabled.", data: { blockHolidays: user?.blockHolidays, holidayCountry: user?.holidayCountry } }
+    },
+  },
+
+  set_holidays: {
+    description: "Enable/disable holiday blocking and set country",
+    parameters: {
+      type: "object",
+      properties: {
+        blockHolidays: { type: "boolean" },
+        holidayCountry: { type: "string", description: "ISO country code e.g. US, IL, GB" },
+      },
+      required: [],
+    },
+    execute: async (params, userId) => {
+      const data: Record<string, unknown> = {}
+      if (params.blockHolidays !== undefined) data.blockHolidays = params.blockHolidays
+      if (params.holidayCountry !== undefined) data.holidayCountry = params.holidayCountry
+      if (Object.keys(data).length === 0) return { success: false, message: "No changes specified." }
+      await prisma.user.update({ where: { id: userId }, data })
+      return { success: true, message: `Holiday settings updated.`, data }
+    },
+  },
+
+  // ── Branding ─────────────────────────────────────────────────
+  get_branding: {
+    description: "Show current brand settings",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params, userId) => {
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { brandColor: true, brandLogo: true, hidePoweredBy: true } })
+      return { success: true, message: "Current branding settings.", data: { brandColor: user?.brandColor, brandLogo: user?.brandLogo, hidePoweredBy: user?.hidePoweredBy } }
+    },
+  },
+
+  update_branding: {
+    description: "Update brand color, logo URL, or hide powered-by badge",
+    parameters: {
+      type: "object",
+      properties: {
+        brandColor: { type: "string", description: "Hex color e.g. #3B82F6" },
+        brandLogo: { type: "string", description: "Logo URL" },
+        hidePoweredBy: { type: "boolean" },
+      },
+      required: [],
+    },
+    execute: async (params, userId) => {
+      const data: Record<string, unknown> = {}
+      if (params.brandColor !== undefined) data.brandColor = params.brandColor
+      if (params.brandLogo !== undefined) data.brandLogo = params.brandLogo
+      if (params.hidePoweredBy !== undefined) data.hidePoweredBy = params.hidePoweredBy
+      if (Object.keys(data).length === 0) return { success: false, message: "No changes specified." }
+      await prisma.user.update({ where: { id: userId }, data })
+      return { success: true, message: `Branding updated: ${Object.keys(data).join(", ")}.` }
+    },
+  },
+
+  // ── Linked Accounts ──────────────────────────────────────────
+  list_linked_accounts: {
+    description: "Show linked Google/OAuth accounts",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params, userId) => {
+      const accounts = await prisma.account.findMany({
+        where: { userId },
+        select: { provider: true, providerAccountId: true, type: true },
+      })
+      return {
+        success: true,
+        message: accounts.length ? `Found ${accounts.length} linked account(s).` : "No linked accounts.",
+        data: { accounts },
+      }
+    },
+  },
+
+  get_calendars: {
+    description: "Show calendar sync status",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params, userId) => {
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { calendarSyncEnabled: true } })
+      const accounts = await prisma.account.findMany({ where: { userId, provider: "google" }, select: { providerAccountId: true } })
+      return {
+        success: true,
+        message: `Calendar sync: ${user?.calendarSyncEnabled ? "enabled" : "disabled"}. ${accounts.length} Google account(s) linked.`,
+        data: { calendarSyncEnabled: user?.calendarSyncEnabled, googleAccounts: accounts.length },
+      }
+    },
+  },
+
+  // ── API Keys ─────────────────────────────────────────────────
+  list_api_keys: {
+    description: "Show API keys",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params, userId) => {
+      const keys = await prisma.apiKey.findMany({
+        where: { userId, revokedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, keyPrefix: true, name: true, createdAt: true, lastUsedAt: true },
+      })
+      return {
+        success: true,
+        message: keys.length ? `Found ${keys.length} active API key(s).` : "No API keys.",
+        data: { apiKeys: keys },
+      }
+    },
+  },
+
+  create_api_key: {
+    description: "Generate a new API key",
+    parameters: {
+      type: "object",
+      properties: { name: { type: "string", description: "Key name/label" } },
+      required: ["name"],
+    },
+    execute: async (params, userId) => {
+      const crypto = require("crypto")
+      const rawKey = `mk_${crypto.randomBytes(32).toString("hex")}`
+      const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex")
+      const keyPrefix = rawKey.slice(0, 11)
+
+      await prisma.apiKey.create({
+        data: { keyHash, keyPrefix, name: params.name as string, userId },
+      })
+
+      return { success: true, message: `API key created: ${rawKey}\n\n⚠️ Save this now — it won't be shown again!`, data: { key: rawKey, keyPrefix } }
+    },
+  },
+
+  delete_api_key: {
+    description: "Revoke an API key. Requires confirmation.",
+    parameters: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "API key ID" },
+        confirmed: { type: "boolean" },
+      },
+      required: ["id"],
+    },
+    execute: async (params, userId) => {
+      const key = await prisma.apiKey.findFirst({ where: { id: params.id as string, userId, revokedAt: null } })
+      if (!key) return { success: false, message: "API key not found." }
+      if (!params.confirmed) {
+        return { success: false, confirmationRequired: true, confirmationMessage: `Revoke API key "${key.name}" (${key.keyPrefix}...)?`, message: "Please confirm revocation.", data: { keyId: key.id } }
+      }
+      await prisma.apiKey.update({ where: { id: key.id }, data: { revokedAt: new Date() } })
+      return { success: true, message: `Revoked API key "${key.name}".` }
+    },
+  },
+
+  // ── Webhooks ─────────────────────────────────────────────────
+  list_webhooks: {
+    description: "Show configured webhooks",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params, userId) => {
+      const webhooks = await prisma.webhook.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        include: { _count: { select: { deliveries: true } } },
+      })
+      return {
+        success: true,
+        message: webhooks.length ? `Found ${webhooks.length} webhook(s).` : "No webhooks configured.",
+        data: { webhooks: webhooks.map((w) => ({ id: w.id, url: w.url, events: w.events, active: w.active, deliveries: w._count.deliveries })) },
+      }
+    },
+  },
+
+  create_webhook: {
+    description: "Create a webhook with URL and events to listen for",
+    parameters: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "Webhook endpoint URL" },
+        events: { type: "array", items: { type: "string" }, description: "Events: booking.created, booking.cancelled, booking.rescheduled" },
+      },
+      required: ["url", "events"],
+    },
+    execute: async (params, userId) => {
+      const crypto = require("crypto")
+      const secret = `whsec_${crypto.randomBytes(24).toString("hex")}`
+      const webhook = await prisma.webhook.create({
+        data: { userId, url: params.url as string, events: params.events as string[], secret, active: true },
+      })
+      return { success: true, message: `Webhook created. Secret: ${secret}\n\n⚠️ Save this secret now!`, data: { webhookId: webhook.id, secret } }
+    },
+  },
+
+  delete_webhook: {
+    description: "Delete a webhook. Requires confirmation.",
+    parameters: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Webhook ID" },
+        confirmed: { type: "boolean" },
+      },
+      required: ["id"],
+    },
+    execute: async (params, userId) => {
+      const webhook = await prisma.webhook.findFirst({ where: { id: params.id as string, userId } })
+      if (!webhook) return { success: false, message: "Webhook not found." }
+      if (!params.confirmed) {
+        return { success: false, confirmationRequired: true, confirmationMessage: `Delete webhook for "${webhook.url}"?`, message: "Please confirm deletion.", data: { webhookId: webhook.id } }
+      }
+      await prisma.webhook.delete({ where: { id: webhook.id } })
+      return { success: true, message: `Deleted webhook for "${webhook.url}".` }
+    },
+  },
+
+  test_webhook: {
+    description: "Trigger a test delivery for a webhook",
+    parameters: {
+      type: "object",
+      properties: { id: { type: "string", description: "Webhook ID" } },
+      required: ["id"],
+    },
+    execute: async (params, userId) => {
+      const webhook = await prisma.webhook.findFirst({ where: { id: params.id as string, userId } })
+      if (!webhook) return { success: false, message: "Webhook not found." }
+
+      const testPayload = { event: "test", timestamp: new Date().toISOString(), data: { message: "This is a test delivery from letsmeet.link" } }
+      try {
+        const crypto = require("crypto")
+        const signature = crypto.createHmac("sha256", webhook.secret).update(JSON.stringify(testPayload)).digest("hex")
+        const res = await fetch(webhook.url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Webhook-Signature": signature },
+          body: JSON.stringify(testPayload),
+        })
+        await prisma.webhookDelivery.create({
+          data: { webhookId: webhook.id, event: "test", payload: testPayload, status: res.ok ? "SUCCESS" : "FAILED", responseCode: res.status, attempts: 1 },
+        })
+        return { success: true, message: `Test delivery sent. Response: ${res.status} ${res.statusText}` }
+      } catch (err) {
+        return { success: false, message: `Test delivery failed: ${err instanceof Error ? err.message : "Network error"}` }
+      }
+    },
+  },
+
+  // ── Recurring Meetings ───────────────────────────────────────
+  list_recurring_bookings: {
+    description: "Show recurring booking series",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params, userId) => {
+      const parents = await prisma.booking.findMany({
+        where: { hostId: userId, recurrenceRule: { not: null }, recurrenceParentId: null },
+        orderBy: { startTime: "desc" },
+        include: { eventType: { select: { title: true } }, _count: { select: { recurrenceChildren: true } } },
+      })
+      return {
+        success: true,
+        message: parents.length ? `Found ${parents.length} recurring series.` : "No recurring bookings.",
+        data: {
+          series: parents.map((b) => ({
+            id: b.id, eventType: b.eventType.title, guestName: b.guestName, guestEmail: b.guestEmail,
+            recurrenceRule: b.recurrenceRule, occurrences: b._count.recurrenceChildren + 1, status: b.status,
+            startTime: b.startTime.toISOString(),
+          })),
+        },
+      }
+    },
+  },
+
+  cancel_recurring_series: {
+    description: "Cancel an entire recurring series. Requires confirmation.",
+    parameters: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Parent booking ID of the series" },
+        confirmed: { type: "boolean" },
+      },
+      required: ["id"],
+    },
+    execute: async (params, userId) => {
+      const parent = await prisma.booking.findFirst({
+        where: { id: params.id as string, hostId: userId, recurrenceParentId: null },
+        include: { eventType: { select: { title: true } }, _count: { select: { recurrenceChildren: true } } },
+      })
+      if (!parent) return { success: false, message: "Recurring series not found." }
+      if (!params.confirmed) {
+        const count = parent._count.recurrenceChildren + 1
+        return { success: false, confirmationRequired: true, confirmationMessage: `Cancel all ${count} bookings in "${parent.eventType.title}" series with ${parent.guestName}?`, message: "Please confirm.", data: { bookingId: parent.id, count } }
+      }
+      await prisma.booking.updateMany({ where: { recurrenceParentId: parent.id }, data: { status: "CANCELLED" } })
+      await prisma.booking.update({ where: { id: parent.id }, data: { status: "CANCELLED" } })
+      return { success: true, message: `Cancelled entire recurring series.` }
+    },
+  },
+
+  // ── Group Events ─────────────────────────────────────────────
+  get_group_event_status: {
+    description: "Show attendees for group event time slots",
+    parameters: {
+      type: "object",
+      properties: {
+        eventTypeId: { type: "string" },
+        eventTypeTitle: { type: "string" },
+      },
+      required: [],
+    },
+    execute: async (params, userId) => {
+      let eventType
+      if (params.eventTypeId) {
+        eventType = await prisma.eventType.findFirst({ where: { id: params.eventTypeId as string, userId, maxAttendees: { gt: 1 } } })
+      } else if (params.eventTypeTitle) {
+        eventType = await prisma.eventType.findFirst({ where: { userId, title: { contains: params.eventTypeTitle as string, mode: "insensitive" }, maxAttendees: { gt: 1 } } })
+      } else {
+        eventType = await prisma.eventType.findFirst({ where: { userId, maxAttendees: { gt: 1 } } })
+      }
+      if (!eventType) return { success: false, message: "No group event type found." }
+
+      const bookings = await prisma.booking.findMany({
+        where: { eventTypeId: eventType.id, status: { in: ["CONFIRMED", "PENDING"] }, startTime: { gte: new Date() } },
+        orderBy: { startTime: "asc" },
+        select: { startTime: true, endTime: true, guestName: true, guestEmail: true, status: true },
+      })
+
+      // Group by time slot
+      const slots: Record<string, Array<{ name: string; email: string }>> = {}
+      for (const b of bookings) {
+        const key = b.startTime.toISOString()
+        if (!slots[key]) slots[key] = []
+        slots[key].push({ name: b.guestName, email: b.guestEmail })
+      }
+
+      return {
+        success: true,
+        message: `Group event "${eventType.title}" (max ${eventType.maxAttendees}/slot).`,
+        data: { eventType: eventType.title, maxAttendees: eventType.maxAttendees, slots },
+      }
+    },
+  },
+
+  // ── Custom Questions ─────────────────────────────────────────
+  get_event_questions: {
+    description: "Show custom booking questions for an event type",
+    parameters: {
+      type: "object",
+      properties: {
+        eventTypeId: { type: "string" },
+        eventTypeTitle: { type: "string" },
+      },
+      required: [],
+    },
+    execute: async (params, userId) => {
+      let eventType
+      if (params.eventTypeId) {
+        eventType = await prisma.eventType.findFirst({ where: { id: params.eventTypeId as string, userId }, select: { id: true, title: true, customQuestions: true } })
+      } else if (params.eventTypeTitle) {
+        eventType = await prisma.eventType.findFirst({ where: { userId, title: { contains: params.eventTypeTitle as string, mode: "insensitive" } }, select: { id: true, title: true, customQuestions: true } })
+      }
+      if (!eventType) return { success: false, message: "Event type not found." }
+      const questions = eventType.customQuestions ? JSON.parse(eventType.customQuestions) : []
+      return { success: true, message: questions.length ? `${questions.length} custom question(s) on "${eventType.title}".` : `No custom questions on "${eventType.title}".`, data: { eventTypeId: eventType.id, questions } }
+    },
+  },
+
+  set_event_questions: {
+    description: "Add/update custom booking questions on an event type",
+    parameters: {
+      type: "object",
+      properties: {
+        eventTypeId: { type: "string" },
+        eventTypeTitle: { type: "string" },
+        questions: {
+          type: "array",
+          items: { type: "object", properties: { id: { type: "string" }, label: { type: "string" }, type: { type: "string", enum: ["text", "textarea", "select", "checkbox", "radio"] }, required: { type: "boolean" }, options: { type: "array", items: { type: "string" } } } },
+          description: "Array of question definitions",
+        },
+      },
+      required: ["questions"],
+    },
+    execute: async (params, userId) => {
+      let eventType
+      if (params.eventTypeId) {
+        eventType = await prisma.eventType.findFirst({ where: { id: params.eventTypeId as string, userId } })
+      } else if (params.eventTypeTitle) {
+        eventType = await prisma.eventType.findFirst({ where: { userId, title: { contains: params.eventTypeTitle as string, mode: "insensitive" } } })
+      }
+      if (!eventType) return { success: false, message: "Event type not found." }
+
+      const questions = (params.questions as Array<Record<string, unknown>>).map((q, i) => ({
+        id: q.id || `q_${Date.now()}_${i}`,
+        label: q.label,
+        type: q.type || "text",
+        required: q.required !== false,
+        options: q.options || undefined,
+      }))
+
+      await prisma.eventType.update({ where: { id: eventType.id }, data: { customQuestions: JSON.stringify(questions) } })
+      return { success: true, message: `Set ${questions.length} custom question(s) on "${eventType.title}".`, data: { questions } }
+    },
+  },
+
   // ── Analytics ────────────────────────────────────────────────
   get_analytics_summary: {
     description: "Get a quick summary of booking analytics and stats",

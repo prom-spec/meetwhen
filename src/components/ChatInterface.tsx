@@ -193,6 +193,10 @@ const QUICK_ACTIONS = [
   { label: '📋 Event types', message: 'List my event types' },
   { label: '📊 Quick stats', message: 'Show my analytics summary' },
   { label: '⏰ Availability', message: 'Show my availability schedule' },
+  { label: '🗳️ Polls', message: 'List my meeting polls' },
+  { label: '🔑 API Keys', message: 'Show my API keys' },
+  { label: '🔗 Webhooks', message: 'List my webhooks' },
+  { label: '🎨 Branding', message: 'Show my branding settings' },
 ]
 
 export default function ChatInterface() {
