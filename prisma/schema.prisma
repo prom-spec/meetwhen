@@ -191,12 +191,16 @@ model Booking {
   googleEventId String?
   meetingUrl    String?
 
+  reminderEmailSent    Boolean @default(false)
+  postMeetingEmailSent Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([hostId])
   @@index([eventTypeId])
   @@index([startTime])
+  @@index([endTime])
 }
 
 enum BookingStatus {

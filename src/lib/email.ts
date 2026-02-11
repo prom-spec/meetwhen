@@ -6,6 +6,7 @@ import BookingReminder from "@/emails/BookingReminder"
 import BookingCancellation from "@/emails/BookingCancellation"
 import BookingReschedule from "@/emails/BookingReschedule"
 import RescheduleRequest from "@/emails/RescheduleRequest"
+import PostMeetingFollowup from "@/emails/PostMeetingFollowup"
 import { emailLogger } from "./logger"
 import { generateBookingToken } from "./booking-tokens"
 
@@ -207,7 +208,9 @@ export async function sendBookingReminder(data: BookingEmailData & { minutesUnti
     const result = await client.emails.send({
       from: FROM_EMAIL,
       to: recipientEmail,
-      subject: `Reminder: ${eventType.title} starts soon`,
+      subject: toHost 
+        ? `Reminder: ${eventType.title} starts soon`
+        : `Reminder: Meeting with ${host.name || "Host"} tomorrow at ${formatInTimeZone(booking.startTime, recipientTimezone, "h:mm a")}`,
       react: BookingReminder({
         recipientName,
         otherPartyName,
@@ -472,6 +475,51 @@ export async function sendRescheduleRequestEmail(data: RescheduleRequestEmailDat
   } catch (error) {
     emailLogger.error("Failed to send reschedule request email", error, {
       bookingId: booking.id,
+    })
+    return { success: false, error }
+  }
+}
+
+export async function sendPostMeetingFollowup(data: {
+  bookingId: string
+  guestName: string
+  guestEmail: string
+  hostName: string
+}) {
+  const { bookingId, guestName, guestEmail, hostName } = data
+
+  emailLogger.info("Sending post-meeting follow-up", {
+    bookingId,
+    guestEmail,
+  })
+
+  const client = await getResend()
+  if (!client) {
+    emailLogger.warn("Email client not available, skipping post-meeting follow-up", { bookingId })
+    return { success: false, error: "Email not configured" }
+  }
+
+  try {
+    const result = await client.emails.send({
+      from: FROM_EMAIL,
+      to: guestEmail,
+      subject: `Hope your meeting with ${hostName} went well! 👋`,
+      react: PostMeetingFollowup({
+        guestName,
+        hostName,
+      }),
+    })
+
+    emailLogger.info("Post-meeting follow-up email sent", {
+      bookingId,
+      messageId: result.data?.id,
+      guestEmail,
+    })
+    return { success: true, id: result.data?.id }
+  } catch (error) {
+    emailLogger.error("Failed to send post-meeting follow-up", error, {
+      bookingId,
+      guestEmail,
     })
     return { success: false, error }
   }
