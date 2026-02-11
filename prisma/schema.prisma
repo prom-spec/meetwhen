@@ -54,6 +54,11 @@ model User {
   calendarSyncEnabled Boolean @default(true)
   blockHolidays   Boolean @default(false)
   holidayCountry  String? // ISO 3166-1 alpha-2 (e.g. "IL", "US")
+  // Branding
+  brandColor     String?
+  brandLogo      String?
+  hidePoweredBy  Boolean  @default(false)
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

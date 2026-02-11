@@ -11,6 +11,9 @@ const updateSettingsSchema = z.object({
   calendarSyncEnabled: z.boolean().optional(),
   blockHolidays: z.boolean().optional(),
   holidayCountry: z.string().max(2).optional(),
+  brandColor: z.string().max(7).regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color").nullable().optional(),
+  brandLogo: z.string().url().max(2048).nullable().optional(),
+  hidePoweredBy: z.boolean().optional(),
 }).strict()
 
 export async function GET() {
@@ -77,7 +80,7 @@ export async function PATCH(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
     }
-    const { name, username, timezone, calendarSyncEnabled, blockHolidays, holidayCountry } = parsed.data
+    const { name, username, timezone, calendarSyncEnabled, blockHolidays, holidayCountry, brandColor, brandLogo, hidePoweredBy } = parsed.data
 
     // Validate username uniqueness if provided
     if (username !== undefined) {

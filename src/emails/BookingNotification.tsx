@@ -85,6 +85,18 @@ export default function BookingNotification({
             This booking has been automatically confirmed and added to your calendar.
           </Text>
 
+          {/* Referral Nudge */}
+          <Section style={referralBox}>
+            <Text style={referralText}>
+              Your team still doing the email dance? Give them a link too.
+            </Text>
+            <Button style={referralButton} href="https://letsmeet.link/?ref=host-referral">
+              Invite a colleague
+            </Button>
+          </Section>
+
+          <Hr style={hr} />
+
           <Text style={footerText}>
             — letsmeet.link
           </Text>

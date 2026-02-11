@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Video, MapPin, Phone, Link2, Check, Save } from "lucide-react"
 import { useToast } from "@/components/ToastProvider"
+import ShareModal from "@/components/ShareModal"
 
 type LocationType = "IN_PERSON" | "GOOGLE_MEET" | "ZOOM" | "PHONE" | "CUSTOM"
 
@@ -32,6 +33,9 @@ export default function NewEventTypePage() {
   const { toast } = useToast()
   const [username, setUsername] = useState("")
   const [saving, setSaving] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [createdEventSlug, setCreatedEventSlug] = useState("")
+  const [createdEventTitle, setCreatedEventTitle] = useState("")
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
@@ -67,7 +71,9 @@ export default function NewEventTypePage() {
       })
 
       if (res.ok) {
-        router.push("/dashboard/event-types")
+        setCreatedEventSlug(formData.slug)
+        setCreatedEventTitle(formData.title)
+        setShowShareModal(true)
       } else {
         const error = await res.json()
         toast(error.error || "Something went wrong", "error")
@@ -79,9 +85,20 @@ export default function NewEventTypePage() {
     }
   }
 
-  const baseUrl = typeof window !== "undefined" ? window.location.host : "letsmeet.com"
+  const baseUrl = typeof window !== "undefined" ? window.location.host : "letsmeet.link"
+  const bookingBaseUrl = typeof window !== "undefined" ? window.location.origin : "https://letsmeet.link"
 
   return (
+    <>
+    <ShareModal
+      open={showShareModal}
+      onClose={() => {
+        setShowShareModal(false)
+        router.push("/dashboard/event-types")
+      }}
+      bookingUrl={`${bookingBaseUrl}/${username}/${createdEventSlug}`}
+      eventTitle={createdEventTitle}
+    />
     <div className="min-h-screen bg-gray-50">
       {/* Top Header Bar */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
@@ -318,5 +335,6 @@ export default function NewEventTypePage() {
         </form>
       </div>
     </div>
+    </>
   )
 }

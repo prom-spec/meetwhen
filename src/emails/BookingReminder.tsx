@@ -4,6 +4,7 @@ import {
   Head,
   Heading,
   Html,
+  Link,
   Preview,
   Section,
   Text,
@@ -83,6 +84,18 @@ export default function BookingReminder({
           <Text style={footerText}>
             — letsmeet.link
           </Text>
+
+          {!isHost && (
+            <>
+              <Hr style={hr} />
+              <Text style={psText}>
+                P.S. Want your own scheduling page? It&apos;s free →{" "}
+                <Link href="https://letsmeet.link/?ref=reminder-email" style={psLink}>
+                  letsmeet.link
+                </Link>
+              </Text>
+            </>
+          )}
         </Container>
       </Body>
     </Html>
@@ -165,4 +178,17 @@ const footerText = {
   fontSize: "14px",
   lineHeight: "20px",
   margin: "0 0 8px",
+}
+
+const psText = {
+  color: "#9ca3af",
+  fontSize: "13px",
+  lineHeight: "20px",
+  margin: "0",
+  textAlign: "center" as const,
+}
+
+const psLink = {
+  color: "#3B82F6",
+  textDecoration: "none",
 }

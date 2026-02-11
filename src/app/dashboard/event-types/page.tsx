@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Plus, Edit, Trash2, Copy, ExternalLink, Video, MapPin, Phone, Link2, Check, ChevronRight, X, Loader2, CalendarPlus } from "lucide-react"
+import { Plus, Edit, Trash2, Copy, ExternalLink, Video, MapPin, Phone, Link2, Check, ChevronRight, X, Loader2, CalendarPlus, Share2 } from "lucide-react"
 import { useToast } from "@/components/ToastProvider"
 import ConfirmDialog from "@/components/ConfirmDialog"
+import ShareModal from "@/components/ShareModal"
 
 type LocationType = "IN_PERSON" | "GOOGLE_MEET" | "ZOOM" | "PHONE" | "CUSTOM"
 
@@ -68,6 +69,7 @@ export default function EventTypesPage() {
   const [username, setUsername] = useState<string>("")
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [shareEventType, setShareEventType] = useState<EventType | null>(null)
   const { toast } = useToast()
   const [formData, setFormData] = useState({
     title: "",
@@ -325,6 +327,14 @@ export default function EventTypesPage() {
                 </button>
                 {/* Secondary actions */}
                 <div className="flex items-center justify-center gap-1">
+                  <button
+                    onClick={() => setShareEventType(eventType)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                    title="Share"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    Share
+                  </button>
                   <a
                     href={`/${username}/${eventType.slug}`}
                     target="_blank"
@@ -357,6 +367,14 @@ export default function EventTypesPage() {
           ))}
         </div>
       )}
+
+      {/* Share Modal */}
+      <ShareModal
+        open={!!shareEventType}
+        onClose={() => setShareEventType(null)}
+        bookingUrl={shareEventType ? `${typeof window !== "undefined" ? window.location.origin : "https://letsmeet.link"}/${username}/${shareEventType.slug}` : ""}
+        eventTitle={shareEventType?.title || ""}
+      />
 
       {/* Modal - Responsive: Full screen on mobile, centered card on desktop */}
       <ConfirmDialog
