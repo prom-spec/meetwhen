@@ -58,6 +58,9 @@ model User {
   brandColor     String?
   brandLogo      String?
   hidePoweredBy  Boolean  @default(false)
+  // Stripe Connect
+  stripeAccountId          String?
+  stripeOnboardingComplete Boolean @default(false)
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -131,6 +134,24 @@ model EventType {
   minNotice    Int @default(240)
   maxDaysAhead Int @default(60)
 
+  allowRecurring    Boolean @default(false)
+  recurrenceOptions String? // JSON array of allowed frequencies e.g. ["weekly_4","weekly_8","biweekly_4","monthly_3"]
+
+  // Custom booking questions (JSON array of {id, label, type, required, options?})
+  customQuestions String?
+  // Meeting limits
+  maxBookingsPerDay  Int?
+  maxBookingsPerWeek Int?
+  // Redirect after booking
+  redirectUrl String?
+  // Visibility: "public" (shown on profile) or "unlisted" (direct link only)
+  visibility String @default("public")
+  // Group events: max attendees per slot (1 = one-on-one)
+  maxAttendees Int @default(1)
+  // Payment
+  price    Int?    // Price in cents (null = free)
+  currency String  @default("USD")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -195,8 +216,19 @@ model Booking {
   status BookingStatus @default(CONFIRMED)
   notes  String?
 
+  recurrenceRule     String? // e.g. "weekly_4", "biweekly_4", "monthly_3"
+  recurrenceParentId String?
+  recurrenceParent   Booking?  @relation("RecurrenceSeries", fields: [recurrenceParentId], references: [id], onDelete: SetNull)
+  recurrenceChildren Booking[] @relation("RecurrenceSeries")
+
   googleEventId String?
   meetingUrl    String?
+
+  // Custom question answers (JSON object {questionId: answer})
+  customAnswers String?
+  // Payment
+  stripePaymentIntentId String?
+  paymentStatus         String? // "pending", "paid", "refunded"
 
   reminderEmailSent    Boolean @default(false)
   postMeetingEmailSent Boolean @default(false)
@@ -208,6 +240,7 @@ model Booking {
   @@index([eventTypeId])
   @@index([startTime])
   @@index([endTime])
+  @@index([recurrenceParentId])
 }
 
 enum BookingStatus {

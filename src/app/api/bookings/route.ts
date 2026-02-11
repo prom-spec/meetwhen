@@ -19,6 +19,8 @@ const createBookingSchema = z.object({
   date: z.string().optional(),
   time: z.string().optional(),
   startTime: z.string().optional(),
+  recurrenceRule: z.string().optional(), // e.g. "weekly_4", "weekly_8", "biweekly_4", "monthly_3"
+  customAnswers: z.string().optional(), // JSON object of custom question answers
 })
 import { bookingRateLimiter, getClientIp } from "@/lib/rate-limit"
 
@@ -72,7 +74,7 @@ export async function POST(request: NextRequest) {
       bookingLogger.warn("Validation failed", { requestId, errors: parsed.error.flatten() })
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
     }
-    const { eventTypeId, guestName, guestEmail, guestTimezone, date, time, startTime: startTimeISO } = parsed.data
+    const { eventTypeId, guestName, guestEmail, guestTimezone, date, time, startTime: startTimeISO, recurrenceRule } = parsed.data
 
     bookingLogger.info("Booking request received", { 
       requestId,
@@ -338,28 +340,72 @@ export async function POST(request: NextRequest) {
 
     // Standard individual booking
     bookingLogger.debug("Processing individual booking", { requestId, hostId: eventType.userId })
-    
-    // Check for conflicts
-    const conflictingBooking = await prisma.booking.findFirst({
-      where: {
-        hostId: eventType.userId,
-        status: { not: "CANCELLED" },
-        OR: [
-          { startTime: { lt: endTime }, endTime: { gt: startTime } },
-        ],
-      },
-    })
 
-    if (conflictingBooking) {
-      bookingLogger.warn("Time slot conflict detected", { requestId, conflictingBookingId: conflictingBooking.id })
-      return NextResponse.json({ error: "This time slot is no longer available. Please select a different time." }, { status: 409 })
+    // Helper: generate recurring dates from a rule
+    function generateRecurringDates(baseStart: Date, baseEnd: Date, rule: string): { start: Date; end: Date }[] {
+      const dates: { start: Date; end: Date }[] = []
+      const [freq, countStr] = rule.split("_")
+      const count = parseInt(countStr, 10)
+      if (!count || count < 1 || count > 12) return dates
+      for (let i = 1; i < count; i++) {
+        let nextStart: Date
+        let nextEnd: Date
+        if (freq === "weekly") {
+          nextStart = dateFns.addWeeks(baseStart, i)
+          nextEnd = dateFns.addWeeks(baseEnd, i)
+        } else if (freq === "biweekly") {
+          nextStart = dateFns.addWeeks(baseStart, i * 2)
+          nextEnd = dateFns.addWeeks(baseEnd, i * 2)
+        } else if (freq === "monthly") {
+          nextStart = dateFns.addMonths(baseStart, i)
+          nextEnd = dateFns.addMonths(baseEnd, i)
+        } else {
+          break
+        }
+        dates.push({ start: nextStart, end: nextEnd })
+      }
+      return dates
     }
 
-    // Check Google Calendar for conflicts
-    const hasGCalConflict = await hasCalendarConflict(eventType.userId, startTime, endTime)
-    if (hasGCalConflict) {
-      bookingLogger.warn("Google Calendar conflict detected", { requestId })
-      return NextResponse.json({ error: "This time conflicts with an existing calendar event. Please select a different time." }, { status: 409 })
+    // If recurring, validate that the event type allows it and check all slots
+    let recurringDates: { start: Date; end: Date }[] = []
+    if (recurrenceRule) {
+      if (!eventType.allowRecurring) {
+        return NextResponse.json({ error: "This event type does not allow recurring bookings." }, { status: 400 })
+      }
+      // Validate allowed options
+      const allowedOptions: string[] = eventType.recurrenceOptions ? JSON.parse(eventType.recurrenceOptions) : ["weekly_4", "weekly_8", "biweekly_4", "monthly_3"]
+      if (!allowedOptions.includes(recurrenceRule)) {
+        return NextResponse.json({ error: "Invalid recurrence option." }, { status: 400 })
+      }
+      recurringDates = generateRecurringDates(startTime, endTime, recurrenceRule)
+    }
+
+    // Check for conflicts on all dates (primary + recurring)
+    const allSlots = [{ start: startTime, end: endTime }, ...recurringDates]
+    for (const slot of allSlots) {
+      const conflictingBooking = await prisma.booking.findFirst({
+        where: {
+          hostId: eventType.userId,
+          status: { not: "CANCELLED" },
+          OR: [
+            { startTime: { lt: slot.end }, endTime: { gt: slot.start } },
+          ],
+        },
+      })
+      if (conflictingBooking) {
+        bookingLogger.warn("Time slot conflict detected", { requestId, conflictingBookingId: conflictingBooking.id, slotStart: slot.start.toISOString() })
+        return NextResponse.json({ error: `Time slot on ${dateFns.format(slot.start, "MMM d, yyyy")} at ${dateFns.format(slot.start, "HH:mm")} is no longer available.` }, { status: 409 })
+      }
+    }
+
+    // Check Google Calendar for conflicts on all dates
+    for (const slot of allSlots) {
+      const hasGCalConflict = await hasCalendarConflict(eventType.userId, slot.start, slot.end)
+      if (hasGCalConflict) {
+        bookingLogger.warn("Google Calendar conflict detected", { requestId, slotStart: slot.start.toISOString() })
+        return NextResponse.json({ error: `Time on ${dateFns.format(slot.start, "MMM d, yyyy")} conflicts with an existing calendar event.` }, { status: 409 })
+      }
     }
 
     // Create the booking
@@ -373,12 +419,40 @@ export async function POST(request: NextRequest) {
         startTime,
         endTime,
         status: "CONFIRMED",
+        recurrenceRule: recurrenceRule || null,
       },
       include: {
         eventType: true,
         host: { select: { name: true, email: true, timezone: true } },
       },
     })
+
+    // Create child bookings for recurring series
+    const childBookings: typeof booking[] = []
+    if (recurrenceRule && recurringDates.length > 0) {
+      for (const slot of recurringDates) {
+        const child = await prisma.booking.create({
+          data: {
+            eventTypeId,
+            hostId: eventType.userId,
+            guestName,
+            guestEmail,
+            guestTimezone: guestTimezone || "UTC",
+            startTime: slot.start,
+            endTime: slot.end,
+            status: "CONFIRMED",
+            recurrenceRule,
+            recurrenceParentId: booking.id,
+          },
+          include: {
+            eventType: true,
+            host: { select: { name: true, email: true, timezone: true } },
+          },
+        })
+        childBookings.push(child)
+      }
+      bookingLogger.info("Recurring series created", { requestId, parentId: booking.id, childCount: childBookings.length })
+    }
 
     bookingLogger.info("Booking created successfully", { 
       requestId, 

@@ -20,6 +20,14 @@ const createEventTypeSchema = z.object({
   maxDaysAhead: z.coerce.number().int().min(1).max(365).optional(),
   teamId: z.string().optional(),
   schedulingType: z.enum(["INDIVIDUAL", "ROUND_ROBIN", "COLLECTIVE"]).optional(),
+  maxBookingsPerDay: z.coerce.number().int().min(1).nullable().optional(),
+  maxBookingsPerWeek: z.coerce.number().int().min(1).nullable().optional(),
+  redirectUrl: z.string().url().max(2000).nullable().optional(),
+  visibility: z.enum(["public", "unlisted"]).optional(),
+  maxAttendees: z.coerce.number().int().min(1).max(100).optional(),
+  customQuestions: z.string().optional(),
+  price: z.coerce.number().int().min(0).nullable().optional(),
+  currency: z.string().length(3).optional(),
 })
 
 export async function GET() {
@@ -62,7 +70,9 @@ export async function POST(request: NextRequest) {
     const { 
       title, slug, description, duration, color, location, locationType, locationValue, 
       bufferBefore, bufferAfter, minNotice, maxDaysAhead,
-      teamId, schedulingType
+      teamId, schedulingType,
+      maxBookingsPerDay, maxBookingsPerWeek, redirectUrl, visibility, maxAttendees,
+      customQuestions, price, currency
     } = parsed.data
 
     // If teamId is provided, verify user is a team member with appropriate permissions
@@ -114,6 +124,14 @@ export async function POST(request: NextRequest) {
         bufferAfter: bufferAfter ? Number(bufferAfter) : 0,
         minNotice: minNotice ? Number(minNotice) : 240,
         maxDaysAhead: maxDaysAhead ? Number(maxDaysAhead) : 60,
+        maxBookingsPerDay: maxBookingsPerDay || null,
+        maxBookingsPerWeek: maxBookingsPerWeek || null,
+        redirectUrl: redirectUrl || null,
+        visibility: visibility || "public",
+        maxAttendees: maxAttendees ? Number(maxAttendees) : 1,
+        customQuestions: customQuestions || null,
+        price: price || null,
+        currency: currency || "USD",
         ...(teamId && { 
           teamId,
           schedulingType: schedulingType || "ROUND_ROBIN",

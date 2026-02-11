@@ -18,6 +18,14 @@ const updateEventTypeSchema = z.object({
   bufferAfter: z.coerce.number().int().min(0).max(120).optional(),
   minNotice: z.coerce.number().int().min(0).max(43200).optional(),
   maxDaysAhead: z.coerce.number().int().min(1).max(365).optional(),
+  maxBookingsPerDay: z.coerce.number().int().min(1).nullable().optional(),
+  maxBookingsPerWeek: z.coerce.number().int().min(1).nullable().optional(),
+  redirectUrl: z.string().url().max(2000).nullable().optional(),
+  visibility: z.enum(["public", "unlisted"]).optional(),
+  maxAttendees: z.coerce.number().int().min(1).max(100).optional(),
+  customQuestions: z.string().nullable().optional(),
+  price: z.coerce.number().int().min(0).nullable().optional(),
+  currency: z.string().length(3).optional(),
 })
 
 export async function GET(
@@ -78,7 +86,7 @@ export async function PATCH(
     if (!parsed.success) {
       return NextResponse.json({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }, { status: 400 })
     }
-    const { title, slug, description, duration, color, location, locationType, locationValue, isActive, bufferBefore, bufferAfter, minNotice, maxDaysAhead } = parsed.data
+    const { title, slug, description, duration, color, location, locationType, locationValue, isActive, bufferBefore, bufferAfter, minNotice, maxDaysAhead, maxBookingsPerDay, maxBookingsPerWeek, redirectUrl, visibility, maxAttendees, customQuestions, price, currency } = parsed.data
 
     if (slug && slug !== existingEventType.slug) {
       const slugExists = await prisma.eventType.findFirst({
@@ -109,6 +117,14 @@ export async function PATCH(
     if (bufferAfter !== undefined) updateData.bufferAfter = bufferAfter
     if (minNotice !== undefined) updateData.minNotice = minNotice
     if (maxDaysAhead !== undefined) updateData.maxDaysAhead = maxDaysAhead
+    if (maxBookingsPerDay !== undefined) updateData.maxBookingsPerDay = maxBookingsPerDay
+    if (maxBookingsPerWeek !== undefined) updateData.maxBookingsPerWeek = maxBookingsPerWeek
+    if (redirectUrl !== undefined) updateData.redirectUrl = redirectUrl
+    if (visibility !== undefined) updateData.visibility = visibility
+    if (maxAttendees !== undefined) updateData.maxAttendees = maxAttendees
+    if (customQuestions !== undefined) updateData.customQuestions = customQuestions
+    if (price !== undefined) updateData.price = price
+    if (currency !== undefined) updateData.currency = currency
 
     const eventType = await prisma.eventType.update({
       where: { id },

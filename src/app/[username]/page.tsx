@@ -31,7 +31,7 @@ export default async function UserProfilePage({ params }: PageProps) {
     where: { username },
     include: {
       eventTypes: {
-        where: { isActive: true },
+        where: { isActive: true, OR: [{ visibility: "public" }, { visibility: null }] },
         orderBy: { createdAt: "desc" },
       },
     },

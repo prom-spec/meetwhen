@@ -82,6 +82,12 @@ export default function EventTypesPage() {
     locationValue: "",
     bufferBefore: "0",
     bufferAfter: "0",
+    maxBookingsPerDay: "",
+    maxBookingsPerWeek: "",
+    redirectUrl: "",
+    visibility: "public",
+    maxAttendees: "1",
+    customQuestions: "[]",
   })
 
   useEffect(() => {
@@ -184,6 +190,12 @@ export default function EventTypesPage() {
       locationValue: "",
       bufferBefore: "0",
       bufferAfter: "0",
+      maxBookingsPerDay: "",
+      maxBookingsPerWeek: "",
+      redirectUrl: "",
+      visibility: "public",
+      maxAttendees: "1",
+      customQuestions: "[]",
     })
     setShowModal(true)
   }
@@ -201,6 +213,12 @@ export default function EventTypesPage() {
       locationValue: eventType.locationValue || "",
       bufferBefore: eventType.bufferBefore.toString(),
       bufferAfter: eventType.bufferAfter.toString(),
+      maxBookingsPerDay: (eventType as any).maxBookingsPerDay?.toString() || "",
+      maxBookingsPerWeek: (eventType as any).maxBookingsPerWeek?.toString() || "",
+      redirectUrl: (eventType as any).redirectUrl || "",
+      visibility: (eventType as any).visibility || "public",
+      maxAttendees: ((eventType as any).maxAttendees || 1).toString(),
+      customQuestions: (eventType as any).customQuestions || "[]",
     })
     setShowModal(true)
   }
@@ -614,6 +632,62 @@ export default function EventTypesPage() {
                         </select>
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                {/* Advanced Settings */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">Advanced Settings</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Max Bookings / Day</label>
+                      <input type="number" min="1" placeholder="Unlimited"
+                        value={formData.maxBookingsPerDay}
+                        onChange={(e) => setFormData({ ...formData, maxBookingsPerDay: e.target.value })}
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Max Bookings / Week</label>
+                      <input type="number" min="1" placeholder="Unlimited"
+                        value={formData.maxBookingsPerWeek}
+                        onChange={(e) => setFormData({ ...formData, maxBookingsPerWeek: e.target.value })}
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Max Attendees per Slot</label>
+                    <input type="number" min="1" placeholder="1 (one-on-one)"
+                      value={formData.maxAttendees}
+                      onChange={(e) => setFormData({ ...formData, maxAttendees: e.target.value })}
+                      className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Set to more than 1 for group events</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Visibility</label>
+                    <select
+                      value={formData.visibility}
+                      onChange={(e) => setFormData({ ...formData, visibility: e.target.value })}
+                      className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm bg-white"
+                    >
+                      <option value="public">Public — shown on your profile</option>
+                      <option value="unlisted">Unlisted — only accessible via direct link</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Redirect After Booking</label>
+                    <input type="url" placeholder="https://example.com/thank-you"
+                      value={formData.redirectUrl}
+                      onChange={(e) => setFormData({ ...formData, redirectUrl: e.target.value })}
+                      className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Guest will be redirected here after booking instead of the default confirmation page</p>
                   </div>
                 </div>
 
