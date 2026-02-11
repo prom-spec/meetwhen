@@ -19,9 +19,52 @@ import {
   Clock,
   XCircle,
   ArrowUpRight,
+  Vote,
+  Repeat,
+  Users,
+  HelpCircle,
+  GitBranch,
 } from "lucide-react"
 import BookingTrendsChart from "@/components/BookingTrendsChart"
 import BusiestTimesHeatmap from "@/components/BusiestTimesHeatmap"
+
+interface ExpandedAnalytics {
+  polls: {
+    total: number
+    open: number
+    closed: number
+    booked: number
+    totalVotes: number
+    conversionRate: number
+  }
+  recurring: {
+    recurringBookings: number
+    oneTimeBookings: number
+    totalSeries: number
+    seriesCompletionRate: number
+  }
+  groupEvents: {
+    totalGroupBookings: number
+    eventTypes: {
+      title: string
+      maxAttendees: number
+      totalBookings: number
+      uniqueSlots: number
+      avgAttendees: number
+      avgFillRate: number
+    }[]
+  }
+  customQuestions: {
+    questionId: string
+    label: string
+    totalResponses: number
+    topAnswers: { answer: string; count: number }[]
+  }[]
+  routingForms: {
+    totalForms: number
+    totalRules: number
+  }
+}
 
 interface Summary {
   bookings: {
@@ -56,6 +99,7 @@ interface EventStats {
 export default function AnalyticsPage() {
   const [summary, setSummary] = useState<Summary | null>(null)
   const [events, setEvents] = useState<EventStats[]>([])
+  const [expanded, setExpanded] = useState<ExpandedAnalytics | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -65,9 +109,10 @@ export default function AnalyticsPage() {
   const fetchData = async () => {
     setIsLoading(true)
     try {
-      const [summaryRes, eventsRes] = await Promise.all([
+      const [summaryRes, eventsRes, expandedRes] = await Promise.all([
         fetch("/api/analytics/summary"),
         fetch("/api/analytics/events"),
+        fetch("/api/analytics/expanded"),
       ])
 
       if (summaryRes.ok) setSummary(await summaryRes.json())
@@ -75,6 +120,7 @@ export default function AnalyticsPage() {
         const eventsData = await eventsRes.json()
         setEvents(eventsData.events || [])
       }
+      if (expandedRes.ok) setExpanded(await expandedRes.json())
     } catch (error) {
       console.error("Error fetching analytics:", error)
     } finally {
@@ -245,6 +291,142 @@ export default function AnalyticsPage() {
         <BusiestTimesHeatmap />
       </div>
 
+      {/* Meeting Polls */}
+      {expanded && expanded.polls.total > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+          <h2 className="text-lg font-semibold text-[#1a1a2e] mb-4 flex items-center gap-2">
+            <Vote className="w-5 h-5 text-indigo-500" /> Meeting Polls
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <MiniStat label="Total Polls" value={expanded.polls.total} />
+            <MiniStat label="Open" value={expanded.polls.open} />
+            <MiniStat label="Total Votes" value={expanded.polls.totalVotes} />
+            <MiniStat label="Poll → Booking" value={`${expanded.polls.conversionRate}%`} highlight />
+          </div>
+        </div>
+      )}
+
+      {/* Recurring vs One-Time */}
+      {expanded && (expanded.recurring.recurringBookings > 0 || expanded.recurring.oneTimeBookings > 0) && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+          <h2 className="text-lg font-semibold text-[#1a1a2e] mb-4 flex items-center gap-2">
+            <Repeat className="w-5 h-5 text-teal-500" /> Recurring vs One-Time
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <MiniStat label="Recurring" value={expanded.recurring.recurringBookings} />
+            <MiniStat label="One-Time" value={expanded.recurring.oneTimeBookings} />
+            <MiniStat label="Series" value={expanded.recurring.totalSeries} />
+            <MiniStat label="Completion Rate" value={`${expanded.recurring.seriesCompletionRate}%`} highlight />
+          </div>
+          {(expanded.recurring.recurringBookings + expanded.recurring.oneTimeBookings) > 0 && (
+            <div className="mt-4">
+              <div className="flex gap-1 h-4 rounded-full overflow-hidden bg-gray-100">
+                <div
+                  className="bg-teal-500 transition-all"
+                  style={{
+                    width: `${(expanded.recurring.recurringBookings / (expanded.recurring.recurringBookings + expanded.recurring.oneTimeBookings)) * 100}%`,
+                  }}
+                />
+                <div className="bg-gray-300 flex-1" />
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Recurring ({Math.round((expanded.recurring.recurringBookings / (expanded.recurring.recurringBookings + expanded.recurring.oneTimeBookings)) * 100)}%)</span>
+                <span>One-Time</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Group Events */}
+      {expanded && expanded.groupEvents.eventTypes.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+          <h2 className="text-lg font-semibold text-[#1a1a2e] mb-4 flex items-center gap-2">
+            <Users className="w-5 h-5 text-blue-500" /> Group Events
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-2 font-medium text-gray-500">Event</th>
+                  <th className="text-right py-2 font-medium text-gray-500">Max</th>
+                  <th className="text-right py-2 font-medium text-gray-500">Bookings</th>
+                  <th className="text-right py-2 font-medium text-gray-500">Avg/Slot</th>
+                  <th className="text-right py-2 font-medium text-gray-500">Fill Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expanded.groupEvents.eventTypes.map((g, i) => (
+                  <tr key={i} className="border-b border-gray-100">
+                    <td className="py-2 font-medium text-[#1a1a2e]">{g.title}</td>
+                    <td className="py-2 text-right text-gray-600">{g.maxAttendees}</td>
+                    <td className="py-2 text-right text-gray-600">{g.totalBookings}</td>
+                    <td className="py-2 text-right text-gray-600">{g.avgAttendees}</td>
+                    <td className="py-2 text-right">
+                      <span className={g.avgFillRate > 50 ? "text-green-600 font-medium" : "text-gray-600"}>
+                        {g.avgFillRate}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Questions */}
+      {expanded && expanded.customQuestions.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+          <h2 className="text-lg font-semibold text-[#1a1a2e] mb-4 flex items-center gap-2">
+            <HelpCircle className="w-5 h-5 text-amber-500" /> Custom Question Responses
+          </h2>
+          <div className="space-y-6">
+            {expanded.customQuestions.map((q) => (
+              <div key={q.questionId}>
+                <div className="flex justify-between items-baseline mb-2">
+                  <h3 className="font-medium text-[#1a1a2e] text-sm">{q.label}</h3>
+                  <span className="text-xs text-gray-400">{q.totalResponses} responses</span>
+                </div>
+                <div className="space-y-1">
+                  {q.topAnswers.map((a, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
+                        <div
+                          className="bg-amber-400 h-full rounded-full flex items-center px-2"
+                          style={{
+                            width: `${Math.max((a.count / q.totalResponses) * 100, 15)}%`,
+                          }}
+                        >
+                          <span className="text-xs text-amber-900 truncate">{a.answer}</span>
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-500 w-8 text-right">{a.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Routing Forms */}
+      {expanded && expanded.routingForms.totalForms > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+          <h2 className="text-lg font-semibold text-[#1a1a2e] mb-4 flex items-center gap-2">
+            <GitBranch className="w-5 h-5 text-purple-500" /> Routing Forms
+          </h2>
+          <div className="grid grid-cols-2 gap-4">
+            <MiniStat label="Active Forms" value={expanded.routingForms.totalForms} />
+            <MiniStat label="Routing Rules" value={expanded.routingForms.totalRules} />
+          </div>
+          <p className="text-xs text-gray-400 mt-3">
+            Submission tracking coming soon — add a RoutingFormSubmission model to enable detailed analytics.
+          </p>
+        </div>
+      )}
+
       {/* Event Types Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
@@ -381,6 +563,25 @@ function FunnelStep({
       {rate !== undefined && !isRate && (
         <p className="text-xs text-gray-400 mt-1">{rate}% conversion</p>
       )}
+    </div>
+  )
+}
+
+function MiniStat({
+  label,
+  value,
+  highlight,
+}: {
+  label: string
+  value: string | number
+  highlight?: boolean
+}) {
+  return (
+    <div className="text-center p-3 bg-gray-50 rounded-lg">
+      <p className={`text-xl font-bold ${highlight ? "text-green-600" : "text-[#1a1a2e]"}`}>
+        {value}
+      </p>
+      <p className="text-xs text-gray-500 mt-1">{label}</p>
     </div>
   )
 }
