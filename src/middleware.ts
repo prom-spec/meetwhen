@@ -56,11 +56,11 @@ function isRateLimited(ip: string): boolean {
 // CSP policy
 const CSP_POLICY = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: https:",
   "font-src 'self'",
-  "connect-src 'self' https://accounts.google.com https://www.googleapis.com",
+  "connect-src 'self' https://accounts.google.com https://www.googleapis.com https://www.google-analytics.com https://region1.google-analytics.com https://cloudflareinsights.com",
   "frame-src 'self' https://accounts.google.com",
 ].join("; ")
 
