@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight, Clock, MapPin, CheckCircle, Globe, Search, Loader2 } from "lucide-react"
@@ -60,8 +60,10 @@ async function trackEvent(eventTypeId: string, stage: string) {
 export default function BookingPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const username = params.username as string
   const eventSlug = params.eventSlug as string
+  const isEmbed = searchParams.get("embed") === "true"
 
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
@@ -286,20 +288,22 @@ export default function BookingPage() {
 
   if (isBooked && eventType && selectedDate && selectedTime) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <header className="py-4 px-4">
-          <div className="max-w-md mx-auto">
-            {branding.brandLogo ? (
-              <img src={branding.brandLogo} alt="Logo" className="h-6 object-contain opacity-60" />
-            ) : (
-              <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
-                <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
-              </Link>
-            )}
-          </div>
-        </header>
+      <div className={`min-h-screen bg-gray-50 flex flex-col ${isEmbed ? '!min-h-0' : ''}`}>
+        {!isEmbed && (
+          <header className="py-4 px-4">
+            <div className="max-w-md mx-auto">
+              {branding.brandLogo ? (
+                <img src={branding.brandLogo} alt="Logo" className="h-6 object-contain opacity-60" />
+              ) : (
+                <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
+                  <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
+                </Link>
+              )}
+            </div>
+          </header>
+        )}
 
-        <main className="flex-1 flex items-center justify-center p-4">
+        <main className={`flex-1 flex items-center justify-center ${isEmbed ? 'p-2' : 'p-4'}`}>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-md w-full text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
               <CheckCircle className="w-8 h-8 text-green-600" />
@@ -332,26 +336,28 @@ export default function BookingPage() {
           </div>
         </main>
 
-        <PoweredByFooter hidden={branding.hidePoweredBy} />
+        {!isEmbed && <PoweredByFooter hidden={branding.hidePoweredBy} />}
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="py-4 px-4 border-b border-gray-100 bg-white">
-        <div className="max-w-4xl mx-auto">
-          {branding.brandLogo ? (
-            <img src={branding.brandLogo} alt="Logo" className="h-6 object-contain opacity-60" />
-          ) : (
-            <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
-              <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
-            </Link>
-          )}
-        </div>
-      </header>
+    <div className={`min-h-screen bg-gray-50 flex flex-col ${isEmbed ? '!min-h-0' : ''}`}>
+      {!isEmbed && (
+        <header className="py-4 px-4 border-b border-gray-100 bg-white">
+          <div className="max-w-4xl mx-auto">
+            {branding.brandLogo ? (
+              <img src={branding.brandLogo} alt="Logo" className="h-6 object-contain opacity-60" />
+            ) : (
+              <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
+                <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
+              </Link>
+            )}
+          </div>
+        </header>
+      )}
 
-      <main className="flex-1 py-8 px-4">
+      <main className={`flex-1 ${isEmbed ? 'py-2 px-2' : 'py-8 px-4'}`}>
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="md:flex">
@@ -649,7 +655,7 @@ export default function BookingPage() {
         </div>
       </main>
 
-      <PoweredByFooter className="border-t border-gray-100" hidden={branding.hidePoweredBy} />
+      {!isEmbed && <PoweredByFooter className="border-t border-gray-100" hidden={branding.hidePoweredBy} />}
     </div>
   )
 }

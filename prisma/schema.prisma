@@ -75,6 +75,8 @@ model User {
   ownedTeams    Team[]         @relation("teamOwner")
   teamMembers   TeamMember[]
   linkingTokens LinkingToken[]
+  meetingPolls  MeetingPoll[]
+  routingForms  RoutingForm[]
 }
 
 model LinkingToken {
@@ -336,4 +338,89 @@ model PageView {
   @@index([eventTypeId])
   @@index([createdAt])
   @@index([stage])
+}
+
+model MeetingPoll {
+  id            String       @id @default(cuid())
+  title         String
+  description   String?
+  duration      Int          // minutes
+  timezone      String
+  createdBy     String
+  creator       User         @relation(fields: [createdBy], references: [id])
+  options       PollOption[]
+  votes         PollVote[]
+  status        String       @default("open") // open, closed, booked
+  finalOptionId String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([createdBy])
+}
+
+model PollOption {
+  id        String      @id @default(cuid())
+  pollId    String
+  poll      MeetingPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  startTime DateTime
+  endTime   DateTime
+  votes     PollVote[]
+
+  @@index([pollId])
+}
+
+model PollVote {
+  id           String      @id @default(cuid())
+  pollId       String
+  poll         MeetingPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  optionId     String
+  option       PollOption  @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  voterName    String
+  voterEmail   String
+  availability String      // "yes", "maybe", "no"
+  createdAt    DateTime    @default(now())
+
+  @@unique([optionId, voterEmail])
+  @@index([pollId])
+}
+
+model RoutingForm {
+  id                  String             @id @default(cuid())
+  title               String
+  description         String?
+  userId              String
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fields              RoutingFormField[]
+  rules               RoutingRule[]
+  fallbackEventTypeId String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([userId])
+}
+
+model RoutingFormField {
+  id       String      @id @default(cuid())
+  formId   String
+  form     RoutingForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  label    String
+  type     String
+  required Boolean     @default(true)
+  options  String?
+  order    Int         @default(0)
+
+  @@index([formId])
+}
+
+model RoutingRule {
+  id          String      @id @default(cuid())
+  formId      String
+  form        RoutingForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  fieldId     String
+  operator    String
+  value       String
+  eventTypeId String
+  order       Int         @default(0)
+
+  @@index([formId])
 }

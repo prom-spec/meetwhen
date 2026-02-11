@@ -15,6 +15,7 @@ const navLinks = [
   { href: "/dashboard/bookings", label: "Bookings" },
   { href: "/dashboard/teams", label: "Teams" },
   { href: "/dashboard/analytics", label: "Analytics" },
+  { href: "/dashboard/embed", label: "Embed" },
   { href: "/dashboard/settings", label: "Settings" },
 ]
 
