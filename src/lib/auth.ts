@@ -8,7 +8,12 @@ import { authLogger } from "./logger"
 import { cookies } from "next/headers"
 
 // Startup check: ensure NEXTAUTH_SECRET is set in production
-if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_SECRET) {
+// Skip during build phase (next build sets NEXT_PHASE)
+if (
+  process.env.NODE_ENV === "production" &&
+  !process.env.NEXTAUTH_SECRET &&
+  process.env.NEXT_PHASE !== "phase-production-build"
+) {
   throw new Error("NEXTAUTH_SECRET must be set in production environment")
 }
 

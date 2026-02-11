@@ -38,7 +38,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Date is required" }, { status: 400 })
     }
 
-    const dateObj = new Date(date)
+    // Normalize to just the date portion to match @db.Date storage
+    const datePart = date.split("T")[0]
+    const dateObj = new Date(datePart + "T00:00:00.000Z")
     if (isNaN(dateObj.getTime())) {
       return NextResponse.json({ error: "Invalid date format" }, { status: 400 })
     }
