@@ -1,4 +1,4 @@
-# LetsMeet
+# letsmeet.link
 
 A modern, open-source scheduling application built with Next.js 16 — similar to Calendly.
 
@@ -139,7 +139,7 @@ src/
 
 ## MCP Server
 
-LetsMeet includes an MCP (Model Context Protocol) server for AI agent integrations. Start it with:
+letsmeet.link includes an MCP (Model Context Protocol) server for AI agent integrations. Start it with:
 
 ```bash
 pnpm mcp

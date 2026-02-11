@@ -1,4 +1,4 @@
-# LetsMeet Security Audit — 2026-02-10
+# letsmeet.link Security Audit — 2026-02-10
 
 ## Summary
 

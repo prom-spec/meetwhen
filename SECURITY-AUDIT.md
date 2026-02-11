@@ -1,4 +1,4 @@
-# LetsMeet Security Audit Report
+# letsmeet.link Security Audit Report
 
 **Date:** 2026-02-09  
 **Auditor:** Automated Security Review  
