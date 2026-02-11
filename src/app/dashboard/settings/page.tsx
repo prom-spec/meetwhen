@@ -703,26 +703,7 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Hide &quot;Powered by letsmeet.link&quot;</p>
-                <p className="text-sm text-gray-500">
-                  Remove the footer from your booking pages
-                </p>
-              </div>
-              <button
-                onClick={() => setHidePoweredBy(!hidePoweredBy)}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#0066FF] focus:ring-offset-2 ${
-                  hidePoweredBy ? "bg-[#0066FF]" : "bg-gray-200"
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    hidePoweredBy ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </div>
+            {/* Hide Powered By — hidden until premium tier is available */}
 
             {/* Preview */}
             {(brandColor || brandLogo) && (
