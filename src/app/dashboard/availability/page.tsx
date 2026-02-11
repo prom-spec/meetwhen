@@ -278,7 +278,14 @@ export default function AvailabilityPage() {
       })
 
       if (res.ok) {
-        setDateOverrides(prev => prev.filter(o => o.date !== dateStr))
+        // Re-fetch from server to ensure all fields (including reason) are preserved
+        // on remaining items. Local filtering with date string comparison can lose
+        // data due to date format mismatches between server and client state.
+        const overridesRes = await fetch("/api/date-overrides")
+        const overridesData = await overridesRes.json()
+        if (Array.isArray(overridesData)) {
+          setDateOverrides(overridesData)
+        }
       } else {
         toast("Failed to delete override", "error")
       }
