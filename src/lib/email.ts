@@ -37,6 +37,8 @@ interface BookingEmailData {
     startTime: Date
     endTime: Date
     meetingUrl?: string | null
+    recurrenceRule?: string | null
+    childCount?: number
   }
   eventType: {
     title: string
@@ -47,6 +49,18 @@ interface BookingEmailData {
     email: string
     timezone?: string
   }
+}
+
+function formatRecurrenceRule(rule: string, childCount?: number): string {
+  const labels: Record<string, string> = {
+    weekly_4: "Weekly for 4 weeks",
+    weekly_8: "Weekly for 8 weeks",
+    biweekly_4: "Biweekly for 4 occurrences",
+    monthly_3: "Monthly for 3 months",
+  }
+  const label = labels[rule] || rule
+  const total = (childCount || 0) + 1
+  return `${label} (${total} meetings total)`
 }
 
 function formatTimeRange(start: Date, end: Date, timezone: string): { startTime: string; endTime: string } {
@@ -103,6 +117,7 @@ export async function sendBookingConfirmation(data: BookingEmailData) {
         meetingUrl: booking.meetingUrl,
         location: eventType.location,
         bookingUrl,
+        recurrenceInfo: booking.recurrenceRule ? formatRecurrenceRule(booking.recurrenceRule, booking.childCount) : null,
       }),
     })
 

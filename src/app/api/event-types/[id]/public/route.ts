@@ -35,6 +35,8 @@ export async function GET(
         duration: eventType.duration,
         description: eventType.description,
         location: eventType.location,
+        allowRecurring: eventType.allowRecurring,
+        recurrenceOptions: eventType.recurrenceOptions,
       },
       host: {
         name: eventType.user.name,

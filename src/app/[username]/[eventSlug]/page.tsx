@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Clock, MapPin, CheckCircle, Globe, Search, Loader2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Clock, MapPin, CheckCircle, Globe, Search, Loader2, Repeat } from "lucide-react"
 import PoweredByFooter from "@/components/PoweredByFooter"
 import { useToast } from "@/components/ToastProvider"
 
@@ -14,6 +14,8 @@ interface EventType {
   duration: number
   description: string | null
   location: string | null
+  allowRecurring?: boolean
+  recurrenceOptions?: string | null
 }
 
 interface Branding {
@@ -92,6 +94,7 @@ export default function BookingPage() {
     name: "",
     email: "",
     notes: "",
+    recurrenceRule: "",
   })
 
   const allTimezones = useMemo(() => {
@@ -225,6 +228,7 @@ export default function BookingPage() {
           date: formatDate(selectedDate),
           time: selectedTime,
           notes: formData.notes || "",
+          ...(formData.recurrenceRule ? { recurrenceRule: formData.recurrenceRule } : {}),
         }),
       })
 
@@ -638,13 +642,47 @@ export default function BookingPage() {
                           placeholder="Share anything that will help prepare for the meeting..."
                         />
                       </div>
+                      {/* Recurrence option */}
+                      {eventType?.allowRecurring && eventType.recurrenceOptions && (() => {
+                        const options: string[] = (() => { try { return JSON.parse(eventType.recurrenceOptions!) } catch { return [] } })()
+                        if (options.length === 0) return null
+                        const labels: Record<string, string> = {
+                          weekly_4: "Weekly × 4 (1 month)",
+                          weekly_8: "Weekly × 8 (2 months)",
+                          biweekly_4: "Biweekly × 4 (2 months)",
+                          monthly_3: "Monthly × 3 (3 months)",
+                        }
+                        return (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <Repeat className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />
+                              Recurring
+                            </label>
+                            <select
+                              value={formData.recurrenceRule}
+                              onChange={(e) => setFormData({ ...formData, recurrenceRule: e.target.value })}
+                              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066FF] focus:border-transparent transition-shadow bg-white"
+                            >
+                              <option value="">One-time meeting</option>
+                              {options.map((opt: string) => (
+                                <option key={opt} value={opt}>{labels[opt] || opt}</option>
+                              ))}
+                            </select>
+                            {formData.recurrenceRule && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                This will book multiple meetings on the same day/time
+                              </p>
+                            )}
+                          </div>
+                        )
+                      })()}
                       <button
                         type="submit"
                         disabled={isLoading}
                         className="w-full py-3 text-white font-medium rounded-lg disabled:opacity-50 transition-colors"
                         style={{ backgroundColor: accent }}
                       >
-                        {isLoading ? "Booking..." : "Confirm Booking"}
+                        {isLoading ? "Booking..." : formData.recurrenceRule ? "Confirm Recurring Booking" : "Confirm Booking"}
                       </button>
                     </form>
                   </div>

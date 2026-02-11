@@ -23,6 +23,7 @@ interface BookingConfirmationProps {
   meetingUrl?: string | null
   location?: string | null
   bookingUrl?: string | null
+  recurrenceInfo?: string | null
 }
 
 export default function BookingConfirmation({
@@ -35,6 +36,7 @@ export default function BookingConfirmation({
   meetingUrl,
   location,
   bookingUrl,
+  recurrenceInfo,
 }: BookingConfirmationProps) {
   return (
     <Html>
@@ -61,6 +63,11 @@ export default function BookingConfirmation({
             {location && !meetingUrl && (
               <Text style={eventDetails}>
                 📍 {location}
+              </Text>
+            )}
+            {recurrenceInfo && (
+              <Text style={eventDetails}>
+                🔁 {recurrenceInfo}
               </Text>
             )}
           </Section>

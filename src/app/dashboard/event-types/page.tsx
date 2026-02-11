@@ -198,6 +198,8 @@ export default function EventTypesPage() {
       visibility: "public",
       maxAttendees: "1",
       customQuestions: "[]",
+      allowRecurring: false,
+      recurrenceOptions: "[]",
     })
     setShowModal(true)
   }
@@ -221,6 +223,8 @@ export default function EventTypesPage() {
       visibility: (eventType as any).visibility || "public",
       maxAttendees: ((eventType as any).maxAttendees || 1).toString(),
       customQuestions: (eventType as any).customQuestions || "[]",
+      allowRecurring: (eventType as any).allowRecurring || false,
+      recurrenceOptions: (eventType as any).recurrenceOptions || "[]",
     })
     setShowModal(true)
   }
@@ -635,6 +639,72 @@ export default function EventTypesPage() {
                       </div>
                     </div>
                   </div>
+                </div>
+
+                {/* Recurring Meetings */}
+                <div className="space-y-4 mt-6">
+                  <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">
+                    <Repeat className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+                    Recurring Meetings
+                  </h3>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Allow recurring bookings</label>
+                      <p className="text-xs text-gray-500">Guests can book a series of meetings at once</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.allowRecurring}
+                        onChange={(e) => {
+                          const checked = e.target.checked
+                          setFormData({ 
+                            ...formData, 
+                            allowRecurring: checked,
+                            recurrenceOptions: checked && formData.recurrenceOptions === "[]" 
+                              ? JSON.stringify(["weekly_4", "weekly_8", "biweekly_4", "monthly_3"])
+                              : formData.recurrenceOptions,
+                          })
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  {formData.allowRecurring && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Allowed frequencies</label>
+                      <div className="space-y-2">
+                        {[
+                          { value: "weekly_4", label: "Weekly × 4 (1 month)" },
+                          { value: "weekly_8", label: "Weekly × 8 (2 months)" },
+                          { value: "biweekly_4", label: "Biweekly × 4 (2 months)" },
+                          { value: "monthly_3", label: "Monthly × 3 (3 months)" },
+                        ].map((opt) => {
+                          const selected: string[] = (() => { try { return JSON.parse(formData.recurrenceOptions) } catch { return [] } })()
+                          const isChecked = selected.includes(opt.value)
+                          return (
+                            <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  const next = isChecked 
+                                    ? selected.filter((v: string) => v !== opt.value) 
+                                    : [...selected, opt.value]
+                                  setFormData({ ...formData, recurrenceOptions: JSON.stringify(next) })
+                                }}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className="text-sm text-gray-700">{opt.label}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Advanced Settings */}
