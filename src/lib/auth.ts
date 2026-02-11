@@ -298,6 +298,7 @@ export const authOptions: NextAuthOptions = {
                 scope: account.scope,
                 id_token: account.id_token as string | undefined,
                 session_state: account.session_state,
+                email: googleEmail,
               },
             })
             authLogger.info("Updated existing account tokens/scope on re-sign-in", {
