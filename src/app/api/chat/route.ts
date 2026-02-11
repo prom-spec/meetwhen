@@ -73,17 +73,28 @@ function checkRateLimit(userId: string): { allowed: boolean; remaining: number; 
   return { allowed: true, remaining: 30 - limit.count, resetAt: limit.resetAt }
 }
 
+// Detect if message looks like an action request vs general question
+function looksLikeAction(message: string): boolean {
+  const actionPatterns = /\b(create|make|add|delete|remove|cancel|update|change|set|toggle|enable|disable|turn on|turn off|show me|list|get|generate|verify|block|close|revoke|test)\b/i
+  return actionPatterns.test(message)
+}
+
+const QA_MODEL = "@cf/meta/llama-3.1-8b-instruct"
+const TOOL_MODEL = "@hf/nousresearch/hermes-2-pro-mistral-7b"
+
 async function callAI(
   accountId: string,
   aiToken: string,
   messages: Array<{ role: string; content: string | null; tool_calls?: unknown; tool_call_id?: string }>,
-  tools?: unknown[]
+  tools?: unknown[],
+  model?: string
 ) {
   const body: Record<string, unknown> = { messages }
   if (tools && tools.length > 0) body.tools = tools
+  const selectedModel = model || (tools && tools.length > 0 ? TOOL_MODEL : QA_MODEL)
 
   const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@hf/nousresearch/hermes-2-pro-mistral-7b`,
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${selectedModel}`,
     {
       method: "POST",
       headers: {
@@ -142,9 +153,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "AI service not configured" }, { status: 500 })
     }
 
-    const tools = getFunctionDefinitions()
+    const lastUserMessage = sanitizedMessages.filter((m: { role: string }) => m.role === "user").pop()?.content || ""
+    const useTools = looksLikeAction(lastUserMessage as string)
+    const tools = useTools ? getFunctionDefinitions() : undefined
     const allMessages = [{ role: "system", content: SYSTEM_PROMPT }, ...sanitizedMessages]
 
+    console.log(`[Chat] useTools=${useTools}, model=${useTools ? TOOL_MODEL : QA_MODEL}, message="${(lastUserMessage as string).slice(0, 80)}"`)
     let result = await callAI(accountId, aiToken, allMessages, tools)
 
     // Handle up to 3 sequential tool calls (for multi-step conversations)
