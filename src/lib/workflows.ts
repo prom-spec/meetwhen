@@ -13,14 +13,24 @@ interface TemplateContext {
   booking_url: string
 }
 
-function resolveTemplate(template: string, ctx: TemplateContext): string {
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
+
+function resolveTemplate(template: string, ctx: TemplateContext, htmlEscape = false): string {
+  const esc = htmlEscape ? escapeHtml : (s: string) => s
   return template
-    .replace(/\{\{guest_name\}\}/g, ctx.guest_name)
-    .replace(/\{\{host_name\}\}/g, ctx.host_name)
-    .replace(/\{\{event_title\}\}/g, ctx.event_title)
-    .replace(/\{\{meeting_time\}\}/g, ctx.meeting_time)
-    .replace(/\{\{meeting_url\}\}/g, ctx.meeting_url)
-    .replace(/\{\{booking_url\}\}/g, ctx.booking_url)
+    .replace(/\{\{guest_name\}\}/g, esc(ctx.guest_name))
+    .replace(/\{\{host_name\}\}/g, esc(ctx.host_name))
+    .replace(/\{\{event_title\}\}/g, esc(ctx.event_title))
+    .replace(/\{\{meeting_time\}\}/g, esc(ctx.meeting_time))
+    .replace(/\{\{meeting_url\}\}/g, esc(ctx.meeting_url))
+    .replace(/\{\{booking_url\}\}/g, esc(ctx.booking_url))
 }
 
 async function buildTemplateContext(bookingId: string): Promise<TemplateContext | null> {
@@ -53,7 +63,7 @@ async function executeSendEmail(
   ctx: TemplateContext
 ): Promise<void> {
   const subject = resolveTemplate((config.subject as string) || "", ctx)
-  const body = resolveTemplate((config.body as string) || "", ctx)
+  const body = resolveTemplate((config.body as string) || "", ctx, true) // HTML-escape for XSS prevention
   const to = resolveTemplate((config.to as string) || "{{guest_email}}", ctx)
 
   // Use Resend directly for workflow emails (plain text body)
@@ -77,12 +87,55 @@ async function executeSendEmail(
   })
 }
 
+/**
+ * Validates that a webhook URL is safe (no SSRF to internal networks).
+ */
+function validateWebhookUrl(url: string): void {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    throw new Error("Invalid webhook URL")
+  }
+
+  if (!["https:", "http:"].includes(parsed.protocol)) {
+    throw new Error("Webhook URL must use HTTP(S)")
+  }
+
+  const hostname = parsed.hostname.toLowerCase()
+
+  // Block internal/private hostnames
+  const blockedPatterns = [
+    /^localhost$/,
+    /^127\./,
+    /^10\./,
+    /^172\.(1[6-9]|2\d|3[01])\./,
+    /^192\.168\./,
+    /^0\./,
+    /^169\.254\./,        // link-local
+    /^\[::1?\]$/,         // IPv6 loopback
+    /^\[fd/,              // IPv6 private
+    /^\[fe80:/,           // IPv6 link-local
+    /\.internal$/,
+    /\.local$/,
+    /^metadata\.google\.internal$/,
+  ]
+
+  for (const pattern of blockedPatterns) {
+    if (pattern.test(hostname)) {
+      throw new Error("Webhook URL points to a blocked/internal address")
+    }
+  }
+}
+
 async function executeSendWebhook(
   config: Record<string, unknown>,
   ctx: TemplateContext
 ): Promise<void> {
   const url = resolveTemplate((config.url as string) || "", ctx)
   const method = ((config.method as string) || "POST").toUpperCase()
+
+  validateWebhookUrl(url)
 
   const payload = JSON.stringify({
     guest_name: ctx.guest_name,
