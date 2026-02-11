@@ -99,6 +99,17 @@ export default function BookingConfirmation({
           <Text style={footerText}>
             — letsmeet.link
           </Text>
+
+          <Hr style={hr} />
+
+          <Text style={psText}>
+            P.S. Loved how easy that was? Get your own booking link — free.
+          </Text>
+          <Section style={buttonContainer}>
+            <Button style={subtleButton} href="https://letsmeet.link/?ref=guest-email">
+              Create my letsmeet.link →
+            </Button>
+          </Section>
         </Container>
       </Body>
     </Html>
@@ -216,4 +227,23 @@ const button = {
   textDecoration: "none",
   textAlign: "center" as const,
   padding: "12px 24px",
+}
+
+const psText = {
+  color: "#9ca3af",
+  fontSize: "13px",
+  lineHeight: "20px",
+  margin: "0 0 12px",
+  textAlign: "center" as const,
+}
+
+const subtleButton = {
+  backgroundColor: "#e5e7eb",
+  borderRadius: "6px",
+  color: "#374151",
+  fontSize: "13px",
+  fontWeight: "500",
+  textDecoration: "none",
+  textAlign: "center" as const,
+  padding: "10px 20px",
 }

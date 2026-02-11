@@ -56,7 +56,7 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
     const start = new Date(booking.startTime).toISOString().replace(/-|:|\.\d+/g, "")
     const end = new Date(booking.endTime).toISOString().replace(/-|:|\.\d+/g, "")
     const title = encodeURIComponent(booking.eventType.title)
-    const details = encodeURIComponent(`Meeting with ${booking.host.name || booking.host.email}`)
+    const details = encodeURIComponent(`Meeting with ${booking.host.name || booking.host.email}\n\nScheduled with letsmeet.link · Get your free scheduling link → https://letsmeet.link/?ref=calendar`)
     
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}`
   }
@@ -247,6 +247,24 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
               <p className="text-center text-sm text-gray-500">
                 A calendar invitation has been sent to your email
               </p>
+            </div>
+          )}
+
+          {/* Viral CTA - only for active upcoming bookings */}
+          {!isCancelled && !isPast && (
+            <div className="mt-6 bg-blue-50 border border-blue-100 rounded-xl p-6 text-center">
+              <p className="text-lg font-semibold text-[#1a1a2e] mb-2">
+                Tired of the &ldquo;when works for you?&rdquo; dance?
+              </p>
+              <p className="text-sm text-gray-600 mb-4">
+                You just booked in 30 seconds. Give everyone who meets with you the same experience.
+              </p>
+              <a
+                href="https://letsmeet.link/?ref=guest-confirm"
+                className="inline-flex items-center justify-center px-5 py-2.5 bg-[#0066FF] text-white text-sm font-medium rounded-lg hover:bg-[#0052cc] transition-colors"
+              >
+                Get my free booking link →
+              </a>
             </div>
           )}
 
