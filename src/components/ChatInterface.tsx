@@ -23,6 +23,8 @@ interface Message {
 
 // Parse markdown links [text](url) and render as clickable links
 function renderMessageContent(content: string, isUser: boolean) {
+  // Strip pending action metadata (HTML comments used for multi-turn state)
+  content = content.replace(/<!--\s*PENDING:.*?-->/gs, "").trim()
   const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
   const parts: React.ReactNode[] = []
   let lastIndex = 0
