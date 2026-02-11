@@ -83,7 +83,7 @@ async function callAI(
   if (tools && tools.length > 0) body.tools = tools
 
   const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.1-8b-instruct`,
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@hf/nousresearch/hermes-2-pro-mistral-7b`,
     {
       method: "POST",
       headers: {
@@ -155,6 +155,7 @@ export async function POST(request: NextRequest) {
       iterations++
       const toolCall = result.tool_calls[0]
       const functionName = toolCall.function?.name || toolCall.name
+      console.log(`[Chat] Tool call #${iterations}: ${functionName}`, JSON.stringify(toolCall))
       let functionArgs: Record<string, unknown> = {}
 
       try {
@@ -164,7 +165,9 @@ export async function POST(request: NextRequest) {
         functionArgs = {}
       }
 
+      console.log(`[Chat] Executing ${functionName} with args:`, JSON.stringify(functionArgs))
       const actionResult = await executeAction(functionName, functionArgs, userId)
+      console.log(`[Chat] Action result:`, JSON.stringify(actionResult))
       actionResults.push({ action: functionName, result: actionResult })
 
       // Build follow-up messages with tool result
