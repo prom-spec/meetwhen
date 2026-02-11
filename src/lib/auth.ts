@@ -276,6 +276,7 @@ export const authOptions: NextAuthOptions = {
       // Update existing account tokens and scope on re-sign-in
       // NextAuth's PrismaAdapter doesn't update tokens for existing accounts
       if (account?.provider === "google" && user.id) {
+        const googleEmail = (profile as { email?: string })?.email || user.email
         try {
           const existingAccount = await prisma.account.findUnique({
             where: {
