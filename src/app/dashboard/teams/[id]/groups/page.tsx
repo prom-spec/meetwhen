@@ -12,7 +12,7 @@ interface Group {
 }
 
 export default function TeamGroupsPage() {
-  const { teamId } = useParams<{ teamId: string }>()
+  const { id: teamId } = useParams<{ id: string }>()
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
