@@ -21,6 +21,8 @@ export default function EmbedPage() {
   const [activeMode, setActiveMode] = useState<EmbedMode>("inline")
   const [floatingText, setFloatingText] = useState("Book a meeting")
   const [floatingColor, setFloatingColor] = useState("#0066FF")
+  const [primaryColor, setPrimaryColor] = useState("")
+  const [bgColor, setBgColor] = useState("")
   const [copiedMode, setCopiedMode] = useState<string | null>(null)
   const { toast } = useToast()
 
@@ -36,20 +38,29 @@ export default function EmbedPage() {
       .finally(() => setIsLoading(false))
   }, [toast])
 
+  const colorParams = [
+    primaryColor ? `primaryColor=${primaryColor.replace("#", "")}` : "",
+    bgColor ? `bgColor=${bgColor.replace("#", "")}` : "",
+  ].filter(Boolean).join("&")
+
   const bookingUrl = selectedEvent
-    ? `https://letsmeet.link/${username}/${selectedEvent.slug}`
+    ? `https://letsmeet.link/${username}/${selectedEvent.slug}${colorParams ? `?${colorParams}` : ""}`
     : ""
 
   function getCode(mode: EmbedMode): string {
     if (!bookingUrl) return ""
     const script = '<script src="https://letsmeet.link/embed.js" async><\/script>'
+    const colorAttrs = [
+      primaryColor ? ` data-letsmeet-primary-color="${primaryColor.replace("#", "")}"` : "",
+      bgColor ? ` data-letsmeet-bg-color="${bgColor.replace("#", "")}"` : "",
+    ].join("")
     switch (mode) {
       case "inline":
-        return `<div data-letsmeet-url="${bookingUrl}" data-letsmeet-mode="inline"></div>\n${script}`
+        return `<div data-letsmeet-url="${bookingUrl}" data-letsmeet-mode="inline"${colorAttrs}></div>\n${script}`
       case "popup":
-        return `<button data-letsmeet-url="${bookingUrl}" data-letsmeet-mode="popup">Book a meeting</button>\n${script}`
+        return `<button data-letsmeet-url="${bookingUrl}" data-letsmeet-mode="popup"${colorAttrs}>Book a meeting</button>\n${script}`
       case "floating":
-        return `<div data-letsmeet-url="${bookingUrl}" data-letsmeet-mode="floating" data-letsmeet-text="${floatingText}" data-letsmeet-color="${floatingColor}"></div>\n${script}`
+        return `<div data-letsmeet-url="${bookingUrl}" data-letsmeet-mode="floating" data-letsmeet-text="${floatingText}" data-letsmeet-color="${floatingColor}"${colorAttrs}></div>\n${script}`
     }
   }
 
@@ -103,6 +114,52 @@ export default function EmbedPage() {
             <option key={et.id} value={et.id}>{et.title} ({et.duration}min)</option>
           ))}
         </select>
+      </div>
+
+      {/* Color customization */}
+      <div className="mb-6 grid grid-cols-2 gap-4 max-w-xs">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Primary Color</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={primaryColor || "#0066FF"}
+              onChange={e => setPrimaryColor(e.target.value)}
+              className="w-8 h-8 rounded cursor-pointer border-0"
+            />
+            <input
+              type="text"
+              value={primaryColor}
+              onChange={e => setPrimaryColor(e.target.value)}
+              placeholder="#0066FF"
+              className="w-24 px-2 py-1 text-sm border border-gray-200 rounded-lg font-mono"
+            />
+            {primaryColor && (
+              <button onClick={() => setPrimaryColor("")} className="text-xs text-gray-400 hover:text-gray-600">✕</button>
+            )}
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Background Color</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={bgColor || "#F9FAFB"}
+              onChange={e => setBgColor(e.target.value)}
+              className="w-8 h-8 rounded cursor-pointer border-0"
+            />
+            <input
+              type="text"
+              value={bgColor}
+              onChange={e => setBgColor(e.target.value)}
+              placeholder="#F9FAFB"
+              className="w-24 px-2 py-1 text-sm border border-gray-200 rounded-lg font-mono"
+            />
+            {bgColor && (
+              <button onClick={() => setBgColor("")} className="text-xs text-gray-400 hover:text-gray-600">✕</button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Mode tabs */}
@@ -187,7 +244,7 @@ export default function EmbedPage() {
           <div className="border border-dashed border-gray-300 rounded-lg p-4 bg-gray-50 min-h-[300px] relative overflow-hidden">
             {activeMode === "inline" && bookingUrl && (
               <iframe
-                src={`${bookingUrl}?embed=true`}
+                src={`${bookingUrl}${bookingUrl.includes("?") ? "&" : "?"}embed=true`}
                 className="w-full h-[500px] border-none rounded"
               />
             )}
@@ -195,8 +252,7 @@ export default function EmbedPage() {
               <div className="flex items-center justify-center h-full min-h-[300px]">
                 <button
                   onClick={() => {
-                    // Open preview in a new window since we can't iframe localhost easily
-                    window.open(`${bookingUrl}?embed=true`, '_blank', 'width=700,height=700')
+                    window.open(`${bookingUrl}${bookingUrl.includes("?") ? "&" : "?"}embed=true`, '_blank', 'width=700,height=700')
                   }}
                   className="px-6 py-3 bg-[#0066FF] text-white rounded-lg font-medium hover:bg-[#0052cc] transition-colors"
                 >
@@ -213,7 +269,7 @@ export default function EmbedPage() {
                 <button
                   className="absolute bottom-4 right-4 text-white px-5 py-3 rounded-full font-semibold text-sm shadow-lg"
                   style={{ backgroundColor: floatingColor }}
-                  onClick={() => window.open(`${bookingUrl}?embed=true`, '_blank', 'width=420,height=700')}
+                  onClick={() => window.open(`${bookingUrl}${bookingUrl.includes("?") ? "&" : "?"}embed=true`, '_blank', 'width=420,height=700')}
                 >
                   {floatingText}
                 </button>

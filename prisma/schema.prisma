@@ -94,6 +94,7 @@ model User {
   meetingPolls  MeetingPoll[]
   routingForms  RoutingForm[]
   workflows     Workflow[]
+  emailSequences EmailSequence[]
 }
 
 model LinkingToken {

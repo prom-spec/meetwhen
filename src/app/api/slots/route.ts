@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       slots,
       ...(isGroup ? { spotsLeft, maxAttendees } : {}),
-      eventType: { id: eventType.id, title: eventType.title, duration: eventType.duration, description: eventType.description, location: eventType.location, allowRecurring: eventType.allowRecurring, recurrenceOptions: eventType.recurrenceOptions, maxAttendees: eventType.maxAttendees, screeningQuestions: eventType.screeningQuestions, cancellationPolicy: (eventType as Record<string, unknown>).cancellationPolicy, confirmationLinks: (eventType as Record<string, unknown>).confirmationLinks },
+      eventType: { id: eventType.id, title: eventType.title, duration: eventType.duration, description: eventType.description, location: eventType.location, allowRecurring: eventType.allowRecurring, recurrenceOptions: eventType.recurrenceOptions, maxAttendees: eventType.maxAttendees, screeningQuestions: eventType.screeningQuestions, cancellationPolicy: (eventType as Record<string, unknown>).cancellationPolicy, confirmationLinks: (eventType as Record<string, unknown>).confirmationLinks, redirectUrl: (eventType as Record<string, unknown>).redirectUrl },
       hostName: user.name || username,
       hostTimezone: user.timezone,
     })
@@ -229,6 +229,7 @@ async function handleTeamSlots(teamSlug: string, eventSlug: string, dateStr: str
         description: eventType.description,
         location: eventType.location,
         schedulingType: eventType.schedulingType,
+        redirectUrl: (eventType as Record<string, unknown>).redirectUrl,
       },
       team: {
         id: team.id,

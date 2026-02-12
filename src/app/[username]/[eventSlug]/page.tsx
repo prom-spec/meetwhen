@@ -28,6 +28,7 @@ interface EventType {
   screeningQuestions?: string | null
   cancellationPolicy?: string | null
   confirmationLinks?: string | null
+  redirectUrl?: string | null
 }
 
 interface Branding {
@@ -347,9 +348,45 @@ export default function BookingPage() {
     return availableDates.has(dateStr)
   }
 
+  // Redirect to custom URL after booking if configured
+  const [redirectCountdown, setRedirectCountdown] = useState(3)
+  useEffect(() => {
+    if (isBooked && eventType?.redirectUrl) {
+      const timer = setInterval(() => {
+        setRedirectCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            window.location.href = eventType.redirectUrl!
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+  }, [isBooked, eventType?.redirectUrl])
+
+  // Read embed color params
+  const embedPrimaryColor = searchParams.get("primaryColor") ? `#${searchParams.get("primaryColor")}` : null
+  const embedBgColor = searchParams.get("bgColor") ? `#${searchParams.get("bgColor")}` : null
+
+  // Apply embed colors as CSS custom properties
+  useEffect(() => {
+    if (embedPrimaryColor) document.documentElement.style.setProperty('--embed-primary', embedPrimaryColor)
+    if (embedBgColor) document.documentElement.style.setProperty('--embed-bg', embedBgColor)
+    return () => {
+      document.documentElement.style.removeProperty('--embed-primary')
+      document.documentElement.style.removeProperty('--embed-bg')
+    }
+  }, [embedPrimaryColor, embedBgColor])
+
+  // Use embed colors with fallback to branding
+  const effectiveAccent = embedPrimaryColor || accent
+  const effectiveBg = embedBgColor || undefined
+
   if (isBooked && eventType && selectedDate && selectedTime) {
     return (
-      <div className={`min-h-screen bg-gray-50 flex flex-col ${isEmbed ? '!min-h-0' : ''}`}>
+      <div className={`min-h-screen flex flex-col ${isEmbed ? '!min-h-0' : ''}`} style={{ backgroundColor: effectiveBg || '#f9fafb' }}>
         {!isEmbed && (
           <header className="py-4 px-4">
             <div className="max-w-md mx-auto">
@@ -370,9 +407,15 @@ export default function BookingPage() {
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
             <h1 className="text-2xl font-bold text-[#1a1a2e] mb-2">Booking Confirmed!</h1>
+            {eventType.redirectUrl ? (
+              <p className="text-gray-600 mb-6">
+                Redirecting in {redirectCountdown}s...
+              </p>
+            ) : (
             <p className="text-gray-600 mb-6">
               Your {eventType.title} with {username} has been scheduled.
             </p>
+            )}
             <div className="bg-gray-50 rounded-lg p-4 text-left mb-6">
               <p className="font-semibold text-[#1a1a2e]">{eventType.title}</p>
               <p className="text-sm text-gray-500 mt-1">
@@ -411,7 +454,7 @@ export default function BookingPage() {
               <Link
                 href={`/booking/${bookingId}`}
                 className="inline-flex items-center justify-center w-full py-3 px-4 text-white rounded-lg font-medium transition-colors"
-                style={{ backgroundColor: accent }}
+                style={{ backgroundColor: effectiveAccent }}
               >
                 View Booking Details
               </Link>
@@ -425,7 +468,7 @@ export default function BookingPage() {
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 flex flex-col ${isEmbed ? '!min-h-0' : ''}`}>
+    <div className={`min-h-screen flex flex-col ${isEmbed ? '!min-h-0' : ''}`} style={{ backgroundColor: effectiveBg || '#f9fafb' }}>
       {!isEmbed && (
         <header className="py-4 px-4 border-b border-gray-100 bg-white">
           <div className="max-w-4xl mx-auto">
@@ -449,7 +492,7 @@ export default function BookingPage() {
                 <button
                   onClick={() => router.push(`/${username}`)}
                   className="text-sm mb-4 font-medium"
-                  style={{ color: accent }}
+                  style={{ color: effectiveAccent }}
                 >
                   ← Back
                 </button>
@@ -460,12 +503,12 @@ export default function BookingPage() {
                     )}
                     <h1 className="text-xl font-bold text-[#1a1a2e]">{eventType.title}</h1>
                     <div className="flex items-center gap-2 mt-3 text-gray-500">
-                      <Clock className="w-4 h-4" style={{ color: accent }} />
+                      <Clock className="w-4 h-4" style={{ color: effectiveAccent }} />
                       <span>{eventType.duration} min</span>
                     </div>
                     {eventType.location && (
                       <div className="flex items-center gap-2 mt-2 text-gray-500">
-                        <MapPin className="w-4 h-4" style={{ color: accent }} />
+                        <MapPin className="w-4 h-4" style={{ color: effectiveAccent }} />
                         <span>{eventType.location}</span>
                       </div>
                     )}
@@ -677,7 +720,7 @@ export default function BookingPage() {
                     <button
                       onClick={() => setShowForm(false)}
                       className="text-sm mb-4 font-medium"
-                      style={{ color: accent }}
+                      style={{ color: effectiveAccent }}
                     >
                       ← Change time
                     </button>
@@ -948,7 +991,7 @@ export default function BookingPage() {
                         type="submit"
                         disabled={isLoading}
                         className="w-full py-3 text-white font-medium rounded-lg disabled:opacity-50 transition-colors"
-                        style={{ backgroundColor: accent }}
+                        style={{ backgroundColor: effectiveAccent }}
                       >
                         {isLoading ? "Booking..." : formData.recurrenceRule ? "Confirm Recurring Booking" : "Confirm Booking"}
                       </button>
