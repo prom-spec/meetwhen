@@ -660,6 +660,49 @@ export async function POST(request: NextRequest) {
       bookingLogger.error("Webhook trigger failed", err, { bookingId: booking.id })
     })
 
+    // Create reminder jobs for this booking
+    try {
+      const reminderTemplates = await prisma.reminderTemplate.findMany({
+        where: { OR: [{ eventTypeId: eventType.id }, { eventTypeId: null, userId: eventType.userId }], active: true },
+      })
+      if (reminderTemplates.length > 0) {
+        await prisma.reminderJob.createMany({
+          data: reminderTemplates.map(t => ({
+            bookingId: booking.id,
+            templateId: t.id,
+            scheduledFor: new Date(startTime.getTime() + t.offsetMinutes * 60000),
+          })),
+        })
+      } else {
+        // Create default reminders: 24h before and 1h before
+        const defaults = [-1440, -60]
+        for (const offset of defaults) {
+          const scheduledFor = new Date(startTime.getTime() + offset * 60000)
+          if (scheduledFor > new Date()) {
+            // Create a default template if needed
+            const tmpl = await prisma.reminderTemplate.upsert({
+              where: { id: `default_${eventType.userId}_${offset}` },
+              update: {},
+              create: {
+                id: `default_${eventType.userId}_${offset}`,
+                userId: eventType.userId,
+                offsetMinutes: offset,
+                channel: "EMAIL",
+                subject: offset === -1440 ? "Reminder: Meeting tomorrow" : "Reminder: Meeting in 1 hour",
+                body: `Your meeting "${eventType.title}" is coming up.`,
+                active: true,
+              },
+            })
+            await prisma.reminderJob.create({
+              data: { bookingId: booking.id, templateId: tmpl.id, scheduledFor },
+            })
+          }
+        }
+      }
+    } catch (err) {
+      bookingLogger.error("Failed to create reminder jobs", err, { bookingId: booking.id })
+    }
+
     logAudit(eventType.userId, "booking.created", "booking", booking.id, { guestEmail, eventType: eventType.title, startTime: startTime.toISOString() }, ip)
 
     // L1: Strip host email from response
