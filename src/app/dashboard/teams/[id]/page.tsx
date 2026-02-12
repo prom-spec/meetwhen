@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Plus, Users, Trash2, Crown, Shield, User, RefreshCw, ExternalLink, Copy, Check, Edit, Loader2, UserPlus } from "lucide-react"
+import { handleFormError } from "@/lib/form-errors"
 import Link from "next/link"
 import { useToast } from "@/components/ToastProvider"
 import ConfirmDialog from "@/components/ConfirmDialog"
@@ -119,7 +120,7 @@ export default function TeamSettingsPage() {
         setNewMemberRole("MEMBER")
       } else {
         const error = await res.json()
-        toast(error.error || "Failed to add member", "error")
+        toast(handleFormError(error) || "Failed to add member", "error")
       }
     } catch (error) {
       console.error("Error adding member:", error)
@@ -143,7 +144,7 @@ export default function TeamSettingsPage() {
         fetchTeam()
       } else {
         const error = await res.json()
-        toast(error.error || "Failed to remove member", "error")
+        toast(handleFormError(error) || "Failed to remove member", "error")
       }
     } catch (error) {
       console.error("Error removing member:", error)
@@ -164,7 +165,7 @@ export default function TeamSettingsPage() {
         fetchTeam()
       } else {
         const error = await res.json()
-        toast(error.error || "Failed to update role", "error")
+        toast(handleFormError(error) || "Failed to update role", "error")
       }
     } catch (error) {
       console.error("Error updating role:", error)
@@ -204,7 +205,7 @@ export default function TeamSettingsPage() {
         })
       } else {
         const error = await res.json()
-        toast(error.error || "Failed to create event type", "error")
+        toast(handleFormError(error) || "Failed to create event type", "error")
       }
     } catch (error) {
       console.error("Error creating event type:", error)
@@ -266,7 +267,7 @@ export default function TeamSettingsPage() {
         toast("Event type created and assigned to member", "success")
       } else {
         const error = await res.json()
-        toast(error.error || "Failed to create event type", "error")
+        toast(handleFormError(error) || "Failed to create event type", "error")
       }
     } catch (error) {
       console.error("Error creating assigned event type:", error)

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Plus, Edit, Trash2, Copy, ExternalLink, Video, MapPin, Phone, Link2, Check, ChevronRight, X, Loader2, CalendarPlus, Share2, Repeat, ShieldCheck } from "lucide-react"
+import { handleFormError } from "@/lib/form-errors"
 import { useToast } from "@/components/ToastProvider"
 import ConfirmDialog from "@/components/ConfirmDialog"
 import ShareModal from "@/components/ShareModal"
@@ -160,8 +161,8 @@ export default function EventTypesPage() {
         fetchEventTypes()
         closeModal()
       } else {
-        const error = await res.json()
-        toast(error.error || "Something went wrong", "error")
+        const errorData = await res.json()
+        toast(handleFormError(errorData), "error")
       }
     } catch (error) {
       console.error("Error saving event type:", error)
@@ -506,6 +507,7 @@ export default function EventTypesPage() {
                       </label>
                       <input
                         type="text"
+                        name="title"
                         required
                         value={formData.title}
                         onChange={(e) => {
@@ -531,6 +533,7 @@ export default function EventTypesPage() {
                         </span>
                         <input
                           type="text"
+                          name="slug"
                           required
                           value={formData.slug}
                           onChange={(e) => setFormData({ ...formData, slug: e.target.value })}

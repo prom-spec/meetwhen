@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Video, MapPin, Phone, Link2, Check, Save } from "lucide-react"
+import { ArrowLeft, Video, MapPin, Phone, Link2, Check, Save, Eye, EyeOff } from "lucide-react"
 import { useToast } from "@/components/ToastProvider"
+import { handleFormError } from "@/lib/form-errors"
 import ShareModal from "@/components/ShareModal"
 
 type LocationType = "IN_PERSON" | "GOOGLE_MEET" | "ZOOM" | "PHONE" | "CUSTOM"
@@ -36,6 +37,7 @@ export default function NewEventTypePage() {
   const [showShareModal, setShowShareModal] = useState(false)
   const [createdEventSlug, setCreatedEventSlug] = useState("")
   const [createdEventTitle, setCreatedEventTitle] = useState("")
+  const formRef = useRef<HTMLFormElement>(null)
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
@@ -48,6 +50,7 @@ export default function NewEventTypePage() {
     bufferAfter: 0,
     availableStartTime: "",
     availableEndTime: "",
+    visibility: "public" as "public" | "unlisted",
   })
 
   useEffect(() => {
@@ -81,8 +84,8 @@ export default function NewEventTypePage() {
         setCreatedEventTitle(formData.title)
         setShowShareModal(true)
       } else {
-        const error = await res.json()
-        toast(error.error || "Something went wrong", "error")
+        const errorData = await res.json()
+        toast(handleFormError(errorData, formRef), "error")
       }
     } catch (error) {
       console.error("Error:", error)
@@ -137,7 +140,7 @@ export default function NewEventTypePage() {
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form id="event-type-form" onSubmit={handleSubmit}>
+        <form id="event-type-form" ref={formRef} onSubmit={handleSubmit}>
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Left Column - Event Details */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -153,6 +156,7 @@ export default function NewEventTypePage() {
                   </label>
                   <input
                     type="text"
+                    name="title"
                     required
                     value={formData.title}
                     onChange={(e) => setFormData({
@@ -176,6 +180,7 @@ export default function NewEventTypePage() {
                     </span>
                     <input
                       type="text"
+                      name="slug"
                       required
                       value={formData.slug}
                       onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
@@ -218,6 +223,41 @@ export default function NewEventTypePage() {
                         {formData.color === color && <Check className="w-5 h-5 text-white" />}
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                {/* Visibility */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Visibility
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, visibility: "public" })}
+                      className={`p-3 rounded-xl border-2 text-left transition-all ${
+                        formData.visibility === "public"
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <Eye className={`w-4 h-4 mb-1 ${formData.visibility === "public" ? "text-blue-600" : "text-gray-400"}`} />
+                      <div className={`text-sm font-medium ${formData.visibility === "public" ? "text-blue-900" : "text-gray-900"}`}>Public</div>
+                      <div className={`text-xs ${formData.visibility === "public" ? "text-blue-600" : "text-gray-500"}`}>Shown on your profile</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, visibility: "unlisted" })}
+                      className={`p-3 rounded-xl border-2 text-left transition-all ${
+                        formData.visibility === "unlisted"
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <EyeOff className={`w-4 h-4 mb-1 ${formData.visibility === "unlisted" ? "text-blue-600" : "text-gray-400"}`} />
+                      <div className={`text-sm font-medium ${formData.visibility === "unlisted" ? "text-blue-900" : "text-gray-900"}`}>Unlisted</div>
+                      <div className={`text-xs ${formData.visibility === "unlisted" ? "text-blue-600" : "text-gray-500"}`}>Direct link only</div>
+                    </button>
                   </div>
                 </div>
               </div>

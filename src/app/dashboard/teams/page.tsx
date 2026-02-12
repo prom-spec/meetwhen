@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Plus, Users, Settings, ExternalLink, Copy, Check, Trash2, Loader2 } from "lucide-react"
+import { handleFormError } from "@/lib/form-errors"
 import Link from "next/link"
 import { useToast } from "@/components/ToastProvider"
 import ConfirmDialog from "@/components/ConfirmDialog"
@@ -85,7 +86,7 @@ export default function TeamsPage() {
         setFormData({ name: "", slug: "" })
       } else {
         const error = await res.json()
-        toast(error.error || "Failed to create team", "error")
+        toast(handleFormError(error) || "Failed to create team", "error")
       }
     } catch (error) {
       console.error("Error creating team:", error)
@@ -107,7 +108,7 @@ export default function TeamsPage() {
         toast("Team deleted", "success")
       } else {
         const error = await res.json()
-        toast(error.error || "Failed to delete team", "error")
+        toast(handleFormError(error) || "Failed to delete team", "error")
       }
     } catch (error) {
       console.error("Error deleting team:", error)
