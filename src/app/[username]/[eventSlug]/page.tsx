@@ -953,40 +953,6 @@ export default function BookingPage() {
                           </div>
                         )
                       })()}
-                      {/* Book on behalf of someone else */}
-                      <div className="border-t border-gray-100 pt-3">
-                        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={bookForOther}
-                            onChange={(e) => setBookForOther(e.target.checked)}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          Book for someone else
-                        </label>
-                        {bookForOther && (
-                          <div className="mt-3 space-y-3 p-3 bg-blue-50 rounded-lg">
-                            <p className="text-xs text-blue-700">Your details (booker):</p>
-                            <input
-                              type="text"
-                              required
-                              value={bookerName}
-                              onChange={(e) => setBookerName(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#0066FF] focus:border-transparent"
-                              placeholder="Your name"
-                            />
-                            <input
-                              type="email"
-                              required
-                              value={bookerEmail}
-                              onChange={(e) => setBookerEmail(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#0066FF] focus:border-transparent"
-                              placeholder="Your email"
-                            />
-                            <p className="text-xs text-blue-600">The name and email above are for the attendee.</p>
-                          </div>
-                        )}
-                      </div>
                       <button
                         type="submit"
                         disabled={isLoading}

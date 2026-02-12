@@ -875,6 +875,23 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Analytics Tracking */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Analytics Tracking</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Google Analytics Tracking ID</label>
+              <input type="text" value={gaTrackingId} onChange={e => setGaTrackingId(e.target.value)} placeholder="G-XXXXXXXXXX" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+              <p className="text-xs text-gray-500 mt-1">Injected on your public booking pages</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Meta Pixel ID</label>
+              <input type="text" value={metaPixelId} onChange={e => setMetaPixelId(e.target.value)} placeholder="1234567890" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+              <p className="text-xs text-gray-500 mt-1">Facebook/Meta pixel for tracking conversions</p>
+            </div>
+          </div>
+        </div>
+
         {/* Custom Domain Section */}
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
