@@ -19,14 +19,11 @@ function generateSlug(): string {
 
 export async function GET() {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const links = await prisma.oneOffLink.findMany({
     where: { userId: session.user.id },
     orderBy: { createdAt: "desc" },
-    include: { bookings: true },
   })
 
   return NextResponse.json(links)
@@ -34,9 +31,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const body = await req.json()
   const parsed = createSchema.safeParse(body)
@@ -57,7 +52,7 @@ export async function POST(req: NextRequest) {
       slug,
       title,
       duration,
-      availableSlots: JSON.stringify(availableSlots),
+      availableSlots: availableSlots,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
       maxUses: maxUses ?? 1,
     },
