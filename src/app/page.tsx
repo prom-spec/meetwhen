@@ -59,19 +59,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="pt-20 pb-16 text-center lg:pt-32">
-          {/* Logo Icon */}
-          <div className="flex justify-center mb-8">
-            <div className="p-4 bg-blue-50 rounded-2xl">
-              <Image
-                src="/logo.svg"
-                alt="letsmeet.link icon"
-                width={64}
-                height={64}
-              />
-            </div>
-          </div>
-
+        <div className="pt-10 pb-16 text-center lg:pt-16">
           {/* Badge */}
           <div className="flex justify-center mb-6">
             <span className="inline-flex items-center gap-2 bg-blue-50 text-[#0066FF] text-sm font-medium px-4 py-2 rounded-full">
