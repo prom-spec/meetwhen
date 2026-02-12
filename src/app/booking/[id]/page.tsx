@@ -197,12 +197,41 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
               </div>
             </div>
 
+            {booking.bookedByName && (
+              <div className="border-t border-gray-200 pt-4">
+                <p className="text-sm text-gray-500 mb-1">Booked by:</p>
+                <p className={isCancelled ? 'text-gray-400' : 'text-gray-700'}>
+                  {booking.bookedByName} {booking.bookedByEmail && `(${booking.bookedByEmail})`}
+                </p>
+              </div>
+            )}
+
             {booking.notes && (
               <div className="border-t border-gray-200 pt-4">
                 <p className="text-sm text-gray-500 mb-1">Notes:</p>
                 <p className={isCancelled ? 'text-gray-400' : 'text-gray-700'}>{booking.notes}</p>
               </div>
             )}
+
+            {booking.screeningAnswers && (() => {
+              try {
+                const answers = JSON.parse(booking.screeningAnswers)
+                const entries = Object.entries(answers)
+                if (entries.length === 0) return null
+                return (
+                  <div className="border-t border-gray-200 pt-4">
+                    <p className="text-sm text-gray-500 mb-2">Screening Responses:</p>
+                    <div className="space-y-1">
+                      {entries.map(([key, value]) => (
+                        <p key={key} className={`text-sm ${isCancelled ? 'text-gray-400' : 'text-gray-700'}`}>
+                          <span className="font-medium">{key}:</span> {String(value)}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )
+              } catch { return null }
+            })()}
           </div>
 
           {/* Actions */}

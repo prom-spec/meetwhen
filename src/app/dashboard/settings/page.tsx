@@ -45,8 +45,11 @@ interface UserSettings {
   blockHolidays: boolean
   holidayCountry: string | null
   brandColor: string | null
+  accentColor: string | null
   brandLogo: string | null
   hidePoweredBy: boolean
+  gaTrackingId: string | null
+  metaPixelId: string | null
   googleConnected: boolean
   hasCalendarScope: boolean
 }
@@ -132,8 +135,11 @@ export default function SettingsPage() {
   const [calendarSyncEnabled, setCalendarSyncEnabled] = useState(true)
   const [blockHolidays, setBlockHolidays] = useState(false)
   const [brandColor, setBrandColor] = useState("")
+  const [accentColor, setAccentColor] = useState("")
   const [brandLogo, setBrandLogo] = useState("")
   const [hidePoweredBy, setHidePoweredBy] = useState(false)
+  const [gaTrackingId, setGaTrackingId] = useState("")
+  const [metaPixelId, setMetaPixelId] = useState("")
 
   // Linked accounts state
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([])
@@ -1243,7 +1249,90 @@ mcporter add letsmeet --type http \\
             )}
           </button>
         </div>
+
+        {/* Danger Zone - Delete Account */}
+        <DeleteAccountSection />
       </div>
+    </div>
+  )
+}
+
+function DeleteAccountSection() {
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [confirmText, setConfirmText] = useState("")
+  const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    setError(null)
+    try {
+      const res = await fetch("/api/user/data", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation: "DELETE MY ACCOUNT" }),
+      })
+      if (res.ok) {
+        window.location.href = "/login"
+      } else {
+        const data = await res.json()
+        setError(data.error || "Failed to delete account")
+      }
+    } catch {
+      setError("Something went wrong. Please try again.")
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <div className="bg-white shadow rounded-lg p-6 border border-red-200">
+      <h2 className="text-lg font-medium text-red-600 mb-2 flex items-center gap-2">
+        <Trash2 className="h-5 w-5" />
+        Danger Zone
+      </h2>
+      <p className="text-sm text-gray-600 mb-4">
+        Permanently delete your account and all associated data. This action cannot be undone.
+      </p>
+      {!showConfirm ? (
+        <button
+          onClick={() => setShowConfirm(true)}
+          className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700"
+        >
+          Delete My Account
+        </button>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-red-700 font-medium">
+            Type <code className="bg-red-50 px-1.5 py-0.5 rounded text-red-800">DELETE MY ACCOUNT</code> to confirm:
+          </p>
+          <input
+            type="text"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="DELETE MY ACCOUNT"
+            className="w-full px-3 py-2 border border-red-300 rounded-md text-sm focus:ring-red-500 focus:border-red-500"
+          />
+          {error && (
+            <p className="text-sm text-red-600">{error}</p>
+          )}
+          <div className="flex gap-3">
+            <button
+              onClick={handleDelete}
+              disabled={confirmText !== "DELETE MY ACCOUNT" || deleting}
+              className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {deleting ? "Deleting..." : "Permanently Delete Account"}
+            </button>
+            <button
+              onClick={() => { setShowConfirm(false); setConfirmText(""); setError(null) }}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

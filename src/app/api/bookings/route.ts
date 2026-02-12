@@ -390,20 +390,39 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for conflicts on all dates (primary + recurring)
+    // For group events (maxAttendees > 1), check if slot is full rather than any conflict
     const allSlots = [{ start: startTime, end: endTime }, ...recurringDates]
     for (const slot of allSlots) {
-      const conflictingBooking = await prisma.booking.findFirst({
+      const overlappingBookings = await prisma.booking.count({
         where: {
           hostId: eventType.userId,
+          eventTypeId,
           status: { not: "CANCELLED" },
-          OR: [
-            { startTime: { lt: slot.end }, endTime: { gt: slot.start } },
-          ],
+          startTime: slot.start,
+          endTime: slot.end,
         },
       })
-      if (conflictingBooking) {
-        bookingLogger.warn("Time slot conflict detected", { requestId, conflictingBookingId: conflictingBooking.id, slotStart: slot.start.toISOString() })
-        return NextResponse.json({ error: `Time slot on ${dateFns.format(slot.start, "MMM d, yyyy")} at ${dateFns.format(slot.start, "HH:mm")} is no longer available.` }, { status: 409 })
+      if (eventType.maxAttendees > 1) {
+        // Group event: check if spots remain
+        if (overlappingBookings >= eventType.maxAttendees) {
+          bookingLogger.warn("Group slot full", { requestId, slotStart: slot.start.toISOString(), maxAttendees: eventType.maxAttendees })
+          return NextResponse.json({ error: `This time slot on ${dateFns.format(slot.start, "MMM d, yyyy")} is fully booked.` }, { status: 409 })
+        }
+      } else {
+        // 1:1 event: any overlap is a conflict
+        const conflictingBooking = await prisma.booking.findFirst({
+          where: {
+            hostId: eventType.userId,
+            status: { not: "CANCELLED" },
+            OR: [
+              { startTime: { lt: slot.end }, endTime: { gt: slot.start } },
+            ],
+          },
+        })
+        if (conflictingBooking) {
+          bookingLogger.warn("Time slot conflict detected", { requestId, conflictingBookingId: conflictingBooking.id, slotStart: slot.start.toISOString() })
+          return NextResponse.json({ error: `Time slot on ${dateFns.format(slot.start, "MMM d, yyyy")} at ${dateFns.format(slot.start, "HH:mm")} is no longer available.` }, { status: 409 })
+        }
       }
     }
 
@@ -428,6 +447,9 @@ export async function POST(request: NextRequest) {
         endTime,
         status: "CONFIRMED",
         recurrenceRule: recurrenceRule || null,
+        screeningAnswers: screeningAnswers || null,
+        bookedByName: bookedByName || null,
+        bookedByEmail: bookedByEmail || null,
       },
       include: {
         eventType: true,
@@ -564,6 +586,34 @@ export async function POST(request: NextRequest) {
     }).catch((err) => {
       bookingLogger.error("Failed to send booking emails", err, { bookingId: booking.id })
     })
+
+    // If booked on behalf, also send confirmation to the booker
+    if (bookedByEmail && bookedByEmail !== booking.guestEmail) {
+      import("@/lib/email").then(({ sendBookingConfirmation }) => {
+        sendBookingConfirmation({
+          booking: {
+            id: booking.id,
+            guestName: bookedByName || "Booker",
+            guestEmail: bookedByEmail,
+            guestTimezone: booking.guestTimezone,
+            startTime: booking.startTime,
+            endTime: booking.endTime,
+            meetingUrl: booking.meetingUrl,
+          },
+          eventType: {
+            title: booking.eventType.title,
+            location: booking.eventType.location,
+          },
+          host: {
+            name: booking.host.name,
+            email: booking.host.email,
+            timezone: booking.host.timezone,
+          },
+        }).catch((err: unknown) => {
+          bookingLogger.error("Failed to send booker confirmation email", err, { bookingId: booking.id })
+        })
+      })
+    }
 
     // Trigger workflow automations
     executeWorkflow("BOOKING_CREATED", booking.id).catch((err) => {

@@ -71,6 +71,10 @@ model User {
   // Multi-account: preferred primary Google account ID (null = first linked)
   primaryAccountId         String?
 
+  // Billing
+  plan           String    @default("free") // "free", "pro", "enterprise"
+  planUpdatedAt  DateTime?
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

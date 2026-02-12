@@ -17,6 +17,9 @@ interface Booking {
   endTime: string
   status: string
   notes: string | null
+  screeningAnswers: string | null
+  bookedByName: string | null
+  bookedByEmail: string | null
   eventType: {
     title: string
     duration: number
@@ -249,11 +252,36 @@ export default function BookingsPage() {
                     </div>
                   </div>
 
+                  {booking.bookedByName && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <User className="w-4 h-4" />
+                      <span>Booked by: {booking.bookedByName} ({booking.bookedByEmail})</span>
+                    </div>
+                  )}
+
                   {booking.notes && (
                     <p className="mt-2 text-sm text-gray-500 bg-gray-50 p-2 rounded">
                       {booking.notes}
                     </p>
                   )}
+
+                  {booking.screeningAnswers && (() => {
+                    try {
+                      const answers = JSON.parse(booking.screeningAnswers)
+                      const entries = Object.entries(answers)
+                      if (entries.length === 0) return null
+                      return (
+                        <div className="mt-2 text-sm bg-blue-50 p-2 rounded border border-blue-100">
+                          <p className="font-medium text-blue-800 text-xs mb-1">Screening Answers</p>
+                          {entries.map(([key, value]) => (
+                            <p key={key} className="text-blue-700 text-xs">
+                              <span className="font-medium">{key}:</span> {String(value)}
+                            </p>
+                          ))}
+                        </div>
+                      )
+                    } catch { return null }
+                  })()}
                 </div>
 
                 <div className="relative mt-4 sm:mt-0 sm:ml-4" ref={openMenuId === booking.id ? menuRef : undefined}>

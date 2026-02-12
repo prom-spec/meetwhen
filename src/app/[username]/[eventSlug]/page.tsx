@@ -8,6 +8,14 @@ import { ChevronLeft, ChevronRight, Clock, MapPin, CheckCircle, Globe, Search, L
 import PoweredByFooter from "@/components/PoweredByFooter"
 import { useToast } from "@/components/ToastProvider"
 
+interface ScreeningQuestion {
+  id: string
+  label: string
+  type: "text" | "select" | "checkbox"
+  required: boolean
+  options?: string[]
+}
+
 interface EventType {
   id: string
   title: string
@@ -16,6 +24,8 @@ interface EventType {
   location: string | null
   allowRecurring?: boolean
   recurrenceOptions?: string | null
+  maxAttendees?: number
+  screeningQuestions?: string | null
   cancellationPolicy?: string | null
   confirmationLinks?: string | null
 }
@@ -31,6 +41,8 @@ interface Branding {
 
 interface SlotResponse {
   slots: string[]
+  spotsLeft?: Record<string, number>
+  maxAttendees?: number
   eventType: EventType
   hostName?: string
   hostTimezone: string
@@ -95,6 +107,11 @@ export default function BookingPage() {
   const tzDropdownRef = useRef<HTMLDivElement>(null)
 
   const { toast } = useToast()
+  const [spotsLeft, setSpotsLeft] = useState<Record<string, number>>({})
+  const [bookForOther, setBookForOther] = useState(false)
+  const [bookerName, setBookerName] = useState("")
+  const [bookerEmail, setBookerEmail] = useState("")
+  const [screeningAnswers, setScreeningAnswers] = useState<Record<string, string>>({})
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -141,6 +158,38 @@ export default function BookingPage() {
   const accent = branding.brandColor || "#0066FF"
   const accentHover = branding.brandColor ? branding.brandColor + "dd" : "#0052cc"
 
+  // Inject GA / Meta Pixel tracking scripts
+  useEffect(() => {
+    if (!branding.gaTrackingId && !branding.metaPixelId) return
+    const head = document.head
+
+    if (branding.gaTrackingId) {
+      const gaScript = document.createElement("script")
+      gaScript.async = true
+      gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${branding.gaTrackingId}`
+      head.appendChild(gaScript)
+      const gaInline = document.createElement("script")
+      gaInline.textContent = `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${branding.gaTrackingId}');`
+      head.appendChild(gaInline)
+    }
+
+    if (branding.metaPixelId) {
+      const fbScript = document.createElement("script")
+      fbScript.textContent = `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${branding.metaPixelId}');fbq('track','PageView');`
+      head.appendChild(fbScript)
+    }
+  }, [branding.gaTrackingId, branding.metaPixelId])
+
+  // Apply custom CSS variables for brand/accent colors
+  useEffect(() => {
+    if (branding.brandColor) document.documentElement.style.setProperty('--brand-color', branding.brandColor)
+    if (branding.accentColor) document.documentElement.style.setProperty('--accent-color', branding.accentColor)
+    return () => {
+      document.documentElement.style.removeProperty('--brand-color')
+      document.documentElement.style.removeProperty('--accent-color')
+    }
+  }, [branding.brandColor, branding.accentColor])
+
   // Track page view once when event type is loaded
   useEffect(() => {
     if (eventType?.id && !hasTrackedView.current) {
@@ -165,6 +214,7 @@ export default function BookingPage() {
       )
       const data: SlotResponse = await res.json()
       setSlots(data.slots || [])
+      setSpotsLeft(data.spotsLeft || {})
       setEventType(data.eventType)
       if (data.hostName) setHostName(data.hostName)
       setHostTimezone(data.hostTimezone)
@@ -234,6 +284,8 @@ export default function BookingPage() {
           time: selectedTime,
           notes: formData.notes || "",
           ...(formData.recurrenceRule ? { recurrenceRule: formData.recurrenceRule } : {}),
+          ...(Object.keys(screeningAnswers).length > 0 ? { screeningAnswers: JSON.stringify(screeningAnswers) } : {}),
+          ...(bookForOther ? { bookedByName: bookerName, bookedByEmail: bookerEmail } : {}),
         }),
       })
 
@@ -333,6 +385,28 @@ export default function BookingPage() {
             <p className="text-sm text-gray-500 mb-6">
               A confirmation email has been sent to {formData.email}
             </p>
+            {/* Custom confirmation links */}
+            {eventType.confirmationLinks && (() => {
+              try {
+                const links: {label: string; url: string}[] = JSON.parse(eventType.confirmationLinks)
+                if (links.length === 0) return null
+                return (
+                  <div className="mb-4 space-y-2">
+                    {links.map((link, i) => (
+                      <a
+                        key={i}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-full py-2.5 px-4 text-center text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+                      >
+                        {link.label} →
+                      </a>
+                    ))}
+                  </div>
+                )
+              } catch { return null }
+            })()}
             {bookingId && (
               <Link
                 href={`/booking/${bookingId}`}
@@ -585,6 +659,11 @@ export default function BookingPage() {
                                 `}
                               >
                                 {slot}
+                                {spotsLeft[slot] !== undefined && eventType?.maxAttendees && eventType.maxAttendees > 1 && (
+                                  <span className="block text-xs font-normal text-gray-400 mt-0.5">
+                                    {spotsLeft[slot]} spot{spotsLeft[slot] !== 1 ? "s" : ""} left
+                                  </span>
+                                )}
                               </button>
                             ))
                           )}
@@ -653,6 +732,100 @@ export default function BookingPage() {
                           placeholder="Share anything that will help prepare for the meeting..."
                         />
                       </div>
+                      {/* Screening Questions */}
+                      {eventType?.screeningQuestions && (() => {
+                        const questions: ScreeningQuestion[] = (() => { try { return JSON.parse(eventType.screeningQuestions!) } catch { return [] } })()
+                        if (questions.length === 0) return null
+                        return (
+                          <div className="border-t border-gray-100 pt-4">
+                            <p className="text-sm font-medium text-gray-700 mb-3">Screening Questions</p>
+                            {questions.map((q) => (
+                              <div key={q.id} className="mb-3">
+                                <label className="block text-sm text-gray-700 mb-1">
+                                  {q.label} {q.required && <span className="text-red-500">*</span>}
+                                </label>
+                                {q.type === "text" && (
+                                  <input
+                                    type="text"
+                                    required={q.required}
+                                    value={screeningAnswers[q.id] || ""}
+                                    onChange={(e) => setScreeningAnswers({ ...screeningAnswers, [q.id]: e.target.value })}
+                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066FF] focus:border-transparent"
+                                  />
+                                )}
+                                {q.type === "select" && q.options && (
+                                  <select
+                                    required={q.required}
+                                    value={screeningAnswers[q.id] || ""}
+                                    onChange={(e) => setScreeningAnswers({ ...screeningAnswers, [q.id]: e.target.value })}
+                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066FF] focus:border-transparent bg-white"
+                                  >
+                                    <option value="">Select...</option>
+                                    {q.options.map((opt) => (
+                                      <option key={opt} value={opt}>{opt}</option>
+                                    ))}
+                                  </select>
+                                )}
+                                {q.type === "checkbox" && (
+                                  <label className="flex items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      required={q.required}
+                                      checked={screeningAnswers[q.id] === "true"}
+                                      onChange={(e) => setScreeningAnswers({ ...screeningAnswers, [q.id]: e.target.checked ? "true" : "false" })}
+                                      className="rounded border-gray-300 text-[#0066FF] focus:ring-[#0066FF]"
+                                    />
+                                    <span className="text-sm text-gray-600">Yes</span>
+                                  </label>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      })()}
+
+                      {/* Book on behalf of someone else */}
+                      <div className="border-t border-gray-100 pt-4">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={bookForOther}
+                            onChange={(e) => setBookForOther(e.target.checked)}
+                            className="rounded border-gray-300 text-[#0066FF] focus:ring-[#0066FF]"
+                          />
+                          <span className="text-sm text-gray-700">Book for someone else</span>
+                        </label>
+                        {bookForOther && (
+                          <div className="mt-3 space-y-3 pl-6">
+                            <div>
+                              <label className="block text-sm text-gray-600 mb-1">Your name (booker) *</label>
+                              <input
+                                type="text"
+                                required
+                                value={bookerName}
+                                onChange={(e) => setBookerName(e.target.value)}
+                                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066FF] focus:border-transparent"
+                                placeholder="Your name"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm text-gray-600 mb-1">Your email (booker) *</label>
+                              <input
+                                type="email"
+                                required
+                                value={bookerEmail}
+                                onChange={(e) => setBookerEmail(e.target.value)}
+                                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066FF] focus:border-transparent"
+                                placeholder="you@example.com"
+                              />
+                            </div>
+                            <p className="text-xs text-gray-400">
+                              Both you and the attendee above will receive confirmation emails.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
                       {/* Recurrence option */}
                       {eventType?.allowRecurring && eventType.recurrenceOptions && (() => {
                         const options: string[] = (() => { try { return JSON.parse(eventType.recurrenceOptions!) } catch { return [] } })()
@@ -687,6 +860,90 @@ export default function BookingPage() {
                           </div>
                         )
                       })()}
+                      {/* Screening Questions */}
+                      {eventType?.screeningQuestions && (() => {
+                        const questions: ScreeningQuestion[] = (() => { try { return JSON.parse(eventType.screeningQuestions!) } catch { return [] } })()
+                        if (questions.length === 0) return null
+                        return (
+                          <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <p className="text-sm font-medium text-gray-700">Screening Questions</p>
+                            {questions.map((q) => (
+                              <div key={q.id}>
+                                <label className="block text-sm text-gray-700 mb-1">
+                                  {q.label} {q.required && <span className="text-red-500">*</span>}
+                                </label>
+                                {q.type === "text" && (
+                                  <input
+                                    type="text"
+                                    required={q.required}
+                                    value={(screeningAnswers[q.id] as string) || ""}
+                                    onChange={(e) => setScreeningAnswers({ ...screeningAnswers, [q.id]: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#0066FF] focus:border-transparent"
+                                  />
+                                )}
+                                {q.type === "select" && q.options && (
+                                  <select
+                                    required={q.required}
+                                    value={(screeningAnswers[q.id] as string) || ""}
+                                    onChange={(e) => setScreeningAnswers({ ...screeningAnswers, [q.id]: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#0066FF] focus:border-transparent bg-white"
+                                  >
+                                    <option value="">Select...</option>
+                                    {q.options.map((opt) => (
+                                      <option key={opt} value={opt}>{opt}</option>
+                                    ))}
+                                  </select>
+                                )}
+                                {q.type === "checkbox" && (
+                                  <label className="flex items-center gap-2 text-sm text-gray-600">
+                                    <input
+                                      type="checkbox"
+                                      checked={!!screeningAnswers[q.id]}
+                                      onChange={(e) => setScreeningAnswers({ ...screeningAnswers, [q.id]: e.target.checked ? "yes" : "" })}
+                                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    Yes
+                                  </label>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      })()}
+                      {/* Book on behalf of someone else */}
+                      <div className="border-t border-gray-100 pt-3">
+                        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={bookForOther}
+                            onChange={(e) => setBookForOther(e.target.checked)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          Book for someone else
+                        </label>
+                        {bookForOther && (
+                          <div className="mt-3 space-y-3 p-3 bg-blue-50 rounded-lg">
+                            <p className="text-xs text-blue-700">Your details (booker):</p>
+                            <input
+                              type="text"
+                              required
+                              value={bookerName}
+                              onChange={(e) => setBookerName(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#0066FF] focus:border-transparent"
+                              placeholder="Your name"
+                            />
+                            <input
+                              type="email"
+                              required
+                              value={bookerEmail}
+                              onChange={(e) => setBookerEmail(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#0066FF] focus:border-transparent"
+                              placeholder="Your email"
+                            />
+                            <p className="text-xs text-blue-600">The name and email above are for the attendee.</p>
+                          </div>
+                        )}
+                      </div>
                       <button
                         type="submit"
                         disabled={isLoading}

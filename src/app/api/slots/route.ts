@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
 
     const existingBookings = await prisma.booking.findMany({
     where: { hostId: user.id, status: { not: "CANCELLED" }, startTime: { gte: dateFns.startOfDay(requestedDate), lte: dateFns.endOfDay(requestedDate) } },
-    select: { startTime: true, endTime: true },
+    select: { startTime: true, endTime: true, eventTypeId: true },
   })
 
     // Fetch busy times from Google Calendar
@@ -91,7 +91,9 @@ export async function GET(request: NextRequest) {
     )
 
     const slots: string[] = []
-    const { duration, bufferBefore, bufferAfter } = eventType
+    const spotsLeft: Record<string, number> = {}
+    const { duration, bufferBefore, bufferAfter, maxAttendees } = eventType
+    const isGroup = maxAttendees > 1
 
     for (const window of availableWindows) {
     const [startHour, startMinute] = window.start.split(":").map(Number)
@@ -105,9 +107,24 @@ export async function GET(request: NextRequest) {
       const slotWithBufferEnd = dateFns.addMinutes(slotEnd, bufferAfter)
 
       if (dateFns.isAfter(slotStart, minBookingDate)) {
-        const hasBookingConflict = existingBookings.some((b) => slotWithBufferStart < new Date(b.endTime) && slotWithBufferEnd > new Date(b.startTime))
         const hasGoogleConflict = googleBusyTimes.some((b) => slotWithBufferStart < b.end && slotWithBufferEnd > b.start)
-        if (!hasBookingConflict && !hasGoogleConflict) slots.push(dateFns.format(slotStart, "HH:mm"))
+        
+        if (isGroup) {
+          // Group event: count exact-time bookings, show slot if spots remain
+          const bookingCount = existingBookings.filter((b) => 
+            new Date(b.startTime).getTime() === slotStart.getTime() && 
+            new Date(b.endTime).getTime() === slotEnd.getTime()
+          ).length
+          const remaining = maxAttendees - bookingCount
+          if (remaining > 0 && !hasGoogleConflict) {
+            const timeStr = dateFns.format(slotStart, "HH:mm")
+            slots.push(timeStr)
+            spotsLeft[timeStr] = remaining
+          }
+        } else {
+          const hasBookingConflict = existingBookings.some((b) => slotWithBufferStart < new Date(b.endTime) && slotWithBufferEnd > new Date(b.startTime))
+          if (!hasBookingConflict && !hasGoogleConflict) slots.push(dateFns.format(slotStart, "HH:mm"))
+        }
       }
       slotStart = dateFns.addMinutes(slotStart, duration <= 30 ? 15 : 30)
     }
@@ -115,7 +132,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       slots,
-      eventType: { id: eventType.id, title: eventType.title, duration: eventType.duration, description: eventType.description, location: eventType.location, allowRecurring: eventType.allowRecurring, recurrenceOptions: eventType.recurrenceOptions },
+      ...(isGroup ? { spotsLeft, maxAttendees } : {}),
+      eventType: { id: eventType.id, title: eventType.title, duration: eventType.duration, description: eventType.description, location: eventType.location, allowRecurring: eventType.allowRecurring, recurrenceOptions: eventType.recurrenceOptions, maxAttendees: eventType.maxAttendees, screeningQuestions: eventType.screeningQuestions, cancellationPolicy: (eventType as Record<string, unknown>).cancellationPolicy, confirmationLinks: (eventType as Record<string, unknown>).confirmationLinks },
       hostName: user.name || username,
       hostTimezone: user.timezone,
     })

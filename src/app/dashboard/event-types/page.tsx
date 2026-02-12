@@ -92,6 +92,7 @@ export default function EventTypesPage() {
     recurrenceOptions: "[]",
     cancellationPolicy: "",
     confirmationLinks: "[]",
+    screeningQuestions: "[]",
   })
 
   useEffect(() => {
@@ -204,6 +205,7 @@ export default function EventTypesPage() {
       recurrenceOptions: "[]",
       cancellationPolicy: "",
       confirmationLinks: "[]",
+      screeningQuestions: "[]",
     })
     setShowModal(true)
   }
@@ -231,6 +233,7 @@ export default function EventTypesPage() {
       recurrenceOptions: (eventType as any).recurrenceOptions || "[]",
       cancellationPolicy: (eventType as any).cancellationPolicy || "",
       confirmationLinks: (eventType as any).confirmationLinks || "[]",
+      screeningQuestions: (eventType as any).screeningQuestions || "[]",
     })
     setShowModal(true)
   }
@@ -775,6 +778,97 @@ export default function EventTypesPage() {
                     <p className="text-xs text-gray-500 mt-1">Set to more than 1 for group events</p>
                   </div>
 
+                  {/* Screening Questions Editor */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Screening Questions</label>
+                    <p className="text-xs text-gray-500 mb-2">Questions guests must answer before booking</p>
+                    {(() => {
+                      let questions: {id: string; label: string; type: string; required: boolean; options?: string[]}[] = []
+                      try { questions = JSON.parse(formData.screeningQuestions || "[]") } catch { questions = [] }
+                      
+                      const updateQuestions = (qs: typeof questions) => {
+                        setFormData({ ...formData, screeningQuestions: JSON.stringify(qs) })
+                      }
+                      
+                      return (
+                        <div className="space-y-2">
+                          {questions.map((q, i) => (
+                            <div key={q.id} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                              <div className="flex-1 space-y-1.5">
+                                <input
+                                  type="text"
+                                  value={q.label}
+                                  onChange={(e) => {
+                                    const updated = [...questions]
+                                    updated[i] = { ...updated[i], label: e.target.value }
+                                    updateQuestions(updated)
+                                  }}
+                                  placeholder="Question text"
+                                  className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                />
+                                <div className="flex gap-2 items-center">
+                                  <select
+                                    value={q.type}
+                                    onChange={(e) => {
+                                      const updated = [...questions]
+                                      updated[i] = { ...updated[i], type: e.target.value }
+                                      updateQuestions(updated)
+                                    }}
+                                    className="rounded border border-gray-300 px-2 py-1 text-xs bg-white"
+                                  >
+                                    <option value="text">Text</option>
+                                    <option value="select">Dropdown</option>
+                                    <option value="checkbox">Checkbox</option>
+                                  </select>
+                                  <label className="flex items-center gap-1 text-xs text-gray-600">
+                                    <input
+                                      type="checkbox"
+                                      checked={q.required}
+                                      onChange={(e) => {
+                                        const updated = [...questions]
+                                        updated[i] = { ...updated[i], required: e.target.checked }
+                                        updateQuestions(updated)
+                                      }}
+                                      className="rounded border-gray-300"
+                                    />
+                                    Required
+                                  </label>
+                                </div>
+                                {q.type === "select" && (
+                                  <input
+                                    type="text"
+                                    value={(q.options || []).join(", ")}
+                                    onChange={(e) => {
+                                      const updated = [...questions]
+                                      updated[i] = { ...updated[i], options: e.target.value.split(",").map(s => s.trim()).filter(Boolean) }
+                                      updateQuestions(updated)
+                                    }}
+                                    placeholder="Option 1, Option 2, Option 3"
+                                    className="block w-full rounded border border-gray-300 px-2 py-1.5 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                  />
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => updateQuestions(questions.filter((_, idx) => idx !== i))}
+                                className="p-1 text-gray-400 hover:text-red-500"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => updateQuestions([...questions, { id: Math.random().toString(36).substr(2, 9), label: "", type: "text", required: false }])}
+                            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            + Add Question
+                          </button>
+                        </div>
+                      )
+                    })()}
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Visibility</label>
                     <select
@@ -795,6 +889,99 @@ export default function EventTypesPage() {
                       className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm"
                     />
                     <p className="text-xs text-gray-500 mt-1">Guest will be redirected here after booking instead of the default confirmation page</p>
+                  </div>
+                </div>
+
+                {/* Screening Questions */}
+                <div className="space-y-4 mt-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Screening Questions</label>
+                    <p className="text-xs text-gray-500 mb-3">Add questions guests must answer before booking. Answers appear in booking details.</p>
+                    {(() => {
+                      let questions: { id: string; label: string; type: string; required: boolean; options?: string[] }[] = []
+                      try { questions = JSON.parse(formData.screeningQuestions || "[]") } catch { questions = [] }
+                      
+                      const updateQuestions = (updated: typeof questions) => {
+                        setFormData({ ...formData, screeningQuestions: JSON.stringify(updated) })
+                      }
+                      
+                      return (
+                        <>
+                          {questions.map((q, i) => (
+                            <div key={q.id} className="flex gap-2 items-start p-3 bg-gray-50 rounded-lg border border-gray-200">
+                              <div className="flex-1 space-y-2">
+                                <input
+                                  type="text"
+                                  value={q.label}
+                                  onChange={(e) => {
+                                    const updated = [...questions]
+                                    updated[i] = { ...updated[i], label: e.target.value }
+                                    updateQuestions(updated)
+                                  }}
+                                  placeholder="Question text"
+                                  className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                                />
+                                <div className="flex gap-2 items-center">
+                                  <select
+                                    value={q.type}
+                                    onChange={(e) => {
+                                      const updated = [...questions]
+                                      updated[i] = { ...updated[i], type: e.target.value }
+                                      updateQuestions(updated)
+                                    }}
+                                    className="px-2 py-1 border border-gray-300 rounded text-xs bg-white"
+                                  >
+                                    <option value="text">Text</option>
+                                    <option value="select">Select</option>
+                                    <option value="checkbox">Checkbox</option>
+                                  </select>
+                                  <label className="flex items-center gap-1 text-xs text-gray-600">
+                                    <input
+                                      type="checkbox"
+                                      checked={q.required}
+                                      onChange={(e) => {
+                                        const updated = [...questions]
+                                        updated[i] = { ...updated[i], required: e.target.checked }
+                                        updateQuestions(updated)
+                                      }}
+                                      className="rounded border-gray-300"
+                                    />
+                                    Required
+                                  </label>
+                                </div>
+                                {q.type === "select" && (
+                                  <input
+                                    type="text"
+                                    value={(q.options || []).join(", ")}
+                                    onChange={(e) => {
+                                      const updated = [...questions]
+                                      updated[i] = { ...updated[i], options: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) }
+                                      updateQuestions(updated)
+                                    }}
+                                    placeholder="Options (comma-separated)"
+                                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
+                                  />
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => updateQuestions(questions.filter((_, j) => j !== i))}
+                                className="text-red-500 hover:text-red-700 text-sm p-1"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => updateQuestions([...questions, { id: `sq_${Date.now()}`, label: "", type: "text", required: false }])}
+                            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            + Add screening question
+                          </button>
+                        </>
+                      )
+                    })()}
                   </div>
                 </div>
 
