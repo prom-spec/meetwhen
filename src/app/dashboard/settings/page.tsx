@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar, Check, X, RefreshCw, Settings, User, Globe, Webhook, ChevronRight, Key, Copy, Trash2, Plus, Bot, Link2, Unlink, Palette } from "lucide-react"
+import { Calendar, Check, X, RefreshCw, Settings, User, Globe, Webhook, ChevronRight, Key, Copy, Trash2, Plus, Bot, Link2, Unlink, Palette, ScrollText } from "lucide-react"
 import Link from "next/link"
 import ConfirmDialog from "@/components/ConfirmDialog"
 
@@ -1015,6 +1015,27 @@ export default function SettingsPage() {
             className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
           >
             Manage Webhooks
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        {/* Audit Log Section */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+            <ScrollText className="h-5 w-5" />
+            Audit Log
+          </h2>
+
+          <p className="text-sm text-gray-600 mb-4">
+            View a complete history of all changes made to your account, including event types,
+            bookings, teams, workflows, and settings.
+          </p>
+
+          <Link
+            href="/dashboard/settings/audit-log"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+          >
+            View Audit Log
             <ChevronRight className="h-4 w-4" />
           </Link>
         </div>

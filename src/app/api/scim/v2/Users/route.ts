@@ -12,27 +12,20 @@ export async function GET(request: NextRequest) {
   if (!auth) return scimError(401, "Unauthorized");
 
   const filter = request.nextUrl.searchParams.get("filter");
-  let users;
-
-  if (filter) {
-    // Parse: userName eq "value"
-    const match = filter.match(/userName\s+eq\s+"([^"]+)"/);
-    if (match) {
-      const member = await prisma.teamMember.findMany({
-        where: { teamId: auth.teamId, user: { email: match[1] } },
-        include: { user: true },
-      });
-      users = member.map((m) => m.user);
-    } else {
-      users = [];
-    }
-  } else {
-    const members = await prisma.teamMember.findMany({
-      where: { teamId: auth.teamId },
-      include: { user: true },
-    });
-    users = members.map((m) => m.user);
-  }
+  const filterParam = filter;
+  const members = await prisma.teamMember.findMany({
+    where: {
+      teamId: auth.teamId,
+      ...(filterParam
+        ? (() => {
+            const match = filterParam.match(/userName\s+eq\s+"([^"]+)"/);
+            return match ? { user: { email: match[1] } } : { userId: "__none__" };
+          })()
+        : {}),
+    },
+    include: { user: true },
+  });
+  const users = members.map((m) => m.user);
 
   return scimListResponse(
     "urn:ietf:params:scim:schemas:core:2.0:User",

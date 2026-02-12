@@ -21,13 +21,18 @@ const errorMessages: Record<string, string> = {
   Configuration: "Server configuration error. Please contact support.",
   AccessDenied: "Access denied. You don't have permission to sign in.",
   Verification: "The verification link has expired or is invalid. Please request a new one.",
+  SSOFailed: "SSO authentication failed. Please try again or contact your administrator.",
 }
 
 function LoginForm() {
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [isSSOLoading, setIsSSOLoading] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
+  const [showSSO, setShowSSO] = useState(false)
+  const [ssoEmail, setSSOEmail] = useState("")
+  const [ssoError, setSSOError] = useState("")
   const searchParams = useSearchParams()
   const error = searchParams.get("error")
 
@@ -55,6 +60,30 @@ function LoginForm() {
       window.location.href = "/login?error=EmailSignin"
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleSSOSignIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!ssoEmail.trim()) return
+    setIsSSOLoading(true)
+    setSSOError("")
+    try {
+      const res = await fetch("/api/auth/sso/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: ssoEmail.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setSSOError(data.error || "SSO not available for this domain")
+        return
+      }
+      window.location.href = data.redirectUrl
+    } catch {
+      setSSOError("Failed to initiate SSO login")
+    } finally {
+      setIsSSOLoading(false)
     }
   }
 
@@ -131,9 +160,56 @@ function LoginForm() {
           )}
         </button>
 
-        <p className="text-center text-xs text-gray-400 mt-4">
-          Sign in with your Google account to get started
-        </p>
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="bg-gray-50 px-2 text-gray-400">or</span>
+          </div>
+        </div>
+
+        {showSSO ? (
+          <form onSubmit={handleSSOSignIn} className="space-y-3">
+            <input
+              type="email"
+              value={ssoEmail}
+              onChange={(e) => setSSOEmail(e.target.value)}
+              placeholder="you@company.com"
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required
+              autoFocus
+            />
+            {ssoError && (
+              <p className="text-xs text-red-600">{ssoError}</p>
+            )}
+            <button
+              type="submit"
+              disabled={isSSOLoading}
+              className="w-full flex items-center justify-center py-2.5 px-4 bg-[#1a1a2e] text-white rounded-lg text-sm font-medium hover:bg-[#2a2a3e] disabled:opacity-50 transition-colors"
+            >
+              {isSSOLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Continue with SSO"
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSSO(false)}
+              className="w-full text-xs text-gray-500 hover:text-gray-700"
+            >
+              Back to other options
+            </button>
+          </form>
+        ) : (
+          <button
+            onClick={() => setShowSSO(true)}
+            className="w-full py-2.5 px-4 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Sign in with SSO
+          </button>
+        )}
       </div>
     </>
   )

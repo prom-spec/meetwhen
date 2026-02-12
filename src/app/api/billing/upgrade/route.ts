@@ -27,6 +27,8 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    logAudit(user.id, "billing.plan_changed", "settings", user.id, { plan })
+
     return NextResponse.json({ success: true, plan: user.plan })
   } catch (error) {
     if (error instanceof z.ZodError) {
