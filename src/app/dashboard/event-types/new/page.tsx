@@ -46,6 +46,8 @@ export default function NewEventTypePage() {
     locationValue: "",
     bufferBefore: 0,
     bufferAfter: 0,
+    availableStartTime: "",
+    availableEndTime: "",
   })
 
   useEffect(() => {
@@ -67,7 +69,11 @@ export default function NewEventTypePage() {
       const res = await fetch("/api/event-types", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          availableStartTime: formData.availableStartTime || null,
+          availableEndTime: formData.availableEndTime || null,
+        }),
       })
 
       if (res.ok) {
@@ -326,6 +332,36 @@ export default function NewEventTypePage() {
                         <option value={15}>15 min</option>
                         <option value={30}>30 min</option>
                       </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Available Time Range */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Available Time Range
+                  </label>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Limit slots to specific hours, regardless of your general availability. Leave empty to use your default schedule.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1.5">Earliest start</label>
+                      <input
+                        type="time"
+                        value={formData.availableStartTime}
+                        onChange={(e) => setFormData({ ...formData, availableStartTime: e.target.value })}
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1.5">Latest start</label>
+                      <input
+                        type="time"
+                        value={formData.availableEndTime}
+                        onChange={(e) => setFormData({ ...formData, availableEndTime: e.target.value })}
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
                     </div>
                   </div>
                 </div>

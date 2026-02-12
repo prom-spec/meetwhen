@@ -32,6 +32,8 @@ const updateEventTypeSchema = z.object({
   currency: z.string().length(3).optional(),
   cancellationPolicy: z.string().max(2000).nullable().optional(),
   confirmationLinks: z.string().max(5000).nullable().optional(),
+  availableStartTime: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
+  availableEndTime: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
 })
 
 export async function GET(
@@ -144,6 +146,8 @@ export async function PATCH(
     if (currency !== undefined) updateData.currency = currency
     if (rawBody.cancellationPolicy !== undefined) updateData.cancellationPolicy = parsed.data.cancellationPolicy ?? null
     if (rawBody.confirmationLinks !== undefined) updateData.confirmationLinks = parsed.data.confirmationLinks ?? null
+    if (rawBody.availableStartTime !== undefined) updateData.availableStartTime = parsed.data.availableStartTime ?? null
+    if (rawBody.availableEndTime !== undefined) updateData.availableEndTime = parsed.data.availableEndTime ?? null
 
     const eventType = await prisma.eventType.update({
       where: { id },

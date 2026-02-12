@@ -22,6 +22,8 @@ interface EventType {
   isActive: boolean
   bufferBefore: number
   bufferAfter: number
+  availableStartTime: string | null
+  availableEndTime: string | null
   createdAt: string
   isAdminManaged?: boolean
   assignedToId?: string | null
@@ -89,6 +91,8 @@ export default function EventTypesPage() {
     locationValue: "",
     bufferBefore: "0",
     bufferAfter: "0",
+    availableStartTime: "",
+    availableEndTime: "",
     maxBookingsPerDay: "",
     maxBookingsPerWeek: "",
     redirectUrl: "",
@@ -145,7 +149,11 @@ export default function EventTypesPage() {
       const res = await fetch(url, {
         method: editingEventType ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          availableStartTime: formData.availableStartTime || null,
+          availableEndTime: formData.availableEndTime || null,
+        }),
       })
 
       if (res.ok) {
@@ -206,6 +214,8 @@ export default function EventTypesPage() {
       bufferBefore: "0",
       bufferAfter: "0",
       maxBookingsPerDay: "",
+      availableStartTime: "",
+      availableEndTime: "",
       maxBookingsPerWeek: "",
       redirectUrl: "",
       visibility: "public",
@@ -234,6 +244,8 @@ export default function EventTypesPage() {
       locationValue: eventType.locationValue || "",
       bufferBefore: eventType.bufferBefore.toString(),
       bufferAfter: eventType.bufferAfter.toString(),
+      availableStartTime: (eventType as any).availableStartTime || "",
+      availableEndTime: (eventType as any).availableEndTime || "",
       maxBookingsPerDay: (eventType as any).maxBookingsPerDay?.toString() || "",
       maxBookingsPerWeek: (eventType as any).maxBookingsPerWeek?.toString() || "",
       redirectUrl: (eventType as any).redirectUrl || "",
@@ -676,6 +688,36 @@ export default function EventTypesPage() {
                           ))}
                         </select>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Available Time Range */}
+                <div className="space-y-4 mt-6">
+                  <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">
+                    Available Time Range
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Limit slots to specific hours, regardless of your general availability. Leave empty to use your default schedule.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Earliest start</label>
+                      <input
+                        type="time"
+                        value={formData.availableStartTime}
+                        onChange={(e) => setFormData({ ...formData, availableStartTime: e.target.value })}
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Latest start</label>
+                      <input
+                        type="time"
+                        value={formData.availableEndTime}
+                        onChange={(e) => setFormData({ ...formData, availableEndTime: e.target.value })}
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm"
+                      />
                     </div>
                   </div>
                 </div>

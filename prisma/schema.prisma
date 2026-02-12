@@ -179,6 +179,11 @@ model EventType {
   price    Int?    // Price in cents (null = free)
   currency String  @default("USD")
 
+  // Event-specific time slot range (override general availability window)
+  // e.g., dinner event: availableStartTime="18:00", availableEndTime="22:00"
+  availableStartTime String? // "HH:mm" format, null = use general availability
+  availableEndTime   String? // "HH:mm" format, null = use general availability
+
   // Cancellation policy (shown on booking page)
   cancellationPolicy String?
   // Custom confirmation page links (JSON array of {label, url})

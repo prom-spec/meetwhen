@@ -37,6 +37,8 @@ const createEventTypeSchema = z.object({
   confirmationLinks: z.string().max(5000).nullable().optional(),
   isAdminManaged: z.boolean().optional(),
   assignedToId: z.string().nullable().optional(),
+  availableStartTime: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
+  availableEndTime: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
 })
 
 export async function GET() {
@@ -91,7 +93,7 @@ export async function POST(request: NextRequest) {
       teamId, schedulingType, allowRecurring, recurrenceOptions,
       maxBookingsPerDay, maxBookingsPerWeek, redirectUrl, visibility, maxAttendees,
       customQuestions, screeningQuestions, price, currency, cancellationPolicy, confirmationLinks,
-      isAdminManaged, assignedToId
+      isAdminManaged, assignedToId, availableStartTime, availableEndTime
     } = parsed.data
 
     // If teamId is provided, verify user is a team member with appropriate permissions
@@ -158,6 +160,8 @@ export async function POST(request: NextRequest) {
         confirmationLinks: confirmationLinks || null,
         isAdminManaged: isAdminManaged || false,
         assignedToId: assignedToId || null,
+        availableStartTime: availableStartTime || null,
+        availableEndTime: availableEndTime || null,
         ...(teamId && { 
           teamId,
           schedulingType: schedulingType || "ROUND_ROBIN",

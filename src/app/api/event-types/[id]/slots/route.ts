@@ -46,13 +46,24 @@ export async function GET(
     const dateOverride = user.dateOverrides.find((d) => dateFns.format(d.date, "yyyy-MM-dd") === dateStr)
 
     let availableWindows: { start: string; end: string }[] = []
-    if (dateOverride) {
-    if (dateOverride.isAvailable && dateOverride.startTime && dateOverride.endTime) {
-      availableWindows = [{ start: dateOverride.startTime, end: dateOverride.endTime }]
+    
+    // If the event type has its own time range, use that instead of general availability
+    // This allows e.g. a "dinner" event to show 6pm-10pm even if general hours are 9am-5pm
+    if (eventType.availableStartTime && eventType.availableEndTime) {
+      // Event-type-specific time range — show on any day the user has *any* availability (or date override)
+      const hasAvailability = dateOverride
+        ? dateOverride.isAvailable
+        : user.availability.some((a) => a.dayOfWeek === dayOfWeek)
+      if (hasAvailability) {
+        availableWindows = [{ start: eventType.availableStartTime, end: eventType.availableEndTime }]
+      }
+    } else if (dateOverride) {
+      if (dateOverride.isAvailable && dateOverride.startTime && dateOverride.endTime) {
+        availableWindows = [{ start: dateOverride.startTime, end: dateOverride.endTime }]
+      }
+    } else {
+      availableWindows = user.availability.filter((a) => a.dayOfWeek === dayOfWeek).map((a) => ({ start: a.startTime, end: a.endTime }))
     }
-  } else {
-    availableWindows = user.availability.filter((a) => a.dayOfWeek === dayOfWeek).map((a) => ({ start: a.startTime, end: a.endTime }))
-  }
 
     if (availableWindows.length === 0) {
     return NextResponse.json({ slots: [] })
