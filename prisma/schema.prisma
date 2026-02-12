@@ -59,6 +59,7 @@ model User {
   accentColor    String?
   brandLogo      String?
   hidePoweredBy  Boolean  @default(false)
+  removeBranding Boolean  @default(false)
   // Tracking
   gaTrackingId   String?
   metaPixelId    String?
@@ -97,6 +98,11 @@ model User {
   workflows     Workflow[]
   emailSequences EmailSequence[]
   auditLogs     AuditLog[]
+  contacts      ContactProfile[]
+  domainClaims  DomainClaim[]
+  oneOffLinks   OneOffLink[]
+  availabilityShares AvailabilityShare[]
+  reminderTemplates  ReminderTemplate[]
 }
 
 model LinkingToken {
@@ -192,11 +198,16 @@ model EventType {
   // Multi-account: which Google account to use for calendar events (null = primary)
   calendarAccountId String?
 
+  // Team group scoping
+  groupId String?
+  group   TeamGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   bookings  Booking[]
   pageViews PageView[]
+  reminderTemplates ReminderTemplate[]
 
   @@unique([userId, slug])
   @@unique([teamId, slug])
@@ -279,6 +290,12 @@ model Booking {
   reminderEmailSent    Boolean @default(false)
   postMeetingEmailSent Boolean @default(false)
 
+  // Contact profile link
+  contactId String?
+  contact   ContactProfile? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  reminderJobs ReminderJob[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -287,6 +304,7 @@ model Booking {
   @@index([startTime])
   @@index([endTime])
   @@index([recurrenceParentId])
+  @@index([contactId])
 }
 
 enum BookingStatus {
@@ -334,6 +352,7 @@ model Team {
 
   members    TeamMember[]
   eventTypes EventType[]  @relation("teamEventTypes")
+  groups     TeamGroup[]
   scimToken  SCIMToken?
   ssoConfig  SSOConfig?
 
@@ -677,4 +696,171 @@ model ErrorLog {
   @@index([createdAt])
   @@index([source])
   @@index([userId])
+}
+
+// ── Contact Profiles ──
+
+model ContactProfile {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email     String
+  name      String?
+  phone     String?
+  company   String?
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings           Booking[]
+  availabilityShares AvailabilityShare[]
+
+  @@unique([userId, email])
+  @@index([userId])
+}
+
+// ── Team Groups ──
+
+model TeamGroup {
+  id          String   @id @default(cuid())
+  teamId      String
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  members    TeamGroupMember[]
+  eventTypes EventType[]
+
+  @@unique([teamId, name])
+  @@index([teamId])
+}
+
+enum GroupMemberRole {
+  MEMBER
+  ADMIN
+}
+
+model TeamGroupMember {
+  id       String          @id @default(cuid())
+  groupId  String
+  group    TeamGroup       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String
+  role     GroupMemberRole  @default(MEMBER)
+  joinedAt DateTime         @default(now())
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+}
+
+// ── Domain Claims ──
+
+model DomainClaim {
+  id                String    @id @default(cuid())
+  domain            String    @unique
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verificationToken String
+  verifiedAt        DateTime?
+  createdAt         DateTime  @default(now())
+
+  orgBranding OrgBranding?
+
+  @@index([userId])
+}
+
+// ── Org Branding ──
+
+model OrgBranding {
+  id            String      @id @default(cuid())
+  domainClaimId String      @unique
+  domainClaim   DomainClaim @relation(fields: [domainClaimId], references: [id], onDelete: Cascade)
+  logoUrl       String?
+  primaryColor  String?
+  accentColor   String?
+  footerText    String?
+  enforced      Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+}
+
+// ── One-Off Meeting Links ──
+
+model OneOffLink {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug           String    @unique
+  title          String
+  duration       Int
+  availableSlots Json
+  maxUses        Int       @default(1)
+  usedCount      Int       @default(0)
+  expiresAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ── Availability Shares ──
+
+model AvailabilityShare {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contactId String?
+  contact   ContactProfile? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  token     String          @unique
+  expiresAt DateTime?
+  createdAt DateTime        @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ── Reminder Workflows ──
+
+enum ReminderChannel {
+  EMAIL
+  WEBHOOK
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model ReminderTemplate {
+  id            String          @id @default(cuid())
+  eventTypeId   String?
+  eventType     EventType?      @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  offsetMinutes Int             // negative = before, e.g. -1440 = 24h before
+  channel       ReminderChannel @default(EMAIL)
+  subject       String?
+  body          String?         @db.Text
+  active        Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+
+  reminderJobs ReminderJob[]
+
+  @@index([userId])
+  @@index([eventTypeId])
+}
+
+model ReminderJob {
+  id           String         @id @default(cuid())
+  bookingId    String
+  booking      Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  templateId   String
+  template     ReminderTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  scheduledFor DateTime
+  sentAt       DateTime?
+  status       ReminderStatus @default(PENDING)
+  createdAt    DateTime       @default(now())
+
+  @@index([bookingId])
+  @@index([templateId])
+  @@index([status, scheduledFor])
 }
