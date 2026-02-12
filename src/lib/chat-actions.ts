@@ -1399,6 +1399,64 @@ export const chatActions: Record<
       }
     },
   },
+
+  // ── Info-only actions for new features ──
+
+  get_audit_logs: {
+    description: "View audit logs",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params: Record<string, unknown>, _userId: string) => {
+      return { success: true, message: "📋 View your audit log at [Settings → Audit Log](/dashboard/settings/audit-log). It tracks all actions like event type changes, bookings, and team updates." }
+    },
+  },
+
+  get_sso_info: {
+    description: "Get SSO/SAML setup info",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params: Record<string, unknown>, _userId: string) => {
+      return { success: true, message: "🔐 SSO/SAML is available on the Enterprise plan. Configure it in your [Team Settings](/dashboard/teams) → SSO tab. Supports Okta, Azure AD, and Google Workspace." }
+    },
+  },
+
+  get_scim_info: {
+    description: "Get SCIM provisioning info",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params: Record<string, unknown>, _userId: string) => {
+      return { success: true, message: "👥 SCIM 2.0 provisioning is available on the Enterprise plan. Set it up in your [Team Settings](/dashboard/teams) → SCIM tab. Auto-sync users from Okta, Azure AD, or OneLogin." }
+    },
+  },
+
+  list_sequences: {
+    description: "List email sequences",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params: Record<string, unknown>, _userId: string) => {
+      return { success: true, message: "📧 Manage your email outreach sequences at [Workflows](/dashboard/workflows). Create automated follow-up sequences for after bookings." }
+    },
+  },
+
+  create_sequence: {
+    description: "Create email sequence",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params: Record<string, unknown>, _userId: string) => {
+      return { success: true, message: "📧 Create email sequences at [Workflows → New](/dashboard/workflows). Add steps with delays and customize email templates." }
+    },
+  },
+
+  get_pwa_info: {
+    description: "Get PWA install info",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params: Record<string, unknown>, _userId: string) => {
+      return { success: true, message: "📱 letsmeet.link is installable as an app! On your phone or desktop, look for the \"Install\" or \"Add to Home Screen\" prompt in your browser. Works offline too." }
+    },
+  },
+
+  get_extension_info: {
+    description: "Get Chrome extension info",
+    parameters: { type: "object", properties: {}, required: [] },
+    execute: async (_params: Record<string, unknown>, _userId: string) => {
+      return { success: true, message: "🧩 Our Chrome extension lets you schedule meetings directly from Gmail and LinkedIn. Install it from the browser-extension folder or check [our docs](/about) for details." }
+    },
+  },
 }
 
 // Build function definitions for the AI model

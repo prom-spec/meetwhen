@@ -171,6 +171,13 @@ function detectEntity(text: string): Entity | null {
   if (/\b(calendar|sync)\b/.test(lower)) return "calendar"
   if (/\b(embed|widget)\b/.test(lower)) return "embed"
   if (/\b(analytics|stats|statistics|summary)\b/.test(lower)) return "analytics"
+  if (/\b(audit\s*log|audit)\b/.test(lower)) return "audit_log"
+  if (/\b(sso|saml|single\s*sign)/i.test(lower)) return "sso"
+  if (/\b(scim|provision)/i.test(lower)) return "scim"
+  if (/\b(screening|qualification)\b/.test(lower)) return "screening"
+  if (/\b(sequence|outreach|email\s*sequence)\b/.test(lower)) return "email_sequence"
+  if (/\b(pwa|install\s*app|installable)\b/.test(lower)) return "pwa"
+  if (/\b(extension|chrome\s*ext|browser\s*ext)\b/.test(lower)) return "extension"
 
   return null
 }
@@ -413,6 +420,41 @@ function resolveAction(verb: Verb, entity: Entity | null, text: string): string 
       set: "set_event_questions",
       create: "set_event_questions",
       update: "set_event_questions",
+    },
+    audit_log: {
+      list: "get_audit_logs",
+      get: "get_audit_logs",
+    },
+    sso: {
+      list: "get_sso_info",
+      get: "get_sso_info",
+      set: "get_sso_info",
+      create: "get_sso_info",
+    },
+    scim: {
+      list: "get_scim_info",
+      get: "get_scim_info",
+      set: "get_scim_info",
+      create: "get_scim_info",
+    },
+    screening: {
+      list: "get_event_questions",
+      get: "get_event_questions",
+      set: "set_event_questions",
+      create: "set_event_questions",
+    },
+    email_sequence: {
+      list: "list_sequences",
+      get: "list_sequences",
+      create: "create_sequence",
+    },
+    pwa: {
+      get: "get_pwa_info",
+      list: "get_pwa_info",
+    },
+    extension: {
+      get: "get_extension_info",
+      list: "get_extension_info",
     },
   }
 
