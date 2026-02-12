@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { z } from "zod"
+import { triggerWebhook } from "@/lib/webhooks"
 
 const voteSchema = z.object({
   voterName: z.string().min(1).max(100).trim(),
@@ -71,6 +72,17 @@ export async function POST(
         })
       )
     )
+
+    // Fire webhook for poll response added
+    if (poll.createdBy) {
+      triggerWebhook(poll.createdBy, "poll.response_added", {
+        pollId: id,
+        pollTitle: poll.title,
+        voterName: data.voterName,
+        voterEmail: data.voterEmail,
+        votes: data.votes,
+      })
+    }
 
     return NextResponse.json({ success: true, votes: results })
   } catch (error) {

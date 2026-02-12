@@ -38,6 +38,8 @@ interface Branding {
   hidePoweredBy: boolean
   gaTrackingId: string | null
   metaPixelId: string | null
+  orgBrandFooter?: string | null
+  orgManaged?: boolean
 }
 
 interface SlotResponse {
@@ -101,7 +103,7 @@ export default function BookingPage() {
   const [timezoneSearch, setTimezoneSearch] = useState("")
   const [availableDates, setAvailableDates] = useState<Set<string>>(new Set())
   const [isLoadingMonth, setIsLoadingMonth] = useState(false)
-  const [branding, setBranding] = useState<Branding>({ brandColor: null, accentColor: null, brandLogo: null, hidePoweredBy: false, gaTrackingId: null, metaPixelId: null })
+  const [branding, setBranding] = useState<Branding>({ brandColor: null, accentColor: null, brandLogo: null, hidePoweredBy: false, gaTrackingId: null, metaPixelId: null, orgBrandFooter: null, orgManaged: false })
   const hasTrackedView = useRef(false)
   const hasTrackedSlot = useRef(false)
   const hasAutoSelected = useRef(false)
@@ -462,6 +464,9 @@ export default function BookingPage() {
           </div>
         </main>
 
+        {branding.orgBrandFooter && (
+          <div className="text-center text-xs text-gray-400 py-2">{branding.orgBrandFooter}</div>
+        )}
         {!isEmbed && <PoweredByFooter hidden={branding.hidePoweredBy} />}
       </div>
     )

@@ -69,6 +69,156 @@ const BUFFER_OPTIONS = [
   { value: "30", label: "30 min" },
 ]
 
+const TIMING_OPTIONS = [
+  { value: -10080, label: "1 week before" },
+  { value: -4320, label: "3 days before" },
+  { value: -1440, label: "1 day before" },
+  { value: -120, label: "2 hours before" },
+  { value: -60, label: "1 hour before" },
+  { value: -30, label: "30 min before" },
+  { value: -15, label: "15 min before" },
+]
+
+interface ReminderTemplate {
+  id: string
+  offsetMinutes: number
+  channel: string
+  subject: string
+  body: string
+  active: boolean
+}
+
+function ReminderSection({ eventTypeId }: { eventTypeId: string }) {
+  const [templates, setTemplates] = useState<ReminderTemplate[]>([])
+  const [loading, setLoading] = useState(true)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({ offsetMinutes: -1440, subject: "", body: "" })
+  const [adding, setAdding] = useState(false)
+  const [newForm, setNewForm] = useState({ offsetMinutes: -1440, subject: "Reminder: {{event}} with {{name}}", body: "Hi {{name}},\n\nYour meeting \"{{event}}\" is coming up on {{date}} at {{time}}.\n\n{{link}}\n\nSee you there!" })
+
+  useEffect(() => {
+    fetch(`/api/reminder-templates?eventTypeId=${eventTypeId}`)
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setTemplates(data) })
+      .finally(() => setLoading(false))
+  }, [eventTypeId])
+
+  const timingLabel = (mins: number) =>
+    TIMING_OPTIONS.find((o) => o.value === mins)?.label || `${Math.abs(mins)} min before`
+
+  const handleAdd = async () => {
+    const res = await fetch("/api/reminder-templates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventTypeId, ...newForm, active: true }),
+    })
+    if (res.ok) {
+      const t = await res.json()
+      setTemplates([...templates, t])
+      setAdding(false)
+      setNewForm({ offsetMinutes: -1440, subject: "Reminder: {{event}} with {{name}}", body: "Hi {{name}},\n\nYour meeting \"{{event}}\" is coming up on {{date}} at {{time}}.\n\n{{link}}\n\nSee you there!" })
+    }
+  }
+
+  const handleUpdate = async (id: string) => {
+    const res = await fetch(`/api/reminder-templates/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editForm),
+    })
+    if (res.ok) {
+      const updated = await res.json()
+      setTemplates(templates.map((t) => (t.id === id ? updated : t)))
+      setEditingId(null)
+    }
+  }
+
+  const handleToggle = async (id: string, active: boolean) => {
+    const res = await fetch(`/api/reminder-templates/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: !active }),
+    })
+    if (res.ok) {
+      const updated = await res.json()
+      setTemplates(templates.map((t) => (t.id === id ? updated : t)))
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    const res = await fetch(`/api/reminder-templates/${id}`, { method: "DELETE" })
+    if (res.ok) setTemplates(templates.filter((t) => t.id !== id))
+  }
+
+  return (
+    <div className="space-y-4 mt-6">
+      <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">
+        <Bell className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+        Reminders
+      </h3>
+      <p className="text-xs text-gray-500">
+        Automated email reminders sent to guests before the meeting. Variables: {"{{name}}"}, {"{{event}}"}, {"{{date}}"}, {"{{time}}"}, {"{{link}}"}
+      </p>
+
+      {loading ? (
+        <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
+      ) : (
+        <div className="space-y-3">
+          {templates.map((t) => (
+            <div key={t.id} className={`border rounded-lg p-3 ${t.active ? "border-gray-200" : "border-gray-100 opacity-60"}`}>
+              {editingId === t.id ? (
+                <div className="space-y-2">
+                  <select value={editForm.offsetMinutes} onChange={(e) => setEditForm({ ...editForm, offsetMinutes: Number(e.target.value) })} className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm">
+                    {TIMING_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                  <input type="text" value={editForm.subject} onChange={(e) => setEditForm({ ...editForm, subject: e.target.value })} placeholder="Subject" className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm" />
+                  <textarea value={editForm.body} onChange={(e) => setEditForm({ ...editForm, body: e.target.value })} rows={3} className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm resize-none" />
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => handleUpdate(t.id)} className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+                    <button type="button" onClick={() => setEditingId(null)} className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{timingLabel(t.offsetMinutes)}</span>
+                      <span className={`text-xs ${t.active ? "text-green-600" : "text-gray-400"}`}>{t.active ? "Active" : "Paused"}</span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 mt-1">{t.subject}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{t.body}</p>
+                  </div>
+                  <div className="flex items-center gap-1 ml-2">
+                    <button type="button" onClick={() => handleToggle(t.id, t.active)} className={`p-1 rounded text-xs ${t.active ? "text-yellow-600 hover:bg-yellow-50" : "text-green-600 hover:bg-green-50"}`}>{t.active ? "Pause" : "Enable"}</button>
+                    <button type="button" onClick={() => { setEditingId(t.id); setEditForm({ offsetMinutes: t.offsetMinutes, subject: t.subject, body: t.body }) }} className="p-1 text-gray-400 hover:text-blue-600"><Edit className="w-3.5 h-3.5" /></button>
+                    <button type="button" onClick={() => handleDelete(t.id)} className="p-1 text-gray-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {adding ? (
+            <div className="border border-blue-200 rounded-lg p-3 bg-blue-50/30 space-y-2">
+              <select value={newForm.offsetMinutes} onChange={(e) => setNewForm({ ...newForm, offsetMinutes: Number(e.target.value) })} className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm">
+                {TIMING_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <input type="text" value={newForm.subject} onChange={(e) => setNewForm({ ...newForm, subject: e.target.value })} placeholder="Subject" className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm" />
+              <textarea value={newForm.body} onChange={(e) => setNewForm({ ...newForm, body: e.target.value })} rows={3} className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm resize-none" />
+              <div className="flex gap-2">
+                <button type="button" onClick={handleAdd} className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Add Reminder</button>
+                <button type="button" onClick={() => setAdding(false)} className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setAdding(true)} className="text-sm text-blue-600 hover:text-blue-800 font-medium">+ Add Reminder Step</button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function EventTypesPage() {
   const [eventTypes, setEventTypes] = useState<EventType[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -856,6 +1006,11 @@ export default function EventTypesPage() {
                     />
                   </div>
                 </div>
+
+                {/* Reminders Section */}
+                {editingEventType && (
+                  <ReminderSection eventTypeId={editingEventType.id} />
+                )}
 
                 {/* Advanced Settings */}
                 <div className="space-y-4">

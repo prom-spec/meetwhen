@@ -50,6 +50,7 @@ const WEBHOOK_EVENTS = [
   { value: "booking.created", label: "Booking Created", description: "Triggered when a new booking is made" },
   { value: "booking.cancelled", label: "Booking Cancelled", description: "Triggered when a booking is cancelled" },
   { value: "booking.rescheduled", label: "Booking Rescheduled", description: "Triggered when a booking is rescheduled" },
+  { value: "poll.response_added", label: "Poll Response Added", description: "Triggered when someone responds to a meeting poll" },
 ]
 
 export default function WebhooksPage() {
@@ -614,8 +615,8 @@ function verifyWebhook(payload, signature, secret) {
           <div>
             <h4 className="font-medium text-gray-900 mb-1">Request Headers</h4>
             <ul className="list-disc list-inside text-gray-600 space-y-1">
-              <li><code className="bg-white px-1 rounded">X-Webhook-Signature</code> - HMAC-SHA256 signature</li>
-              <li><code className="bg-white px-1 rounded">X-Webhook-Timestamp</code> - Unix timestamp</li>
+              <li><code className="bg-white px-1 rounded">X-LetsMeet-Signature</code> - HMAC-SHA256 signature</li>
+              <li><code className="bg-white px-1 rounded">X-LetsMeet-Timestamp</code> - Unix timestamp</li>
               <li><code className="bg-white px-1 rounded">X-Webhook-Event</code> - Event type</li>
             </ul>
           </div>
@@ -623,7 +624,7 @@ function verifyWebhook(payload, signature, secret) {
           <div>
             <h4 className="font-medium text-gray-900 mb-1">Retry Policy</h4>
             <p className="text-gray-600">
-              Failed deliveries are retried up to 3 times with exponential backoff (1s, 5s, 30s).
+              Failed deliveries are retried up to 3 times with exponential backoff (1 min, 5 min, 30 min).
             </p>
           </div>
         </div>

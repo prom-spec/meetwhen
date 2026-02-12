@@ -52,6 +52,7 @@ interface UserSettings {
   metaPixelId: string | null
   googleConnected: boolean
   hasCalendarScope: boolean
+  plan: string
 }
 
 function McpConfigBlock({ title, description, configPath, apiKey, config }: {
@@ -870,7 +871,46 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            {/* Hide Powered By — hidden until premium tier is available */}
+            {/* Hide Powered By */}
+            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+              <div>
+                <p className="font-medium text-gray-900">
+                  Show &quot;Powered by letsmeet.link&quot;
+                </p>
+                <p className="text-sm text-gray-500">
+                  {settings?.plan === "free"
+                    ? "Upgrade to Pro to remove branding from your booking pages."
+                    : "Toggle off to hide the letsmeet.link footer on your public pages."}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (settings?.plan === "free") return
+                  setHidePoweredBy(!hidePoweredBy)
+                }}
+                disabled={settings?.plan === "free"}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#0066FF] focus:ring-offset-2 ${
+                  settings?.plan === "free"
+                    ? "bg-gray-100 cursor-not-allowed opacity-50"
+                    : !hidePoweredBy
+                    ? "bg-[#0066FF] cursor-pointer"
+                    : "bg-gray-200 cursor-pointer"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    !hidePoweredBy ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+            {settings?.plan === "free" && (
+              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <span className="text-sm text-amber-800">
+                  🔒 <Link href="/dashboard/billing" className="text-amber-900 font-medium underline hover:no-underline">Upgrade to Pro</Link> to remove branding from your booking pages.
+                </span>
+              </div>
+            )}
 
             {/* Preview */}
             {(brandColor || brandLogo) && (
@@ -1053,6 +1093,25 @@ export default function SettingsPage() {
             className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
           >
             View Audit Log
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        {/* Domain Control Section */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            Domain Control
+          </h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Claim your organization&apos;s domain to manage all accounts, enforce branding,
+            and control settings for users with matching email addresses.
+          </p>
+          <Link
+            href="/dashboard/settings/domain"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+          >
+            Manage Domain
             <ChevronRight className="h-4 w-4" />
           </Link>
         </div>

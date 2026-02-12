@@ -3,12 +3,13 @@ import prisma from "./prisma"
 import { DeliveryStatus, Prisma } from "@prisma/client"
 import { webhookLogger } from "./logger"
 
-export type WebhookEvent = "booking.created" | "booking.cancelled" | "booking.rescheduled"
+export type WebhookEvent = "booking.created" | "booking.cancelled" | "booking.rescheduled" | "poll.response_added"
 
 export const WEBHOOK_EVENTS: { value: WebhookEvent; label: string; description: string }[] = [
   { value: "booking.created", label: "Booking Created", description: "Triggered when a new booking is made" },
   { value: "booking.cancelled", label: "Booking Cancelled", description: "Triggered when a booking is cancelled" },
   { value: "booking.rescheduled", label: "Booking Rescheduled", description: "Triggered when a booking is rescheduled" },
+  { value: "poll.response_added", label: "Poll Response Added", description: "Triggered when someone responds to a meeting poll" },
 ]
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
@@ -20,7 +21,7 @@ interface WebhookPayload {
 }
 
 const MAX_RETRY_ATTEMPTS = 3
-const RETRY_DELAYS = [1000, 5000, 30000] // 1s, 5s, 30s
+const RETRY_DELAYS = [60000, 300000, 1800000] // 1min, 5min, 30min
 
 /**
  * Sign a payload using HMAC-SHA256
@@ -124,8 +125,8 @@ async function deliverWebhook(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Webhook-Signature": signature,
-        "X-Webhook-Timestamp": timestamp.toString(),
+        "X-LetsMeet-Signature": signature,
+        "X-LetsMeet-Timestamp": timestamp.toString(),
         "X-Webhook-Event": payload.event,
         "User-Agent": "letsmeet.link-Webhooks/1.0",
       },
@@ -278,8 +279,8 @@ export async function sendTestWebhook(webhookId: string): Promise<{ success: boo
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Webhook-Signature": signature,
-        "X-Webhook-Timestamp": timestamp.toString(),
+        "X-LetsMeet-Signature": signature,
+        "X-LetsMeet-Timestamp": timestamp.toString(),
         "X-Webhook-Event": testPayload.event,
         "User-Agent": "letsmeet.link-Webhooks/1.0",
       },
@@ -318,3 +319,8 @@ export async function sendTestWebhook(webhookId: string): Promise<{ success: boo
     return { success: false, error: errorMessage }
   }
 }
+
+/**
+ * Alias for triggerWebhook — convenience function for firing webhooks from routes.
+ */
+export const fireWebhook = triggerWebhook

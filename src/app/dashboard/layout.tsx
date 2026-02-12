@@ -16,11 +16,13 @@ const primaryLinks = [
 ]
 
 const moreLinks = [
+  { href: "/dashboard/contacts", label: "Contacts" },
   { href: "/dashboard/workflows", label: "Workflows" },
   { href: "/dashboard/polls", label: "Polls" },
   { href: "/dashboard/teams", label: "Teams" },
   { href: "/dashboard/routing", label: "Routing" },
   { href: "/dashboard/analytics", label: "Analytics" },
+  { href: "/dashboard/one-off", label: "One-Off Links" },
   { href: "/dashboard/embed", label: "Embed" },
   { href: "/dashboard/billing", label: "Billing" },
 ]

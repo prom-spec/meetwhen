@@ -437,6 +437,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Auto-upsert contact profile
+    let contactId: string | null = null
+    try {
+      const contact = await prisma.contactProfile.upsert({
+        where: { userId_email: { userId: eventType.userId, email: guestEmail } },
+        update: { name: guestName, updatedAt: new Date() },
+        create: { userId: eventType.userId, email: guestEmail, name: guestName },
+      })
+      contactId = contact.id
+    } catch { /* non-critical */ }
+
     // Create the booking
     const booking = await prisma.booking.create({
       data: {
@@ -452,6 +463,7 @@ export async function POST(request: NextRequest) {
         screeningAnswers: screeningAnswers || null,
         bookedByName: bookedByName || null,
         bookedByEmail: bookedByEmail || null,
+        contactId,
       },
       include: {
         eventType: true,
