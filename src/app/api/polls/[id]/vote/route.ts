@@ -30,7 +30,14 @@ export async function POST(
     }
 
     const body = await req.json()
-    const data = voteSchema.parse(body)
+    const parsed = voteSchema.safeParse(body)
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors
+      const firstField = Object.keys(fieldErrors)[0]
+      const firstMsg = firstField ? `${firstField}: ${fieldErrors[firstField]?.[0]}` : "Invalid input"
+      return NextResponse.json({ error: firstMsg, details: fieldErrors }, { status: 400 })
+    }
+    const data = parsed.data
 
     // Validate all optionIds belong to this poll
     const validOptionIds = new Set(poll.options.map((o) => o.id))
@@ -67,9 +74,6 @@ export async function POST(
 
     return NextResponse.json({ success: true, votes: results })
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 })
-    }
     console.error("Vote error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }

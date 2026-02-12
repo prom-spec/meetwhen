@@ -14,7 +14,7 @@ const updateSettingsSchema = z.object({
   holidayCountry: z.string().max(2).optional(),
   brandColor: z.string().max(7).regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color").nullable().optional(),
   accentColor: z.string().max(7).regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color").nullable().optional(),
-  brandLogo: z.string().url().max(2048).nullable().optional(),
+  brandLogo: z.preprocess((v) => (v === "" ? null : v), z.string().url().max(2048).nullable().optional()),
   hidePoweredBy: z.boolean().optional(),
   gaTrackingId: z.string().max(50).nullable().optional(),
   metaPixelId: z.string().max(50).nullable().optional(),
@@ -90,7 +90,10 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const parsed = updateSettingsSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
+      const fieldErrors = parsed.error.flatten().fieldErrors
+      const firstField = Object.keys(fieldErrors)[0]
+      const firstMsg = firstField ? `${firstField}: ${fieldErrors[firstField]?.[0]}` : "Invalid input"
+      return NextResponse.json({ error: firstMsg, details: fieldErrors }, { status: 400 })
     }
     const { name, username, timezone, calendarSyncEnabled, blockHolidays, holidayCountry, brandColor, accentColor, brandLogo, hidePoweredBy, gaTrackingId, metaPixelId, primaryAccountId } = parsed.data
 

@@ -65,7 +65,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   const body = await request.json()
   const parsed = updateWorkflowSchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
+    const fieldErrors = parsed.error.flatten().fieldErrors; const firstField = Object.keys(fieldErrors)[0]; const firstMsg = firstField ? `${firstField}: ${fieldErrors[firstField]?.[0]}` : "Invalid input"; return NextResponse.json({ error: firstMsg, details: fieldErrors }, { status: 400 })
   }
 
   const { name, trigger, isActive, steps } = parsed.data

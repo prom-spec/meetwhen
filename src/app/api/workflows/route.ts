@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
   const parsed = createWorkflowSchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
+    const fieldErrors = parsed.error.flatten().fieldErrors; const firstField = Object.keys(fieldErrors)[0]; const firstMsg = firstField ? `${firstField}: ${fieldErrors[firstField]?.[0]}` : "Invalid input"; return NextResponse.json({ error: firstMsg, details: fieldErrors }, { status: 400 })
   }
 
   const { name, trigger, isActive, steps } = parsed.data

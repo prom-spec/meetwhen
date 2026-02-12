@@ -7,6 +7,7 @@ import { createCalendarEvent, hasCalendarConflict, getGoogleAccessToken, Booking
 import { sendBookingEmails } from "@/lib/email"
 import { triggerWebhook } from "@/lib/webhooks"
 import { executeWorkflow } from "@/lib/workflows"
+import { logValidationError, logError } from "@/lib/error-log"
 import { getNextRoundRobinMember, updateLastAssignedMember, createCollectiveBooking } from "@/lib/team-scheduling"
 import { bookingLogger, apiLogger } from "@/lib/logger"
 import { logAudit } from "@/lib/audit"
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
     const parsed = createBookingSchema.safeParse(body)
     if (!parsed.success) {
       bookingLogger.warn("Validation failed", { requestId, errors: parsed.error.flatten() })
-      return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
+      const fieldErrors = parsed.error.flatten().fieldErrors; const firstField = Object.keys(fieldErrors)[0]; const firstMsg = firstField ? `${firstField}: ${fieldErrors[firstField]?.[0]}` : "Invalid input"; return NextResponse.json({ error: firstMsg, details: fieldErrors }, { status: 400 })
     }
     const { eventTypeId, guestName, guestEmail, guestTimezone, date, time, startTime: startTimeISO, recurrenceRule, screeningAnswers, bookedByName, bookedByEmail } = parsed.data
 

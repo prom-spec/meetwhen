@@ -29,7 +29,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { name, trigger, delayMinutes, subject, body: emailBody } = sequenceSchema.parse(body)
+    const parsed = sequenceSchema.safeParse(body)
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors
+      const firstField = Object.keys(fieldErrors)[0]
+      const firstMsg = firstField ? `${firstField}: ${fieldErrors[firstField]?.[0]}` : "Invalid input"
+      return NextResponse.json({ error: firstMsg, details: fieldErrors }, { status: 400 })
+    }
+    const { name, trigger, delayMinutes, subject, body: emailBody } = parsed.data
 
     const sequence = await prisma.emailSequence.create({
       data: {
@@ -43,9 +50,7 @@ export async function POST(req: NextRequest) {
     })
     return NextResponse.json(sequence, { status: 201 })
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Invalid input", details: error.errors }, { status: 400 })
-    }
+    console.error("Create sequence error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { apiLogger } from "@/lib/logger"
 import { logAudit } from "@/lib/audit"
+import { logValidationError } from "@/lib/error-log"
 import { z } from "zod"
 
 const createEventTypeSchema = z.object({
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest) {
       const fieldErrors = parsed.error.flatten().fieldErrors
       const firstField = Object.keys(fieldErrors)[0]
       const firstMsg = firstField ? `${firstField}: ${fieldErrors[firstField]?.[0]}` : "Invalid input"
+      logValidationError("api/event-types/create", fieldErrors, session.user.id, "/api/event-types")
       return NextResponse.json({ error: firstMsg, details: fieldErrors }, { status: 400 })
     }
     const { 

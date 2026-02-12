@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
+import { logValidationError, logError } from "@/lib/error-log"
 import { z } from "zod"
 
 // Transform empty strings to null/undefined for optional fields
@@ -114,6 +115,7 @@ export async function PATCH(
       const fieldErrors = parsed.error.flatten().fieldErrors
       const firstField = Object.keys(fieldErrors)[0]
       const firstMsg = firstField ? `${firstField}: ${fieldErrors[firstField]?.[0]}` : "Invalid input"
+      logValidationError("api/event-types/update", fieldErrors, session.user.id, `/api/event-types/${id}`)
       return NextResponse.json({ error: firstMsg, details: fieldErrors }, { status: 400 })
     }
     const { title, slug, description, duration, color, location, locationType, locationValue, isActive, bufferBefore, bufferAfter, minNotice, maxDaysAhead, allowRecurring, recurrenceOptions, maxBookingsPerDay, maxBookingsPerWeek, redirectUrl, visibility, maxAttendees, customQuestions, screeningQuestions, price, currency } = parsed.data
@@ -174,6 +176,7 @@ export async function PATCH(
     return NextResponse.json(eventType)
   } catch (error) {
     console.error("Error updating event type:", error)
+    logError({ source: "api/event-types/update", message: error instanceof Error ? error.message : "Unknown error", statusCode: 500, requestPath: `/api/event-types/${id}` })
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

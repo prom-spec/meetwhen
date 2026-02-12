@@ -17,7 +17,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { plan } = upgradeSchema.parse(body)
+    const parsed = upgradeSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid plan selected" }, { status: 400 })
+    }
+    const { plan } = parsed.data
 
     const user = await prisma.user.update({
       where: { email: session.user.email },
@@ -31,9 +35,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, plan: user.plan })
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Invalid plan" }, { status: 400 })
-    }
+    console.error("Upgrade error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

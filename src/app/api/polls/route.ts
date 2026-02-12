@@ -23,7 +23,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const data = createPollSchema.parse(body)
+    const parsed = createPollSchema.safeParse(body)
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors
+      const firstField = Object.keys(fieldErrors)[0]
+      const firstMsg = firstField ? `${firstField}: ${fieldErrors[firstField]?.[0]}` : "Invalid input"
+      return NextResponse.json({ error: firstMsg, details: fieldErrors }, { status: 400 })
+    }
+    const data = parsed.data
 
     const poll = await prisma.meetingPoll.create({
       data: {
@@ -44,9 +51,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(poll, { status: 201 })
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 })
-    }
     console.error("Create poll error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
