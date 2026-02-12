@@ -60,7 +60,7 @@ export async function POST(request: Request) {
               from: `${seq.user.name || "LetsMeet"} <noreply@letsmeet.link>`,
               to: booking.guestEmail,
               subject,
-              html: `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">${body.replace(/\n/g, "<br>")}</div>`,
+              html: `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">${escapeHtml(body).replace(/\n/g, "<br>")}</div>`,
             })
           }
 
@@ -78,6 +78,10 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ ok: true, sent, errors })
+}
+
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
 }
 
 function replaceVars(template: string, booking: Record<string, unknown>, user: Record<string, unknown>): string {
