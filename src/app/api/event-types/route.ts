@@ -7,38 +7,37 @@ import { logAudit } from "@/lib/audit"
 import { z } from "zod"
 
 const createEventTypeSchema = z.object({
-  title: z.string().min(1).max(200).trim(),
-  slug: z.string().min(1).max(50).regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
-  description: z.string().max(2000).optional(),
+  title: z.string().min(1, "Event Name is required").max(200).trim(),
+  slug: z.string().min(1, "URL Slug is required").max(50).regex(/^[a-z0-9-]+$/, "Slug must be lowercase letters, numbers, and hyphens only"),
+  description: z.preprocess((v) => (v === "" ? undefined : v), z.string().max(2000).optional()),
   duration: z.coerce.number().int().min(5).max(480),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
-  location: z.string().max(500).optional(),
+  location: z.preprocess((v) => (v === "" ? undefined : v), z.string().max(500).optional()),
   locationType: z.enum(["IN_PERSON", "GOOGLE_MEET", "ZOOM", "PHONE", "CUSTOM"]).optional(),
-  locationValue: z.string().max(500).optional(),
-  bufferBefore: z.coerce.number().int().min(0).max(120).optional(),
-  bufferAfter: z.coerce.number().int().min(0).max(120).optional(),
-  minNotice: z.coerce.number().int().min(0).max(43200).optional(),
-  maxDaysAhead: z.coerce.number().int().min(1).max(365).optional(),
+  locationValue: z.preprocess((v) => (v === "" ? undefined : v), z.string().max(500).optional()),
+  bufferBefore: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(0).max(120).optional()),
+  bufferAfter: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(0).max(120).optional()),
+  minNotice: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(0).max(43200).optional()),
+  maxDaysAhead: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(1).max(365).optional()),
   teamId: z.string().optional(),
   schedulingType: z.enum(["INDIVIDUAL", "ROUND_ROBIN", "COLLECTIVE"]).optional(),
-  allowRecurring: z.boolean().optional(),
-  recurrenceOptions: z.string().nullable().optional(), // JSON array
-  maxBookingsPerDay: z.coerce.number().int().min(1).nullable().optional(),
-  maxBookingsPerWeek: z.coerce.number().int().min(1).nullable().optional(),
-  redirectUrl: z.string().url().max(2000).nullable().optional(),
+  allowRecurring: z.preprocess((v) => (v === "" ? undefined : v), z.boolean().optional()),
+  recurrenceOptions: z.preprocess((v) => (v === "" ? null : v), z.string().nullable().optional()),
+  maxBookingsPerDay: z.preprocess((v) => (v === "" || v === null ? undefined : v), z.coerce.number().int().min(1).optional()),
+  maxBookingsPerWeek: z.preprocess((v) => (v === "" || v === null ? undefined : v), z.coerce.number().int().min(1).optional()),
+  redirectUrl: z.preprocess((v) => (v === "" || v === null ? undefined : v), z.string().url().max(2000).optional()),
   visibility: z.enum(["public", "unlisted"]).optional(),
-  maxAttendees: z.coerce.number().int().min(1).max(100).optional(),
-  customQuestions: z.string().optional(),
-  screeningQuestions: z.string().nullable().optional(),
-  screeningQuestions: z.string().nullable().optional(),
-  price: z.coerce.number().int().min(0).nullable().optional(),
-  currency: z.string().length(3).optional(),
-  cancellationPolicy: z.string().max(2000).nullable().optional(),
-  confirmationLinks: z.string().max(5000).nullable().optional(),
-  isAdminManaged: z.boolean().optional(),
-  assignedToId: z.string().nullable().optional(),
-  availableStartTime: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
-  availableEndTime: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
+  maxAttendees: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(1).max(100).optional()),
+  customQuestions: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
+  screeningQuestions: z.preprocess((v) => (v === "" ? null : v), z.string().nullable().optional()),
+  price: z.preprocess((v) => (v === "" || v === null ? undefined : v), z.coerce.number().int().min(0).optional()),
+  currency: z.preprocess((v) => (v === "" ? undefined : v), z.string().length(3).optional()),
+  cancellationPolicy: z.preprocess((v) => (v === "" ? null : v), z.string().max(2000).nullable().optional()),
+  confirmationLinks: z.preprocess((v) => (v === "" ? null : v), z.string().max(5000).nullable().optional()),
+  isAdminManaged: z.preprocess((v) => (v === "" ? undefined : v), z.boolean().optional()),
+  assignedToId: z.preprocess((v) => (v === "" ? null : v), z.string().nullable().optional()),
+  availableStartTime: z.preprocess((v) => (v === "" ? null : v), z.string().regex(/^\d{2}:\d{2}$/).nullable().optional()),
+  availableEndTime: z.preprocess((v) => (v === "" ? null : v), z.string().regex(/^\d{2}:\d{2}$/).nullable().optional()),
 })
 
 export async function GET() {
@@ -85,7 +84,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = createEventTypeSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
+      const fieldErrors = parsed.error.flatten().fieldErrors
+      const firstField = Object.keys(fieldErrors)[0]
+      const firstMsg = firstField ? `${firstField}: ${fieldErrors[firstField]?.[0]}` : "Invalid input"
+      return NextResponse.json({ error: firstMsg, details: fieldErrors }, { status: 400 })
     }
     const { 
       title, slug, description, duration, color, location, locationType, locationValue, 

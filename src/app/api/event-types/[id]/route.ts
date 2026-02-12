@@ -5,35 +5,46 @@ import prisma from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
 import { z } from "zod"
 
+// Transform empty strings to null/undefined for optional fields
+const optionalNullableInt = (min: number, max?: number) => {
+  let schema = z.coerce.number().int().min(min)
+  if (max !== undefined) schema = schema.max(max)
+  return z.preprocess((v) => (v === "" || v === null || v === undefined ? undefined : v), schema.optional())
+}
+const optionalNullableUrl = z.preprocess(
+  (v) => (v === "" || v === null ? undefined : v),
+  z.string().url().max(2000).optional()
+)
+
 const updateEventTypeSchema = z.object({
-  title: z.string().min(1).max(200).trim().optional(),
-  slug: z.string().min(1).max(50).regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens").optional(),
-  description: z.string().max(2000).optional().nullable(),
-  duration: z.coerce.number().int().min(5).max(480).optional(),
+  title: z.string().min(1, "Event Name is required").max(200).trim().optional(),
+  slug: z.string().min(1, "URL Slug is required").max(50).regex(/^[a-z0-9-]+$/, "Slug must be lowercase letters, numbers, and hyphens only").optional(),
+  description: z.preprocess((v) => (v === "" ? null : v), z.string().max(2000).nullable().optional()),
+  duration: optionalNullableInt(5, 480),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
-  location: z.string().max(500).optional().nullable(),
+  location: z.preprocess((v) => (v === "" ? null : v), z.string().max(500).nullable().optional()),
   locationType: z.enum(["IN_PERSON", "GOOGLE_MEET", "ZOOM", "PHONE", "CUSTOM"]).optional().nullable(),
-  locationValue: z.string().max(500).optional().nullable(),
+  locationValue: z.preprocess((v) => (v === "" ? null : v), z.string().max(500).nullable().optional()),
   isActive: z.boolean().optional(),
-  bufferBefore: z.coerce.number().int().min(0).max(120).optional(),
-  bufferAfter: z.coerce.number().int().min(0).max(120).optional(),
-  minNotice: z.coerce.number().int().min(0).max(43200).optional(),
-  maxDaysAhead: z.coerce.number().int().min(1).max(365).optional(),
-  allowRecurring: z.boolean().optional(),
-  recurrenceOptions: z.string().nullable().optional(),
-  maxBookingsPerDay: z.coerce.number().int().min(1).nullable().optional(),
-  maxBookingsPerWeek: z.coerce.number().int().min(1).nullable().optional(),
-  redirectUrl: z.string().url().max(2000).nullable().optional(),
+  bufferBefore: optionalNullableInt(0, 120),
+  bufferAfter: optionalNullableInt(0, 120),
+  minNotice: optionalNullableInt(0, 43200),
+  maxDaysAhead: optionalNullableInt(1, 365),
+  allowRecurring: z.preprocess((v) => (v === "" ? undefined : v), z.boolean().optional()),
+  recurrenceOptions: z.preprocess((v) => (v === "" ? null : v), z.string().nullable().optional()),
+  maxBookingsPerDay: z.preprocess((v) => (v === "" || v === null ? undefined : v), z.coerce.number().int().min(1).optional()),
+  maxBookingsPerWeek: z.preprocess((v) => (v === "" || v === null ? undefined : v), z.coerce.number().int().min(1).optional()),
+  redirectUrl: optionalNullableUrl,
   visibility: z.enum(["public", "unlisted"]).optional(),
-  maxAttendees: z.coerce.number().int().min(1).max(100).optional(),
-  customQuestions: z.string().nullable().optional(),
-  screeningQuestions: z.string().nullable().optional(),
-  price: z.coerce.number().int().min(0).nullable().optional(),
-  currency: z.string().length(3).optional(),
-  cancellationPolicy: z.string().max(2000).nullable().optional(),
-  confirmationLinks: z.string().max(5000).nullable().optional(),
-  availableStartTime: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
-  availableEndTime: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
+  maxAttendees: optionalNullableInt(1, 100),
+  customQuestions: z.preprocess((v) => (v === "" ? null : v), z.string().nullable().optional()),
+  screeningQuestions: z.preprocess((v) => (v === "" ? null : v), z.string().nullable().optional()),
+  price: z.preprocess((v) => (v === "" || v === null ? undefined : v), z.coerce.number().int().min(0).optional()),
+  currency: z.preprocess((v) => (v === "" ? undefined : v), z.string().length(3).optional()),
+  cancellationPolicy: z.preprocess((v) => (v === "" ? null : v), z.string().max(2000).nullable().optional()),
+  confirmationLinks: z.preprocess((v) => (v === "" ? null : v), z.string().max(5000).nullable().optional()),
+  availableStartTime: z.preprocess((v) => (v === "" ? null : v), z.string().regex(/^\d{2}:\d{2}$/).nullable().optional()),
+  availableEndTime: z.preprocess((v) => (v === "" ? null : v), z.string().regex(/^\d{2}:\d{2}$/).nullable().optional()),
 })
 
 export async function GET(
@@ -100,7 +111,10 @@ export async function PATCH(
     const rawBody = await request.json()
     const parsed = updateEventTypeSchema.safeParse(rawBody)
     if (!parsed.success) {
-      return NextResponse.json({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }, { status: 400 })
+      const fieldErrors = parsed.error.flatten().fieldErrors
+      const firstField = Object.keys(fieldErrors)[0]
+      const firstMsg = firstField ? `${firstField}: ${fieldErrors[firstField]?.[0]}` : "Invalid input"
+      return NextResponse.json({ error: firstMsg, details: fieldErrors }, { status: 400 })
     }
     const { title, slug, description, duration, color, location, locationType, locationValue, isActive, bufferBefore, bufferAfter, minNotice, maxDaysAhead, allowRecurring, recurrenceOptions, maxBookingsPerDay, maxBookingsPerWeek, redirectUrl, visibility, maxAttendees, customQuestions, screeningQuestions, price, currency } = parsed.data
 

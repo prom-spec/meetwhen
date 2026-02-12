@@ -152,8 +152,15 @@ export default function EventTypesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
+          // Convert empty strings to null for optional numeric/url fields
+          maxBookingsPerDay: formData.maxBookingsPerDay || null,
+          maxBookingsPerWeek: formData.maxBookingsPerWeek || null,
+          redirectUrl: formData.redirectUrl || null,
+          price: formData.price || null,
           availableStartTime: formData.availableStartTime || null,
           availableEndTime: formData.availableEndTime || null,
+          cancellationPolicy: formData.cancellationPolicy || null,
+          screeningQuestions: formData.screeningQuestions || null,
         }),
       })
 
