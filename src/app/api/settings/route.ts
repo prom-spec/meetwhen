@@ -18,6 +18,7 @@ const updateSettingsSchema = z.object({
   hidePoweredBy: z.boolean().optional(),
   gaTrackingId: z.string().max(50).nullable().optional(),
   metaPixelId: z.string().max(50).nullable().optional(),
+  primaryAccountId: z.string().max(200).nullable().optional(),
 }).strict()
 
 export async function GET() {
@@ -91,7 +92,7 @@ export async function PATCH(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
     }
-    const { name, username, timezone, calendarSyncEnabled, blockHolidays, holidayCountry, brandColor, accentColor, brandLogo, hidePoweredBy, gaTrackingId, metaPixelId } = parsed.data
+    const { name, username, timezone, calendarSyncEnabled, blockHolidays, holidayCountry, brandColor, accentColor, brandLogo, hidePoweredBy, gaTrackingId, metaPixelId, primaryAccountId } = parsed.data
 
     // Validate username uniqueness if provided
     if (username !== undefined) {
@@ -126,6 +127,7 @@ export async function PATCH(request: NextRequest) {
     if (hidePoweredBy !== undefined) updateData.hidePoweredBy = hidePoweredBy
     if (gaTrackingId !== undefined) updateData.gaTrackingId = gaTrackingId
     if (metaPixelId !== undefined) updateData.metaPixelId = metaPixelId
+    if (primaryAccountId !== undefined) updateData.primaryAccountId = primaryAccountId
 
     logAudit(session.user.id, "settings.updated", "settings", session.user.id, { changes: Object.keys(updateData) })
 

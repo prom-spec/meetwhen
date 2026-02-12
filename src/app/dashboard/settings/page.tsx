@@ -762,15 +762,32 @@ export default function SettingsPage() {
                       </p>
                     </div>
                   </div>
-                  {!acc.isPrimary && (
-                    <button
-                      onClick={() => setConfirmUnlinkId(acc.id)}
-                      className="p-1.5 text-gray-400 hover:text-red-600 rounded"
-                      title="Unlink account"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {!acc.isPrimary && (
+                      <button
+                        onClick={async () => {
+                          await fetch("/api/settings", {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ primaryAccountId: acc.providerAccountId }),
+                          })
+                          fetchLinkedAccounts()
+                        }}
+                        className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded hover:bg-blue-50"
+                      >
+                        Set as Primary
+                      </button>
+                    )}
+                    {!acc.isPrimary && (
+                      <button
+                        onClick={() => setConfirmUnlinkId(acc.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 rounded"
+                        title="Unlink account"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
