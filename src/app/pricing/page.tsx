@@ -39,7 +39,7 @@ const tiers = [
     description: "For professionals who schedule often",
     icon: Sparkles,
     cta: "Start Pro Trial",
-    ctaHref: "/login?plan=pro",
+    ctaHref: "/dashboard/billing/checkout?plan=pro",
     highlight: true,
     features: [
       { name: "Unlimited event types", included: true },
@@ -68,7 +68,7 @@ const tiers = [
     description: "For teams and organizations",
     icon: Building2,
     cta: "Start Enterprise Trial",
-    ctaHref: "/login?plan=enterprise",
+    ctaHref: "/dashboard/billing/checkout?plan=enterprise",
     highlight: false,
     features: [
       { name: "Everything in Pro", included: true },

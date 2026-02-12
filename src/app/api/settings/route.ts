@@ -44,6 +44,7 @@ export async function GET() {
         hidePoweredBy: true,
         gaTrackingId: true,
         metaPixelId: true,
+        plan: true,
       },
     })
 

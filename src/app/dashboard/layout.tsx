@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect, useRef } from "react"
-import { Menu, X, Loader2, ChevronDown } from "lucide-react"
+import { Menu, X, Loader2, ChevronDown, Heart } from "lucide-react"
 import ChatInterface from "@/components/ChatInterface"
 
 const primaryLinks = [
@@ -22,6 +22,7 @@ const moreLinks = [
   { href: "/dashboard/routing", label: "Routing" },
   { href: "/dashboard/analytics", label: "Analytics" },
   { href: "/dashboard/embed", label: "Embed" },
+  { href: "/dashboard/billing", label: "Billing" },
 ]
 
 const navLinks = [...primaryLinks, ...moreLinks, { href: "/dashboard/settings", label: "Settings" }]
@@ -167,6 +168,13 @@ export default function DashboardLayout({
 
             {/* Desktop Right Side - visible from md (768px) */}
             <div className="hidden md:flex md:items-center md:gap-4">
+              <Link
+                href="/dashboard/billing"
+                className="text-sm text-pink-500 hover:text-pink-600 font-medium whitespace-nowrap flex items-center gap-1"
+                title="Support us"
+              >
+                <Heart className="w-3.5 h-3.5" />
+              </Link>
               <span className="text-sm text-gray-500 truncate max-w-[150px] lg:max-w-[200px]">
                 {session.user?.email}
               </span>
