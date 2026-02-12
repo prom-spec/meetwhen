@@ -71,5 +71,7 @@ export async function POST(request: NextRequest) {
     include: { steps: { orderBy: { order: "asc" } } },
   })
 
+  logAudit(session.user.id, "workflow.created", "workflow", workflow.id, { name, trigger })
+
   return NextResponse.json(workflow, { status: 201 })
 }

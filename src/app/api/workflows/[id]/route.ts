@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 import { z } from "zod"
 
 interface RouteParams {
@@ -99,6 +100,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     include: { steps: { orderBy: { order: "asc" } } },
   })
 
+  logAudit(session.user.id, "workflow.updated", "workflow", id, { name, trigger, isActive })
+
   return NextResponse.json(updated)
 }
 
@@ -118,6 +121,8 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   }
 
   await prisma.workflow.delete({ where: { id } })
+
+  logAudit(session.user.id, "workflow.deleted", "workflow", id, { name: existing.name })
 
   return NextResponse.json({ success: true })
 }
