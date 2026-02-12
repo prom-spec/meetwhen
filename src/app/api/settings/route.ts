@@ -16,6 +16,7 @@ const updateSettingsSchema = z.object({
   accentColor: z.string().max(7).regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color").nullable().optional(),
   brandLogo: z.preprocess((v) => (v === "" ? null : v), z.string().url().max(2048).nullable().optional()),
   hidePoweredBy: z.boolean().optional(),
+  removeBranding: z.boolean().optional(),
   gaTrackingId: z.string().max(50).nullable().optional(),
   metaPixelId: z.string().max(50).nullable().optional(),
   primaryAccountId: z.string().max(200).nullable().optional(),
@@ -44,6 +45,7 @@ export async function GET() {
         accentColor: true,
         brandLogo: true,
         hidePoweredBy: true,
+        removeBranding: true,
         gaTrackingId: true,
         metaPixelId: true,
         plan: true,
@@ -128,6 +130,7 @@ export async function PATCH(request: NextRequest) {
     if (accentColor !== undefined) updateData.accentColor = accentColor
     if (brandLogo !== undefined) updateData.brandLogo = brandLogo
     if (hidePoweredBy !== undefined) updateData.hidePoweredBy = hidePoweredBy
+    if (parsed.data.removeBranding !== undefined) updateData.removeBranding = parsed.data.removeBranding
     if (gaTrackingId !== undefined) updateData.gaTrackingId = gaTrackingId
     if (metaPixelId !== undefined) updateData.metaPixelId = metaPixelId
     if (primaryAccountId !== undefined) updateData.primaryAccountId = primaryAccountId
@@ -150,6 +153,7 @@ export async function PATCH(request: NextRequest) {
         accentColor: true,
         brandLogo: true,
         hidePoweredBy: true,
+        removeBranding: true,
         gaTrackingId: true,
         metaPixelId: true,
       },
