@@ -129,8 +129,15 @@ export async function PATCH(request: NextRequest) {
     if (brandColor !== undefined) updateData.brandColor = brandColor
     if (accentColor !== undefined) updateData.accentColor = accentColor
     if (brandLogo !== undefined) updateData.brandLogo = brandLogo
-    if (hidePoweredBy !== undefined) updateData.hidePoweredBy = hidePoweredBy
-    if (parsed.data.removeBranding !== undefined) updateData.removeBranding = parsed.data.removeBranding
+    // Plan-gate branding removal: only Pro+ users can remove branding
+    if (hidePoweredBy !== undefined || parsed.data.removeBranding !== undefined) {
+      const currentUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } })
+      if (currentUser?.plan === "free") {
+        return NextResponse.json({ error: "Upgrade to Pro to remove branding" }, { status: 403 })
+      }
+      if (hidePoweredBy !== undefined) updateData.hidePoweredBy = hidePoweredBy
+      if (parsed.data.removeBranding !== undefined) updateData.removeBranding = parsed.data.removeBranding
+    }
     if (gaTrackingId !== undefined) updateData.gaTrackingId = gaTrackingId
     if (metaPixelId !== undefined) updateData.metaPixelId = metaPixelId
     if (primaryAccountId !== undefined) updateData.primaryAccountId = primaryAccountId

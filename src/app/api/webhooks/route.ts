@@ -115,17 +115,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Create webhook
+    const secret = generateWebhookSecret()
     const webhook = await prisma.webhook.create({
       data: {
         userId: session.user.id,
         url,
         events,
-        secret: generateWebhookSecret(),
+        secret,
         active: true,
+      },
+      select: {
+        id: true,
+        url: true,
+        events: true,
+        active: true,
+        createdAt: true,
       },
     })
 
-    return NextResponse.json(webhook, { status: 201 })
+    // Return secret only once at creation (like Stripe)
+    return NextResponse.json({ ...webhook, secret }, { status: 201 })
   } catch (error) {
     console.error("Error creating webhook:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

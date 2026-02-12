@@ -14,6 +14,10 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   if (!member || member.role === "MEMBER") return NextResponse.json({ error: "Admin access required" }, { status: 403 })
 
   const body = await req.json()
+  // Verify group belongs to this team
+  const existing = await prisma.teamGroup.findFirst({ where: { id: groupId, teamId } })
+  if (!existing) return NextResponse.json({ error: "Group not found" }, { status: 404 })
+
   const group = await prisma.teamGroup.update({
     where: { id: groupId },
     data: { ...(body.name && { name: body.name }), ...(body.description !== undefined && { description: body.description }) },
@@ -28,6 +32,10 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
 
   const member = await prisma.teamMember.findUnique({ where: { teamId_userId: { teamId, userId: session.user.id } } })
   if (!member || member.role === "MEMBER") return NextResponse.json({ error: "Admin access required" }, { status: 403 })
+
+  // Verify group belongs to this team
+  const existing = await prisma.teamGroup.findFirst({ where: { id: groupId, teamId } })
+  if (!existing) return NextResponse.json({ error: "Group not found" }, { status: 404 })
 
   await prisma.teamGroup.delete({ where: { id: groupId } })
   return NextResponse.json({ success: true })
