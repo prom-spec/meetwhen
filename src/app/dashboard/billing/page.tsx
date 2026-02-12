@@ -139,16 +139,84 @@ export default function BillingPage() {
         })}
       </div>
 
+      {/* Pay Yearly in Crypto */}
+      <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-xl border border-violet-200 p-6 mb-8">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="w-5 h-5 text-violet-500" />
+          <h2 className="text-lg font-bold text-gray-900">Pay with Crypto — Save 20%</h2>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">
+          Pay for a full year upfront with ETH or BTC and get 2 months free. Send the exact amount and email us your transaction hash.
+        </p>
+        <div className="grid sm:grid-cols-2 gap-4 mb-4">
+          <div className="bg-white rounded-lg p-4 border border-violet-100">
+            <p className="text-sm font-semibold text-gray-900 mb-1">Pro — 1 Year</p>
+            <p className="text-2xl font-bold text-gray-900">$10 <span className="text-sm font-normal text-gray-500 line-through">$12</span></p>
+            <p className="text-xs text-green-600 mt-1">Save $2 (2 months free)</p>
+          </div>
+          <div className="bg-white rounded-lg p-4 border border-violet-100">
+            <p className="text-sm font-semibold text-gray-900 mb-1">Enterprise — 1 Year/seat</p>
+            <p className="text-2xl font-bold text-gray-900">$30 <span className="text-sm font-normal text-gray-500 line-through">$36</span></p>
+            <p className="text-xs text-green-600 mt-1">Save $6 (2 months free)</p>
+          </div>
+        </div>
+        <div className="space-y-3">
+          {[
+            { label: "ETH (ERC-20)", address: "0xf1a6c6D72CD1e4213f5A6d501416FF364930474B" },
+            { label: "BTC", address: "bc1qep7cp7scfzptrnnhgs3w5zxx965yrc83kvhtkh" },
+          ].map(({ label, address }) => (
+            <div key={label} className="flex items-center gap-3 bg-white rounded-lg p-3 border border-violet-100">
+              <span className="text-xs font-bold text-gray-500 w-16 shrink-0">{label}</span>
+              <code className="text-xs text-gray-700 truncate flex-1">{address}</code>
+              <button
+                onClick={() => copyAddress(address)}
+                className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+                title="Copy address"
+              >
+                {copiedAddress === address ? (
+                  <CheckCheck className="w-4 h-4 text-green-500" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-gray-500 mt-3">After payment, email <a href="mailto:support@letsmeet.link" className="text-violet-600 hover:underline">support@letsmeet.link</a> with your transaction hash to activate.</p>
+      </div>
+
       {/* Donate Section */}
       <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-xl border border-pink-200 p-6">
         <div className="flex items-center gap-2 mb-3">
           <Heart className="w-5 h-5 text-pink-500" />
-          <h2 className="text-lg font-bold text-gray-900">Buy us a coffee ☕</h2>
+          <h2 className="text-lg font-bold text-gray-900">Support letsmeet.link ☕</h2>
         </div>
         <p className="text-sm text-gray-600 mb-4">
-          Love letsmeet.link? Support our development with a crypto donation. Every bit helps!
+          Love letsmeet.link? Help us keep building! Every donation goes directly to development.
         </p>
+
+        {/* Credit Card Donate */}
+        <div className="bg-white rounded-lg p-4 border border-pink-100 mb-4">
+          <p className="text-sm font-medium text-gray-900 mb-3">Donate with card</p>
+          <div className="flex gap-2">
+            {[5, 10, 25, 50].map((amount) => (
+              <a
+                key={amount}
+                href={`https://buy.stripe.com/test_placeholder?amount=${amount}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 text-center py-2 bg-pink-50 hover:bg-pink-100 text-pink-700 rounded-lg text-sm font-medium transition-colors border border-pink-200"
+              >
+                ${amount}
+              </a>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-2">Powered by Stripe · Coming soon</p>
+        </div>
+
+        {/* Crypto Donate */}
         <div className="space-y-3">
+          <p className="text-sm font-medium text-gray-700">Or donate with crypto</p>
           {[
             { label: "ETH (ERC-20)", address: "0xf1a6c6D72CD1e4213f5A6d501416FF364930474B" },
             { label: "BTC", address: "bc1qep7cp7scfzptrnnhgs3w5zxx965yrc83kvhtkh" },
