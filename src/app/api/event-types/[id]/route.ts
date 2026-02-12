@@ -26,8 +26,11 @@ const updateEventTypeSchema = z.object({
   visibility: z.enum(["public", "unlisted"]).optional(),
   maxAttendees: z.coerce.number().int().min(1).max(100).optional(),
   customQuestions: z.string().nullable().optional(),
+  screeningQuestions: z.string().nullable().optional(),
   price: z.coerce.number().int().min(0).nullable().optional(),
   currency: z.string().length(3).optional(),
+  cancellationPolicy: z.string().max(2000).nullable().optional(),
+  confirmationLinks: z.string().max(5000).nullable().optional(),
 })
 
 export async function GET(
@@ -88,7 +91,7 @@ export async function PATCH(
     if (!parsed.success) {
       return NextResponse.json({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }, { status: 400 })
     }
-    const { title, slug, description, duration, color, location, locationType, locationValue, isActive, bufferBefore, bufferAfter, minNotice, maxDaysAhead, allowRecurring, recurrenceOptions, maxBookingsPerDay, maxBookingsPerWeek, redirectUrl, visibility, maxAttendees, customQuestions, price, currency } = parsed.data
+    const { title, slug, description, duration, color, location, locationType, locationValue, isActive, bufferBefore, bufferAfter, minNotice, maxDaysAhead, allowRecurring, recurrenceOptions, maxBookingsPerDay, maxBookingsPerWeek, redirectUrl, visibility, maxAttendees, customQuestions, screeningQuestions, price, currency } = parsed.data
 
     if (slug && slug !== existingEventType.slug) {
       const slugExists = await prisma.eventType.findFirst({
@@ -127,8 +130,11 @@ export async function PATCH(
     if (visibility !== undefined) updateData.visibility = visibility
     if (maxAttendees !== undefined) updateData.maxAttendees = maxAttendees
     if (customQuestions !== undefined) updateData.customQuestions = customQuestions
+    if (screeningQuestions !== undefined) updateData.screeningQuestions = screeningQuestions
     if (price !== undefined) updateData.price = price
     if (currency !== undefined) updateData.currency = currency
+    if (rawBody.cancellationPolicy !== undefined) updateData.cancellationPolicy = parsed.data.cancellationPolicy ?? null
+    if (rawBody.confirmationLinks !== undefined) updateData.confirmationLinks = parsed.data.confirmationLinks ?? null
 
     const eventType = await prisma.eventType.update({
       where: { id },

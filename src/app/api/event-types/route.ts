@@ -28,8 +28,12 @@ const createEventTypeSchema = z.object({
   visibility: z.enum(["public", "unlisted"]).optional(),
   maxAttendees: z.coerce.number().int().min(1).max(100).optional(),
   customQuestions: z.string().optional(),
+  screeningQuestions: z.string().nullable().optional(),
+  screeningQuestions: z.string().nullable().optional(),
   price: z.coerce.number().int().min(0).nullable().optional(),
   currency: z.string().length(3).optional(),
+  cancellationPolicy: z.string().max(2000).nullable().optional(),
+  confirmationLinks: z.string().max(5000).nullable().optional(),
 })
 
 export async function GET() {
@@ -74,7 +78,7 @@ export async function POST(request: NextRequest) {
       bufferBefore, bufferAfter, minNotice, maxDaysAhead,
       teamId, schedulingType, allowRecurring, recurrenceOptions,
       maxBookingsPerDay, maxBookingsPerWeek, redirectUrl, visibility, maxAttendees,
-      customQuestions, price, currency
+      customQuestions, screeningQuestions, price, currency, cancellationPolicy, confirmationLinks
     } = parsed.data
 
     // If teamId is provided, verify user is a team member with appropriate permissions
@@ -134,8 +138,11 @@ export async function POST(request: NextRequest) {
         visibility: visibility || "public",
         maxAttendees: maxAttendees ? Number(maxAttendees) : 1,
         customQuestions: customQuestions || null,
+        screeningQuestions: screeningQuestions || null,
         price: price || null,
         currency: currency || "USD",
+        cancellationPolicy: cancellationPolicy || null,
+        confirmationLinks: confirmationLinks || null,
         ...(teamId && { 
           teamId,
           schedulingType: schedulingType || "ROUND_ROBIN",

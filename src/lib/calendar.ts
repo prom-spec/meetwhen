@@ -41,14 +41,15 @@ export function getGoogleCalendarClient(accessToken: string): calendar_v3.Calend
  * Retrieves the Google access token for a user from the database
  * Handles token refresh if needed
  */
-export async function getGoogleAccessToken(userId: string): Promise<string | null> {
+export async function getGoogleAccessToken(userId: string, accountId?: string | null): Promise<string | null> {
   try {
-    const account = await prisma.account.findFirst({
-      where: {
-        userId,
-        provider: "google",
-      },
-    })
+    const account = accountId
+      ? await prisma.account.findFirst({
+          where: { id: accountId, userId, provider: "google" },
+        })
+      : await prisma.account.findFirst({
+          where: { userId, provider: "google" },
+        })
 
     if (!account?.access_token) {
       return null
@@ -122,7 +123,7 @@ export async function createCalendarEvent(
     const isGoogleMeet = booking.eventType.locationType === "GOOGLE_MEET"
 
     const event: calendar_v3.Schema$Event = {
-      summary: `${booking.eventType.title} with ${booking.guestName}`,
+      summary: `${booking.eventType.title} — ${booking.guestName} & ${booking.host.name || "Host"}`,
       description: booking.eventType.description || undefined,
       location: getEventLocation(booking),
       start: {

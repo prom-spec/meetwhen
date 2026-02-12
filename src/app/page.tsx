@@ -27,6 +27,12 @@ export default function Home() {
                 MCP for AI
               </Link>
               <Link
+                href="/pricing"
+                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                Pricing
+              </Link>
+              <Link
                 href="/about"
                 className="text-sm font-medium text-gray-600 hover:text-gray-900"
               >
@@ -247,6 +253,9 @@ export default function Home() {
             <div className="flex items-center gap-6">
               <Link href="/mcp" className="text-sm text-gray-500 hover:text-gray-700">
                 MCP Guide
+              </Link>
+              <Link href="/pricing" className="text-sm text-gray-500 hover:text-gray-700">
+                Pricing
               </Link>
               <Link href="/about" className="text-sm text-gray-500 hover:text-gray-700">
                 About

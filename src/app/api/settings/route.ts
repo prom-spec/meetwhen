@@ -12,8 +12,11 @@ const updateSettingsSchema = z.object({
   blockHolidays: z.boolean().optional(),
   holidayCountry: z.string().max(2).optional(),
   brandColor: z.string().max(7).regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color").nullable().optional(),
+  accentColor: z.string().max(7).regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color").nullable().optional(),
   brandLogo: z.string().url().max(2048).nullable().optional(),
   hidePoweredBy: z.boolean().optional(),
+  gaTrackingId: z.string().max(50).nullable().optional(),
+  metaPixelId: z.string().max(50).nullable().optional(),
 }).strict()
 
 export async function GET() {
@@ -36,8 +39,11 @@ export async function GET() {
         blockHolidays: true,
         holidayCountry: true,
         brandColor: true,
+        accentColor: true,
         brandLogo: true,
         hidePoweredBy: true,
+        gaTrackingId: true,
+        metaPixelId: true,
       },
     })
 
@@ -83,7 +89,7 @@ export async function PATCH(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
     }
-    const { name, username, timezone, calendarSyncEnabled, blockHolidays, holidayCountry, brandColor, brandLogo, hidePoweredBy } = parsed.data
+    const { name, username, timezone, calendarSyncEnabled, blockHolidays, holidayCountry, brandColor, accentColor, brandLogo, hidePoweredBy, gaTrackingId, metaPixelId } = parsed.data
 
     // Validate username uniqueness if provided
     if (username !== undefined) {
@@ -113,8 +119,11 @@ export async function PATCH(request: NextRequest) {
     if (blockHolidays !== undefined) updateData.blockHolidays = blockHolidays
     if (holidayCountry !== undefined) updateData.holidayCountry = holidayCountry
     if (brandColor !== undefined) updateData.brandColor = brandColor
+    if (accentColor !== undefined) updateData.accentColor = accentColor
     if (brandLogo !== undefined) updateData.brandLogo = brandLogo
     if (hidePoweredBy !== undefined) updateData.hidePoweredBy = hidePoweredBy
+    if (gaTrackingId !== undefined) updateData.gaTrackingId = gaTrackingId
+    if (metaPixelId !== undefined) updateData.metaPixelId = metaPixelId
 
     const user = await prisma.user.update({
       where: { id: session.user.id },
@@ -129,8 +138,11 @@ export async function PATCH(request: NextRequest) {
         blockHolidays: true,
         holidayCountry: true,
         brandColor: true,
+        accentColor: true,
         brandLogo: true,
         hidePoweredBy: true,
+        gaTrackingId: true,
+        metaPixelId: true,
       },
     })
 

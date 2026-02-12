@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { z } from "zod"
+
+const updatePollSchema = z.object({
+  status: z.enum(["open", "closed", "booked"]).optional(),
+  finalOptionId: z.string().optional(),
+}).strict()
 
 export async function GET(
   req: NextRequest,
@@ -23,6 +29,23 @@ export async function GET(
 
     if (!poll) {
       return NextResponse.json({ error: "Poll not found" }, { status: 404 })
+    }
+
+    // Check if requester is the poll creator — if not, strip voter emails (PII)
+    const session = await getServerSession(authOptions)
+    const isCreator = session?.user?.id === poll.createdBy
+
+    if (!isCreator) {
+      const sanitized = {
+        ...poll,
+        creator: { name: poll.creator.name },
+        options: poll.options.map((opt) => ({
+          ...opt,
+          votes: opt.votes.map(({ voterEmail: _email, ...rest }) => rest),
+        })),
+        votes: poll.votes.map(({ voterEmail: _email, ...rest }) => rest),
+      }
+      return NextResponse.json(sanitized)
     }
 
     return NextResponse.json(poll)
@@ -53,7 +76,11 @@ export async function PATCH(
     }
 
     const body = await req.json()
-    const { status, finalOptionId } = body
+    const parsed = updatePollSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
+    }
+    const { status, finalOptionId } = parsed.data
 
     const updated = await prisma.meetingPoll.update({
       where: { id },

@@ -56,14 +56,20 @@ model User {
   holidayCountry  String? // ISO 3166-1 alpha-2 (e.g. "IL", "US")
   // Branding
   brandColor     String?
+  accentColor    String?
   brandLogo      String?
   hidePoweredBy  Boolean  @default(false)
+  // Tracking
+  gaTrackingId   String?
+  metaPixelId    String?
   // Custom domain
   customDomain         String?   @unique
   customDomainVerified Boolean   @default(false)
   // Stripe Connect
   stripeAccountId          String?
   stripeOnboardingComplete Boolean @default(false)
+  // Multi-account: preferred primary Google account ID (null = first linked)
+  primaryAccountId         String?
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -143,6 +149,8 @@ model EventType {
 
   // Custom booking questions (JSON array of {id, label, type, required, options?})
   customQuestions String?
+  // Screening/qualification questions (JSON array of {id, label, type:"text"|"select"|"checkbox", required, options?})
+  screeningQuestions String?
   // Meeting limits
   maxBookingsPerDay  Int?
   maxBookingsPerWeek Int?
@@ -155,6 +163,14 @@ model EventType {
   // Payment
   price    Int?    // Price in cents (null = free)
   currency String  @default("USD")
+
+  // Cancellation policy (shown on booking page)
+  cancellationPolicy String?
+  // Custom confirmation page links (JSON array of {label, url})
+  confirmationLinks  String?
+
+  // Multi-account: which Google account to use for calendar events (null = primary)
+  calendarAccountId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -230,6 +246,12 @@ model Booking {
 
   // Custom question answers (JSON object {questionId: answer})
   customAnswers String?
+  // Screening question answers (JSON object {questionId: answer})
+  screeningAnswers String?
+
+  // Book on behalf: who booked this meeting (if different from guest)
+  bookedByName  String?
+  bookedByEmail String?
   // Payment
   stripePaymentIntentId String?
   paymentStatus         String? // "pending", "paid", "refunded"
@@ -384,7 +406,7 @@ model MeetingPoll {
   duration      Int          // minutes
   timezone      String
   createdBy     String
-  creator       User         @relation(fields: [createdBy], references: [id])
+  creator       User         @relation(fields: [createdBy], references: [id], onDelete: Cascade)
   options       PollOption[]
   votes         PollVote[]
   status        String       @default("open") // open, closed, booked

@@ -126,7 +126,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     })
 
     // Delete Google Calendar events
-    const accessToken = await getGoogleAccessToken(booking.hostId)
+    const accessToken = await getGoogleAccessToken(booking.hostId, booking.eventType.calendarAccountId)
     if (accessToken) {
       const allGoogleEventIds = [booking.googleEventId, ...extraGoogleEventIds].filter(Boolean) as string[]
       for (const gEventId of allGoogleEventIds) {

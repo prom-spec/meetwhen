@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { z } from "zod"
+
+const timeRegex = /^\d{2}:\d{2}$/
+
+const createOverrideSchema = z.object({
+  date: z.string().min(1),
+  isAvailable: z.boolean().optional().default(false),
+  startTime: z.string().regex(timeRegex, "Must be HH:MM format").nullable().optional(),
+  endTime: z.string().regex(timeRegex, "Must be HH:MM format").nullable().optional(),
+  reason: z.string().max(500).optional(),
+}).refine(data => {
+  if (data.isAvailable && (!data.startTime || !data.endTime)) {
+    return false
+  }
+  return true
+}, { message: "startTime and endTime are required when isAvailable is true" })
 
 export async function GET() {
   try {
@@ -32,11 +48,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { date, isAvailable, startTime, endTime } = body
-
-    if (!date) {
-      return NextResponse.json({ error: "Date is required" }, { status: 400 })
+    const parsed = createOverrideSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
     }
+    const { date, isAvailable, startTime, endTime } = parsed.data
 
     // Normalize to just the date portion to match @db.Date storage
     const datePart = date.split("T")[0]

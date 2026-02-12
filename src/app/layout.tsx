@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
-import Link from "next/link";
 import "./globals.css";
 import Providers from "@/components/Providers";
 
@@ -60,11 +59,6 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased`}>
         <Providers>
           {children}
-          <footer className="py-6 text-center text-sm text-gray-400 space-x-4">
-            <Link href="/privacy" className="hover:text-gray-600 transition-colors">Privacy Policy</Link>
-            <span>·</span>
-            <Link href="/terms" className="hover:text-gray-600 transition-colors">Terms of Service</Link>
-          </footer>
         </Providers>
       </body>
     </html>

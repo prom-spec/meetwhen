@@ -16,12 +16,17 @@ interface EventType {
   location: string | null
   allowRecurring?: boolean
   recurrenceOptions?: string | null
+  cancellationPolicy?: string | null
+  confirmationLinks?: string | null
 }
 
 interface Branding {
   brandColor: string | null
+  accentColor: string | null
   brandLogo: string | null
   hidePoweredBy: boolean
+  gaTrackingId: string | null
+  metaPixelId: string | null
 }
 
 interface SlotResponse {
@@ -83,7 +88,7 @@ export default function BookingPage() {
   const [timezoneSearch, setTimezoneSearch] = useState("")
   const [availableDates, setAvailableDates] = useState<Set<string>>(new Set())
   const [isLoadingMonth, setIsLoadingMonth] = useState(false)
-  const [branding, setBranding] = useState<Branding>({ brandColor: null, brandLogo: null, hidePoweredBy: false })
+  const [branding, setBranding] = useState<Branding>({ brandColor: null, accentColor: null, brandLogo: null, hidePoweredBy: false, gaTrackingId: null, metaPixelId: null })
   const hasTrackedView = useRef(false)
   const hasTrackedSlot = useRef(false)
   const hasAutoSelected = useRef(false)
@@ -392,6 +397,12 @@ export default function BookingPage() {
                     )}
                     {eventType.description && (
                       <p className="mt-4 text-gray-600 text-sm">{eventType.description}</p>
+                    )}
+                    {eventType.cancellationPolicy && (
+                      <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <p className="text-xs font-medium text-amber-800 mb-1">Cancellation Policy</p>
+                        <p className="text-xs text-amber-700">{eventType.cancellationPolicy}</p>
+                      </div>
                     )}
                   </>
                 ) : (

@@ -22,6 +22,9 @@ const createBookingSchema = z.object({
   startTime: z.string().optional(),
   recurrenceRule: z.string().optional(), // e.g. "weekly_4", "weekly_8", "biweekly_4", "monthly_3"
   customAnswers: z.string().optional(), // JSON object of custom question answers
+  screeningAnswers: z.string().optional(), // JSON object of screening question answers
+  bookedByName: z.string().max(200).optional(), // Book on behalf: booker's name
+  bookedByEmail: z.string().email().max(320).optional(), // Book on behalf: booker's email
 })
 import { bookingRateLimiter, getClientIp } from "@/lib/rate-limit"
 
@@ -79,7 +82,7 @@ export async function POST(request: NextRequest) {
       bookingLogger.warn("Validation failed", { requestId, errors: parsed.error.flatten() })
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }, { status: 400 })
     }
-    const { eventTypeId, guestName, guestEmail, guestTimezone, date, time, startTime: startTimeISO, recurrenceRule } = parsed.data
+    const { eventTypeId, guestName, guestEmail, guestTimezone, date, time, startTime: startTimeISO, recurrenceRule, screeningAnswers, bookedByName, bookedByEmail } = parsed.data
 
     bookingLogger.info("Booking request received", { 
       requestId,
@@ -491,7 +494,7 @@ export async function POST(request: NextRequest) {
     // Create Google Calendar events for all bookings in series
     if (eventType.user.calendarSyncEnabled) {
       try {
-        const accessToken = await getGoogleAccessToken(eventType.userId)
+        const accessToken = await getGoogleAccessToken(eventType.userId, eventType.calendarAccountId)
         if (accessToken) {
           for (const b of allBookings) {
             try {

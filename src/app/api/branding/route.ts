@@ -11,8 +11,11 @@ export async function GET(request: NextRequest) {
     where: { username },
     select: {
       brandColor: true,
+      accentColor: true,
       brandLogo: true,
       hidePoweredBy: true,
+      gaTrackingId: true,
+      metaPixelId: true,
     },
   })
 
