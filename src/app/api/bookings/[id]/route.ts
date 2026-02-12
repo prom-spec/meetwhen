@@ -8,6 +8,7 @@ import { sendBookingCancellation, sendBookingReschedule } from "@/lib/email"
 import { triggerWebhook } from "@/lib/webhooks"
 import { executeWorkflow } from "@/lib/workflows"
 import { verifyBookingToken } from "@/lib/booking-tokens"
+import { logAudit } from "@/lib/audit"
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -190,6 +191,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       cancelledSeries: cancelSeries,
       cancelledCount: bookingsToCancelIds.length,
     }).catch((err) => console.error("Webhook trigger failed:", err))
+
+    logAudit(booking.hostId, "booking.cancelled", "booking", id, { cancelledBy, cancelSeries, cancelledCount: bookingsToCancelIds.length })
 
     return NextResponse.json({ 
       success: true, 
@@ -384,6 +387,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
       rescheduledBy,
     }).catch((err) => console.error("Webhook trigger failed:", err))
+
+    logAudit(booking.hostId, "booking.rescheduled", "booking", id, { rescheduledBy, oldStartTime: oldStartTime.toISOString(), newStartTime: newStartTime.toISOString() })
 
     return NextResponse.json(updatedBooking)
   } catch (error) {

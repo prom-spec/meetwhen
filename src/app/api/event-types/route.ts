@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { apiLogger } from "@/lib/logger"
+import { logAudit } from "@/lib/audit"
 import { z } from "zod"
 
 const createEventTypeSchema = z.object({
@@ -34,6 +35,8 @@ const createEventTypeSchema = z.object({
   currency: z.string().length(3).optional(),
   cancellationPolicy: z.string().max(2000).nullable().optional(),
   confirmationLinks: z.string().max(5000).nullable().optional(),
+  isAdminManaged: z.boolean().optional(),
+  assignedToId: z.string().nullable().optional(),
 })
 
 export async function GET() {
@@ -46,8 +49,17 @@ export async function GET() {
     }
 
     const eventTypes = await prisma.eventType.findMany({
-      where: { userId: session.user.id },
+      where: {
+        OR: [
+          { userId: session.user.id },
+          { assignedToId: session.user.id },
+        ],
+      },
       orderBy: { createdAt: "desc" },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        assignedTo: { select: { id: true, name: true, email: true } },
+      },
     })
 
     return NextResponse.json(eventTypes)
@@ -78,7 +90,8 @@ export async function POST(request: NextRequest) {
       bufferBefore, bufferAfter, minNotice, maxDaysAhead,
       teamId, schedulingType, allowRecurring, recurrenceOptions,
       maxBookingsPerDay, maxBookingsPerWeek, redirectUrl, visibility, maxAttendees,
-      customQuestions, screeningQuestions, price, currency, cancellationPolicy, confirmationLinks
+      customQuestions, screeningQuestions, price, currency, cancellationPolicy, confirmationLinks,
+      isAdminManaged, assignedToId
     } = parsed.data
 
     // If teamId is provided, verify user is a team member with appropriate permissions
@@ -143,12 +156,16 @@ export async function POST(request: NextRequest) {
         currency: currency || "USD",
         cancellationPolicy: cancellationPolicy || null,
         confirmationLinks: confirmationLinks || null,
+        isAdminManaged: isAdminManaged || false,
+        assignedToId: assignedToId || null,
         ...(teamId && { 
           teamId,
           schedulingType: schedulingType || "ROUND_ROBIN",
         }),
       },
     })
+
+    logAudit(session.user.id, "event_type.created", "event_type", eventType.id, { title, slug })
 
     return NextResponse.json(eventType, { status: 201 })
   } catch (error) {

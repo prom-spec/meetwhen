@@ -9,6 +9,7 @@ import { triggerWebhook } from "@/lib/webhooks"
 import { executeWorkflow } from "@/lib/workflows"
 import { getNextRoundRobinMember, updateLastAssignedMember, createCollectiveBooking } from "@/lib/team-scheduling"
 import { bookingLogger, apiLogger } from "@/lib/logger"
+import { logAudit } from "@/lib/audit"
 import { z } from "zod"
 
 const createBookingSchema = z.object({
@@ -645,6 +646,8 @@ export async function POST(request: NextRequest) {
     }).catch((err) => {
       bookingLogger.error("Webhook trigger failed", err, { bookingId: booking.id })
     })
+
+    logAudit(eventType.userId, "booking.created", "booking", booking.id, { guestEmail, eventType: eventType.title, startTime: startTime.toISOString() }, ip)
 
     // L1: Strip host email from response
     const { host: { email: _hostEmail, ...hostRest }, ...bookingRest } = booking

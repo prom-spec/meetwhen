@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 import { z } from "zod"
 
 const updateEventTypeSchema = z.object({
@@ -78,12 +79,20 @@ export async function PATCH(
     const existingEventType = await prisma.eventType.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        OR: [
+          { userId: session.user.id },
+          { assignedToId: session.user.id },
+        ],
       },
     })
 
     if (!existingEventType) {
       return NextResponse.json({ error: "Event type not found" }, { status: 404 })
+    }
+
+    // Block edits if admin-managed and user is not the creator/admin
+    if (existingEventType.isAdminManaged && existingEventType.userId !== session.user.id) {
+      return NextResponse.json({ error: "This event type is managed by an admin and cannot be edited" }, { status: 403 })
     }
 
     const rawBody = await request.json()
@@ -142,6 +151,8 @@ export async function PATCH(
       data: updateData as any,
     })
 
+    logAudit(session.user.id, "event_type.updated", "event_type", id, { changes: Object.keys(updateData) })
+
     return NextResponse.json(eventType)
   } catch (error) {
     console.error("Error updating event type:", error)
@@ -175,6 +186,8 @@ export async function DELETE(
     await prisma.eventType.delete({
       where: { id },
     })
+
+    logAudit(session.user.id, "event_type.deleted", "event_type", id, { title: eventType.title })
 
     return NextResponse.json({ success: true })
   } catch (error) {

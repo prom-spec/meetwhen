@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <!-- Settings view -->
+  <div id="settings-view" style="display:none">
+    <h2>⚙️ Settings</h2>
+    <label for="api-key">API Key</label>
+    <input type="password" id="api-key" placeholder="Paste your letsmeet.link API key">
+    <label for="booking-slug">Your booking slug</label>
+    <input type="text" id="booking-slug" placeholder="e.g. nimrod">
+    <button id="save-settings" class="btn primary">Save</button>
+    <button id="back-btn" class="btn secondary">← Back</button>
+  </div>
+
+  <!-- Main view -->
+  <div id="main-view">
+    <div class="header">
+      <img src="../icons/icon48.png" width="24" height="24" alt="">
+      <span class="title">letsmeet.link</span>
+      <button id="gear-btn" class="icon-btn" title="Settings">⚙️</button>
+    </div>
+
+    <div id="no-config" style="display:none">
+      <p>Set your API key and booking slug to get started.</p>
+      <button id="open-settings" class="btn primary">Configure</button>
+    </div>
+
+    <div id="configured" style="display:none">
+      <div class="link-row">
+        <input type="text" id="booking-link" readonly>
+        <button id="copy-link" class="btn small" title="Copy">📋</button>
+      </div>
+      <button id="share-btn" class="btn primary full">Share scheduling link</button>
+
+      <h3>Event Types</h3>
+      <div id="event-types"><p class="muted">Loading…</p></div>
+
+      <a id="dashboard-link" href="https://letsmeet.link/dashboard" target="_blank" class="btn secondary full">Open Dashboard</a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -90,11 +90,13 @@ model User {
   // Team relations
   ownedTeams    Team[]         @relation("teamOwner")
   teamMembers   TeamMember[]
+  assignedEventTypes EventType[] @relation("assignedEventTypes")
   linkingTokens LinkingToken[]
   meetingPolls  MeetingPoll[]
   routingForms  RoutingForm[]
   workflows     Workflow[]
   emailSequences EmailSequence[]
+  auditLogs     AuditLog[]
 }
 
 model LinkingToken {
@@ -151,6 +153,11 @@ model EventType {
 
   allowRecurring    Boolean @default(false)
   recurrenceOptions String? // JSON array of allowed frequencies e.g. ["weekly_4","weekly_8","biweekly_4","monthly_3"]
+
+  // Admin-managed: only team admins can edit
+  isAdminManaged Boolean @default(false)
+  assignedToId   String?
+  assignedTo     User?   @relation("assignedEventTypes", fields: [assignedToId], references: [id])
 
   // Custom booking questions (JSON array of {id, label, type, required, options?})
   customQuestions String?
@@ -319,6 +326,8 @@ model Team {
 
   members    TeamMember[]
   eventTypes EventType[]  @relation("teamEventTypes")
+  scimToken  SCIMToken?
+  ssoConfig  SSOConfig?
 
   @@unique([ownerId, slug])
   @@index([ownerId])
@@ -608,4 +617,41 @@ model EmailSequenceLog {
 
   @@unique([sequenceId, bookingId])
   @@index([sequenceId])
+}
+
+model SCIMToken {
+  id        String   @id @default(cuid())
+  teamId    String   @unique
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     String
+  entityType String
+  entityId   String?
+  metadata   String?  @db.Text
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([entityType])
+}
+
+model SSOConfig {
+  id         String   @id @default(cuid())
+  teamId     String   @unique
+  team       Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  domain     String   @unique
+  entryPoint String
+  issuer     String
+  cert       String   @db.Text
+  enabled    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

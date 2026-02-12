@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 
 // GET /api/teams - List all teams the user belongs to
 export async function GET() {
@@ -111,6 +112,8 @@ export async function POST(request: NextRequest) {
         },
       },
     })
+
+    logAudit(session.user.id, "team.created", "team", team.id, { name, slug })
 
     return NextResponse.json(team, { status: 201 })
   } catch (error) {

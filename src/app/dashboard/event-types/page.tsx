@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Plus, Edit, Trash2, Copy, ExternalLink, Video, MapPin, Phone, Link2, Check, ChevronRight, X, Loader2, CalendarPlus, Share2, Repeat } from "lucide-react"
+import { Plus, Edit, Trash2, Copy, ExternalLink, Video, MapPin, Phone, Link2, Check, ChevronRight, X, Loader2, CalendarPlus, Share2, Repeat, ShieldCheck } from "lucide-react"
 import { useToast } from "@/components/ToastProvider"
 import ConfirmDialog from "@/components/ConfirmDialog"
 import ShareModal from "@/components/ShareModal"
@@ -23,6 +23,11 @@ interface EventType {
   bufferBefore: number
   bufferAfter: number
   createdAt: string
+  isAdminManaged?: boolean
+  assignedToId?: string | null
+  userId?: string
+  user?: { id: string; name: string | null; email: string }
+  assignedTo?: { id: string; name: string | null; email: string } | null
 }
 
 const LOCATION_OPTIONS: { value: LocationType; label: string; icon: typeof Video; description?: string }[] = [
@@ -67,6 +72,7 @@ export default function EventTypesPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingEventType, setEditingEventType] = useState<EventType | null>(null)
   const [username, setUsername] = useState<string>("")
+  const [currentUserId, setCurrentUserId] = useState<string>("")
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [shareEventType, setShareEventType] = useState<EventType | null>(null)
@@ -106,6 +112,7 @@ export default function EventTypesPage() {
       if (res.ok) {
         const data = await res.json()
         setUsername(data.username || "")
+        if (data.id) setCurrentUserId(data.id)
       }
     } catch (error) {
       console.error("Error fetching username:", error)
@@ -316,7 +323,15 @@ export default function EventTypesPage() {
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{eventType.title}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-gray-900">{eventType.title}</h3>
+                    {eventType.isAdminManaged && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">
+                        <ShieldCheck className="w-3 h-3" />
+                        Admin Managed
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-500">{eventType.duration} min</p>
                   {eventType.description && (
                     <p className="text-sm text-gray-600 mt-2 line-clamp-2">
@@ -378,14 +393,24 @@ export default function EventTypesPage() {
                     <ExternalLink className="w-3.5 h-3.5" />
                     Preview
                   </a>
-                  <button
-                    onClick={() => openEditModal(eventType)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                    title="Edit"
-                  >
-                    <Edit className="w-3.5 h-3.5" />
-                    Edit
-                  </button>
+                  {eventType.isAdminManaged && eventType.userId !== currentUserId ? (
+                    <span
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 cursor-not-allowed"
+                      title="Managed by admin"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      Managed by admin
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => openEditModal(eventType)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                      title="Edit"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                      Edit
+                    </button>
+                  )}
                   <button
                     onClick={() => handleDelete(eventType.id)}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 import { z } from "zod"
 
 const updateSettingsSchema = z.object({
@@ -125,6 +126,8 @@ export async function PATCH(request: NextRequest) {
     if (hidePoweredBy !== undefined) updateData.hidePoweredBy = hidePoweredBy
     if (gaTrackingId !== undefined) updateData.gaTrackingId = gaTrackingId
     if (metaPixelId !== undefined) updateData.metaPixelId = metaPixelId
+
+    logAudit(session.user.id, "settings.updated", "settings", session.user.id, { changes: Object.keys(updateData) })
 
     const user = await prisma.user.update({
       where: { id: session.user.id },

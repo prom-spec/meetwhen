@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, Plus, Users, Trash2, Crown, Shield, User, RefreshCw, ExternalLink, Copy, Check, Edit, Loader2 } from "lucide-react"
+import { ArrowLeft, Plus, Users, Trash2, Crown, Shield, User, RefreshCw, ExternalLink, Copy, Check, Edit, Loader2, UserPlus } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/components/ToastProvider"
 import ConfirmDialog from "@/components/ConfirmDialog"
@@ -62,6 +62,15 @@ export default function TeamSettingsPage() {
   const [confirmDeleteEvent, setConfirmDeleteEvent] = useState<string | null>(null)
   const { toast } = useToast()
   const [editingEventType, setEditingEventType] = useState<EventType | null>(null)
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [assignMemberId, setAssignMemberId] = useState("")
+  const [assignEventForm, setAssignEventForm] = useState({
+    title: "",
+    slug: "",
+    description: "",
+    duration: "30",
+    color: "#3B82F6",
+  })
   const [eventTypeForm, setEventTypeForm] = useState({
     title: "",
     slug: "",
@@ -236,6 +245,36 @@ export default function TeamSettingsPage() {
     setShowEventTypeModal(true)
   }
 
+  const handleCreateAssignedEventType = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    try {
+      const res = await fetch("/api/event-types", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...assignEventForm,
+          isAdminManaged: true,
+          assignedToId: assignMemberId,
+        }),
+      })
+      if (res.ok) {
+        fetchTeam()
+        setShowAssignModal(false)
+        setAssignMemberId("")
+        setAssignEventForm({ title: "", slug: "", description: "", duration: "30", color: "#3B82F6" })
+        toast("Event type created and assigned to member", "success")
+      } else {
+        const error = await res.json()
+        toast(error.error || "Failed to create event type", "error")
+      }
+    } catch (error) {
+      console.error("Error creating assigned event type:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const getTeamUrl = () => {
     if (!team) return ""
     const ownerUsername = team.owner?.username || team.ownerId
@@ -382,24 +421,33 @@ export default function TeamSettingsPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Team Event Types</h2>
-            <button
-              onClick={() => {
-                setEditingEventType(null)
-                setEventTypeForm({
-                  title: "",
-                  slug: "",
-                  description: "",
-                  duration: "30",
-                  color: "#3B82F6",
-                  schedulingType: "ROUND_ROBIN",
-                })
-                setShowEventTypeModal(true)
-              }}
-              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Add Event Type
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowAssignModal(true)}
+                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-purple-600 hover:text-purple-700"
+              >
+                <UserPlus className="w-4 h-4 mr-1" />
+                Create for Member
+              </button>
+              <button
+                onClick={() => {
+                  setEditingEventType(null)
+                  setEventTypeForm({
+                    title: "",
+                    slug: "",
+                    description: "",
+                    duration: "30",
+                    color: "#3B82F6",
+                    schedulingType: "ROUND_ROBIN",
+                  })
+                  setShowEventTypeModal(true)
+                }}
+                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add Event Type
+              </button>
+            </div>
           </div>
 
           {team.eventTypes.length === 0 ? (
@@ -524,6 +572,100 @@ export default function TeamSettingsPage() {
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
                 >
                   {isSubmitting ? "Adding..." : "Add Member"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Event Type to Member Modal */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h2 className="text-lg font-semibold mb-4">Create Event Type for Team Member</h2>
+            <p className="text-sm text-gray-500 mb-4">This event type will be admin-managed. The assigned member can use it but cannot edit it.</p>
+            <form onSubmit={handleCreateAssignedEventType} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Assign to Member</label>
+                <select
+                  required
+                  value={assignMemberId}
+                  onChange={(e) => setAssignMemberId(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                >
+                  <option value="">Select a member...</option>
+                  {team.members.map((member) => (
+                    <option key={member.userId} value={member.userId}>
+                      {member.user.name || member.user.email} ({member.role})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Title</label>
+                <input
+                  type="text"
+                  required
+                  value={assignEventForm.title}
+                  onChange={(e) =>
+                    setAssignEventForm({
+                      ...assignEventForm,
+                      title: e.target.value,
+                      slug: generateSlug(e.target.value),
+                    })
+                  }
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                  placeholder="30 Min Consultation"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">URL Slug</label>
+                <input
+                  type="text"
+                  required
+                  value={assignEventForm.slug}
+                  onChange={(e) => setAssignEventForm({ ...assignEventForm, slug: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Duration</label>
+                <select
+                  value={assignEventForm.duration}
+                  onChange={(e) => setAssignEventForm({ ...assignEventForm, duration: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                >
+                  <option value="15">15 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">60 minutes</option>
+                  <option value="90">90 minutes</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <textarea
+                  value={assignEventForm.description}
+                  onChange={(e) => setAssignEventForm({ ...assignEventForm, description: e.target.value })}
+                  rows={2}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => { setShowAssignModal(false); setAssignMemberId("") }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 disabled:opacity-50"
+                >
+                  {isSubmitting ? "Creating..." : "Create & Assign"}
                 </button>
               </div>
             </form>

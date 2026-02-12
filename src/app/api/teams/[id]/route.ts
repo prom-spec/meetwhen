@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -120,6 +121,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
     })
 
+    logAudit(session.user.id, "team.updated", "team", id, { name, slug })
+
     return NextResponse.json(team)
   } catch (error) {
     console.error("Error updating team:", error)
@@ -151,6 +154,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     await prisma.team.delete({ where: { id } })
+
+    logAudit(session.user.id, "team.deleted", "team", id, { name: team.name })
 
     return NextResponse.json({ success: true })
   } catch (error) {

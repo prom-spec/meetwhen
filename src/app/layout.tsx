@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
+import InstallPrompt from "@/components/InstallPrompt";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -14,6 +15,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   minimumScale: 1,
   viewportFit: "cover",
+  themeColor: "#0066FF",
 }
 
 export const metadata: Metadata = {
@@ -29,8 +31,9 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
-    apple: "/favicon.png",
+    apple: "/icons/icon-192.png",
   },
+  manifest: "/manifest.json",
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -53,13 +56,29 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      </head>
       {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
         <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
       )}
       <body className={`${inter.variable} font-sans antialiased`}>
         <Providers>
           {children}
+          <InstallPrompt />
         </Providers>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                  navigator.serviceWorker.register('/sw.js');
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );
