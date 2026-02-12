@@ -67,8 +67,8 @@ const tiers = [
     period: "/seat/month",
     description: "For teams and organizations",
     icon: Building2,
-    cta: "Contact Us",
-    ctaHref: "mailto:hello@letsmeet.link?subject=Enterprise%20Plan",
+    cta: "Start Enterprise Trial",
+    ctaHref: "/login?plan=enterprise",
     highlight: false,
     features: [
       { name: "Everything in Pro", included: true },
@@ -138,7 +138,7 @@ export default function PricingPage() {
         </p>
         <div className="mt-6 inline-flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
           <Sparkles className="w-4 h-4" />
-          Up to 80% cheaper than Calendly
+          Up to 99% cheaper than Calendly
         </div>
       </section>
 
