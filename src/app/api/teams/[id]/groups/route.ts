@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { z } from "zod"
 
-interface RouteParams { params: Promise<{ teamId: string }> }
+interface RouteParams { params: Promise<{ id: string }> }
 
 async function verifyTeamAccess(teamId: string, userId: string, requireAdmin = false) {
   const member = await prisma.teamMember.findUnique({
@@ -19,7 +19,7 @@ async function verifyTeamAccess(teamId: string, userId: string, requireAdmin = f
 export async function GET(_req: NextRequest, { params }: RouteParams) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  const { teamId } = await params
+  const { id: teamId } = await params
 
   const member = await verifyTeamAccess(teamId, session.user.id)
   if (!member) return NextResponse.json({ error: "Not a team member" }, { status: 403 })
@@ -36,7 +36,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
 export async function POST(req: NextRequest, { params }: RouteParams) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  const { teamId } = await params
+  const { id: teamId } = await params
 
   const member = await verifyTeamAccess(teamId, session.user.id, true)
   if (!member) return NextResponse.json({ error: "Admin access required" }, { status: 403 })
