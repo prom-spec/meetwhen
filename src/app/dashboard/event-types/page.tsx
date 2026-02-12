@@ -76,6 +76,7 @@ export default function EventTypesPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [shareEventType, setShareEventType] = useState<EventType | null>(null)
+  const [linkedAccounts, setLinkedAccounts] = useState<{ id: string; providerAccountId: string; email?: string }[]>([])
   const { toast } = useToast()
   const [formData, setFormData] = useState({
     title: "",
@@ -99,11 +100,13 @@ export default function EventTypesPage() {
     cancellationPolicy: "",
     confirmationLinks: "[]",
     screeningQuestions: "[]",
+    calendarAccountIds: "", // JSON array or empty for "all accounts"
   })
 
   useEffect(() => {
     fetchEventTypes()
     fetchUsername()
+    fetch("/api/settings/linked-accounts").then(r => r.ok ? r.json() : []).then(data => setLinkedAccounts(data || [])).catch(() => {})
   }, [])
 
   const fetchUsername = async () => {
@@ -213,6 +216,7 @@ export default function EventTypesPage() {
       cancellationPolicy: "",
       confirmationLinks: "[]",
       screeningQuestions: "[]",
+      calendarAccountIds: "",
     })
     setShowModal(true)
   }
@@ -241,6 +245,7 @@ export default function EventTypesPage() {
       cancellationPolicy: (eventType as any).cancellationPolicy || "",
       confirmationLinks: (eventType as any).confirmationLinks || "[]",
       screeningQuestions: (eventType as any).screeningQuestions || "[]",
+      calendarAccountIds: (eventType as any).calendarAccountIds || "",
     })
     setShowModal(true)
   }
@@ -742,6 +747,36 @@ export default function EventTypesPage() {
                 </div>
 
                 {/* Cancellation Policy & Confirmation Links */}
+                {/* Calendar Accounts for this event type */}
+                {linkedAccounts.length > 1 && (
+                  <div className="space-y-2 mt-6">
+                    <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">Calendar Accounts</h3>
+                    <p className="text-xs text-gray-500">Which Google accounts should this event type use? Leave unchecked for all accounts.</p>
+                    <div className="space-y-2 mt-2">
+                      {linkedAccounts.map((acc: { id: string; providerAccountId: string; email?: string }) => {
+                        const selected: string[] = formData.calendarAccountIds ? JSON.parse(formData.calendarAccountIds || "[]") : []
+                        const isChecked = selected.includes(acc.providerAccountId)
+                        return (
+                          <label key={acc.id} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                const newSelected = e.target.checked
+                                  ? [...selected, acc.providerAccountId]
+                                  : selected.filter((id: string) => id !== acc.providerAccountId)
+                                setFormData({ ...formData, calendarAccountIds: newSelected.length > 0 ? JSON.stringify(newSelected) : "" })
+                              }}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            {acc.email || acc.providerAccountId}
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-4 mt-6">
                   <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">Booking Experience</h3>
                   

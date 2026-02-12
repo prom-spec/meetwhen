@@ -154,6 +154,9 @@ model EventType {
   allowRecurring    Boolean @default(false)
   recurrenceOptions String? // JSON array of allowed frequencies e.g. ["weekly_4","weekly_8","biweekly_4","monthly_3"]
 
+  // Which linked accounts to use for this event type (JSON array of providerAccountIds, null = all)
+  calendarAccountIds String?
+
   // Admin-managed: only team admins can edit
   isAdminManaged Boolean @default(false)
   assignedToId   String?
