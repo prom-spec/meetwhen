@@ -581,3 +581,31 @@ model RoutingRule {
 
   @@index([formId])
 }
+
+model EmailSequence {
+  id           String   @id @default(cuid())
+  name         String
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trigger      String   // "after_booking", "after_meeting", "no_show"
+  delayMinutes Int      @default(60)
+  subject      String
+  body         String   @db.Text
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  logs         EmailSequenceLog[]
+
+  @@index([userId])
+}
+
+model EmailSequenceLog {
+  id         String        @id @default(cuid())
+  sequenceId String
+  sequence   EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  bookingId  String
+  sentAt     DateTime      @default(now())
+
+  @@unique([sequenceId, bookingId])
+  @@index([sequenceId])
+}

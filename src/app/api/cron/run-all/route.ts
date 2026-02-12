@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
   const results: Record<string, unknown> = {}
 
-  for (const job of ["post-meeting", "send-reminders", "workflows"]) {
+  for (const job of ["post-meeting", "send-reminders", "workflows", "sequences"]) {
     try {
       const res = await fetch(`${baseUrl}/api/cron/${job}`, {
         method: "POST",

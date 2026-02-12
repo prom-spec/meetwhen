@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, Zap, Mail, Globe, Clock, Power } from "lucide-react"
+import Link from "next/link"
 
 interface WorkflowStep {
   id?: string
@@ -83,6 +84,7 @@ export default function WorkflowsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Workflows</h1>
           <p className="text-sm text-gray-500 mt-1">Automate emails, webhooks, and more when events happen.</p>
+          <Link href="/dashboard/workflows/sequences" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline mt-1"><Mail className="w-3.5 h-3.5" /> Email Sequences →</Link>
         </div>
         <button
           onClick={() => setShowCreate(true)}
