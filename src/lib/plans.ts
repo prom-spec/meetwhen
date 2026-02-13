@@ -24,7 +24,7 @@ export interface PlanFeatures {
 
 export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
   FREE: {
-    maxEventTypes: 1,
+    maxEventTypes: 3,
     maxCalendars: 1,
     multipleAccounts: false,
     removeBranding: false,

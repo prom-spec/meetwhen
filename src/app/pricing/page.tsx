@@ -18,7 +18,7 @@ const tiers = [
     ctaHref: "/login",
     highlight: false,
     features: [
-      { name: "1 event type", included: true },
+      { name: "3 event types", included: true },
       { name: "Connect 1 Google calendar", included: true },
       { name: "Unlimited bookings", included: true },
       { name: "Custom booking page", included: true },
