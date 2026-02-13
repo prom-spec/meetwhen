@@ -124,7 +124,7 @@ export default async function UserProfilePage({ params }: PageProps) {
         )}
 
         {/* Footer */}
-        <PoweredByFooter className="mt-12" hidden={user.hidePoweredBy} />
+        <PoweredByFooter className="mt-12" hidden={user.hidePoweredBy} userPlan={user.plan} />
       </div>
     </div>
   )

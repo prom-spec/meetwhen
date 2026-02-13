@@ -1,8 +1,19 @@
 import Link from "next/link"
 import Image from "next/image"
+import { getPlanFromUser, canAccess } from "@/lib/plans"
 
-export default function PoweredByFooter({ className = "", hidden = false }: { className?: string; hidden?: boolean }) {
-  if (hidden) return null
+export default function PoweredByFooter({ 
+  className = "", 
+  hidden = false,
+  userPlan,
+}: { 
+  className?: string
+  hidden?: boolean
+  userPlan?: string
+}) {
+  // Hide if explicitly hidden OR if user has a paid plan with branding removal
+  const plan = getPlanFromUser({ plan: userPlan })
+  if (hidden || canAccess(plan, 'removeBranding')) return null
   
   return (
     <div className={`py-6 text-center ${className}`}>

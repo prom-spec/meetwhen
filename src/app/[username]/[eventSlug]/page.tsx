@@ -40,6 +40,7 @@ interface Branding {
   metaPixelId: string | null
   orgBrandFooter?: string | null
   orgManaged?: boolean
+  plan?: string
 }
 
 interface SlotResponse {
@@ -467,7 +468,7 @@ export default function BookingPage() {
         {branding.orgBrandFooter && (
           <div className="text-center text-xs text-gray-400 py-2">{branding.orgBrandFooter}</div>
         )}
-        {!isEmbed && <PoweredByFooter hidden={branding.hidePoweredBy} />}
+        {!isEmbed && <PoweredByFooter hidden={branding.hidePoweredBy} userPlan={branding.plan} />}
       </div>
     )
   }
@@ -975,7 +976,7 @@ export default function BookingPage() {
         </div>
       </main>
 
-      {!isEmbed && <PoweredByFooter className="border-t border-gray-100" hidden={branding.hidePoweredBy} />}
+      {!isEmbed && <PoweredByFooter className="border-t border-gray-100" hidden={branding.hidePoweredBy} userPlan={branding.plan} />}
     </div>
   )
 }

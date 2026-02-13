@@ -73,8 +73,11 @@ model User {
   primaryAccountId         String?
 
   // Billing
-  plan           String    @default("free") // "free", "pro", "enterprise"
-  planUpdatedAt  DateTime?
+  plan                String    @default("FREE") // FREE, PRO, ENTERPRISE
+  lemonCustomerId     String?
+  lemonSubscriptionId String?
+  planExpiresAt       DateTime?
+  planUpdatedAt       DateTime?
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
