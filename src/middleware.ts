@@ -62,7 +62,7 @@ const CSP_POLICY = [
   "img-src 'self' data: https:",
   "font-src 'self'",
   "connect-src 'self' https://accounts.google.com https://www.googleapis.com https://www.google-analytics.com https://region1.google-analytics.com https://cloudflareinsights.com https://app.lemonsqueezy.com",
-  "frame-src 'self' https://accounts.google.com https://app.lemonsqueezy.com https://*.lemonsqueezy.com",
+  "frame-src 'self' https://letsmeet.link https://www.letsmeet.link https://accounts.google.com https://app.lemonsqueezy.com https://*.lemonsqueezy.com",
 ].join("; ")
 
 // Known app hostnames that should NOT trigger custom domain routing
