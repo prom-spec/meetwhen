@@ -18,10 +18,11 @@ function verifySignature(rawBody: string, signature: string): boolean {
   }
 }
 
-function mapVariantToPlan(variantName: string): string {
-  const lower = (variantName || "").toLowerCase()
-  if (lower.includes("enterprise")) return "ENTERPRISE"
-  if (lower.includes("pro")) return "PRO"
+function mapVariantToPlan(variantName: string, productName: string): string {
+  // Check both variant and product name — variant may be "Default"
+  const combined = `${variantName} ${productName}`.toLowerCase()
+  if (combined.includes("enterprise")) return "ENTERPRISE"
+  if (combined.includes("pro")) return "PRO"
   return "FREE"
 }
 
@@ -47,26 +48,39 @@ export async function POST(req: NextRequest) {
   const attrs = payload.data?.attributes || {}
   const lemonCustomerId = String(attrs.customer_id || "")
   const lemonSubscriptionId = String(payload.data?.id || "")
-  const variantName = attrs.variant_name || attrs.product_name || ""
+  const variantName = attrs.variant_name || ""
+  const productName = attrs.product_name || ""
   const status = attrs.status
 
-  console.log(`[LemonSqueezy] Event: ${eventName}, userId: ${userId}, status: ${status}, variant: ${variantName}`)
+  // Resolve user: prefer custom_data.user_id, fall back to customer email lookup
+  const customerEmail = attrs.user_email || ""
+  console.log(`[LemonSqueezy] Event: ${eventName}, userId: ${userId}, customerEmail: ${customerEmail}, status: ${status}, variant: ${variantName}`)
 
-  if (!userId) {
-    console.warn("[LemonSqueezy] No user_id in custom data, skipping DB update")
-    return NextResponse.json({ received: true })
+  let user = userId ? await prisma.user.findUnique({ where: { id: userId } }) : null
+
+  // Fallback: look up user by Lemon Squeezy customer ID (if previously linked)
+  if (!user && lemonCustomerId) {
+    user = await prisma.user.findFirst({ where: { lemonCustomerId } })
+    if (user) console.log(`[LemonSqueezy] Found user by lemonCustomerId: ${user.id}`)
   }
 
-  // Verify user exists before updating
-  const user = await prisma.user.findUnique({ where: { id: userId } })
+  // Fallback: look up user by customer email from Lemon Squeezy
+  if (!user && customerEmail) {
+    user = await prisma.user.findFirst({ where: { email: customerEmail } })
+    if (user) console.log(`[LemonSqueezy] Found user by email ${customerEmail}: ${user.id}`)
+  }
+
   if (!user) {
-    console.warn(`[LemonSqueezy] User ${userId} not found, ignoring`)
+    console.warn(`[LemonSqueezy] No matching user found (userId: ${userId}, email: ${customerEmail}), skipping`)
     return NextResponse.json({ received: true })
   }
+
+  // Use the resolved user ID going forward
+  const resolvedUserId = user.id
 
   // For update/cancel events on existing subscriptions, verify subscription ID matches
   if (eventName !== "subscription_created" && user.lemonSubscriptionId && user.lemonSubscriptionId !== lemonSubscriptionId) {
-    console.warn(`[LemonSqueezy] Subscription ID mismatch for user ${userId}: expected ${user.lemonSubscriptionId}, got ${lemonSubscriptionId}`)
+    console.warn(`[LemonSqueezy] Subscription ID mismatch for user ${resolvedUserId}: expected ${user.lemonSubscriptionId}, got ${lemonSubscriptionId}`)
     return NextResponse.json({ received: true })
   }
 
@@ -74,10 +88,10 @@ export async function POST(req: NextRequest) {
     switch (eventName) {
       case "subscription_created":
       case "subscription_updated": {
-        const plan = mapVariantToPlan(variantName)
+        const plan = mapVariantToPlan(variantName, productName)
         const effectivePlan = ["cancelled", "expired"].includes(status) ? "FREE" : plan
         await prisma.user.update({
-          where: { id: userId },
+          where: { id: resolvedUserId },
           data: {
             plan: effectivePlan,
             lemonCustomerId,
@@ -93,7 +107,7 @@ export async function POST(req: NextRequest) {
         const endsAt = attrs.ends_at ? new Date(attrs.ends_at) : new Date()
         const isPastEnd = endsAt <= new Date()
         await prisma.user.update({
-          where: { id: userId },
+          where: { id: resolvedUserId },
           data: {
             plan: isPastEnd ? "FREE" : user.plan, // downgrade immediately if already past end
             planExpiresAt: endsAt,
@@ -103,9 +117,9 @@ export async function POST(req: NextRequest) {
       }
 
       case "subscription_payment_success": {
-        const plan = mapVariantToPlan(variantName)
+        const plan = mapVariantToPlan(variantName, productName)
         await prisma.user.update({
-          where: { id: userId },
+          where: { id: resolvedUserId },
           data: {
             plan,
             ...(attrs.renews_at ? { planExpiresAt: new Date(attrs.renews_at) } : {}),
@@ -115,7 +129,7 @@ export async function POST(req: NextRequest) {
       }
 
       case "subscription_payment_failed": {
-        console.warn(`[LemonSqueezy] Payment failed for user ${userId}`)
+        console.warn(`[LemonSqueezy] Payment failed for user ${resolvedUserId}`)
         break
       }
 
