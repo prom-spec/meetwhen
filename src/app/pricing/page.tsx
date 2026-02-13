@@ -101,7 +101,7 @@ const faqs = [
   },
   {
     q: "What payment methods do you accept?",
-    a: "We accept credit/debit cards via Lemon Squeezy, plus crypto payments (ETH, BTC) for yearly plans with a 10% discount.",
+    a: "We accept credit/debit cards via Lemon Squeezy. Pay yearly and save — $10/year for Pro (instead of $12), $30/year for Enterprise (instead of $36).",
   },
   {
     q: "How does the 14-day trial work?",

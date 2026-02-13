@@ -199,21 +199,21 @@ export default function BillingPage() {
       <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-xl border border-violet-200 p-6 mb-8">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="w-5 h-5 text-violet-500" />
-          <h2 className="text-lg font-bold text-gray-900">Pay with Crypto — Save 10%</h2>
+          <h2 className="text-lg font-bold text-gray-900">Pay Yearly & Save</h2>
         </div>
         <p className="text-sm text-gray-600 mb-4">
-          Pay for a full year upfront with ETH or BTC and save 10%. Send the exact amount and email us your transaction hash.
+          Pay for a full year upfront and save. Available via crypto (ETH, BTC) — send the exact amount and email us your transaction hash.
         </p>
         <div className="grid sm:grid-cols-2 gap-4 mb-4">
           <div className="bg-white rounded-lg p-4 border border-violet-100">
             <p className="text-sm font-semibold text-gray-900 mb-1">Pro — 1 Year</p>
-            <p className="text-2xl font-bold text-gray-900">$10.80 <span className="text-sm font-normal text-gray-500 line-through">$12</span></p>
-            <p className="text-xs text-green-600 mt-1">Save $1.20 (10% off)</p>
+            <p className="text-2xl font-bold text-gray-900">$10 <span className="text-sm font-normal text-gray-500 line-through">$12</span></p>
+            <p className="text-xs text-green-600 mt-1">Save $2 (2 months free)</p>
           </div>
           <div className="bg-white rounded-lg p-4 border border-violet-100">
             <p className="text-sm font-semibold text-gray-900 mb-1">Enterprise — 1 Year/seat</p>
-            <p className="text-2xl font-bold text-gray-900">$32.40 <span className="text-sm font-normal text-gray-500 line-through">$36</span></p>
-            <p className="text-xs text-green-600 mt-1">Save $3.60 (10% off)</p>
+            <p className="text-2xl font-bold text-gray-900">$30 <span className="text-sm font-normal text-gray-500 line-through">$36</span></p>
+            <p className="text-xs text-green-600 mt-1">Save $6 (2 months free)</p>
           </div>
         </div>
         <div className="space-y-3">
