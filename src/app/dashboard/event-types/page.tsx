@@ -528,37 +528,16 @@ export default function EventTypesPage() {
               </div>
               
               <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
-                {/* Primary CTA: Share Link */}
+                {/* Primary CTA: Share */}
                 <button
-                  onClick={() => copyLink(eventType)}
-                  className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                    copiedId === eventType.id
-                      ? "bg-green-50 text-green-700 border border-green-200"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
-                  }`}
+                  onClick={() => setShareEventType(eventType)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white hover:bg-blue-700"
                 >
-                  {copiedId === eventType.id ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      Link Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      Share Booking Link
-                    </>
-                  )}
+                  <Share2 className="w-4 h-4" />
+                  Share Booking Link
                 </button>
                 {/* Secondary actions */}
                 <div className="flex items-center justify-center gap-1">
-                  <button
-                    onClick={() => setShareEventType(eventType)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                    title="Share"
-                  >
-                    <Share2 className="w-3.5 h-3.5" />
-                    Share
-                  </button>
                   <a
                     href={`/${username}/${eventType.slug}`}
                     target="_blank"
