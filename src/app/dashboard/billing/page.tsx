@@ -86,6 +86,7 @@ export default function BillingPage() {
     if (!checkoutUrl || !userId) return
     const url = new URL(checkoutUrl)
     url.searchParams.set("checkout[custom][user_id]", userId)
+    url.searchParams.set("checkout[success_url]", "https://www.letsmeet.link/dashboard/billing?success=1")
     // Try overlay first, fallback to redirect
     try {
       ;(window as any).createLemonSqueezy?.()
