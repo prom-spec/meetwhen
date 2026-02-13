@@ -195,12 +195,12 @@ export default function PricingPage() {
                   {tier.features.map((feature) => (
                     <li key={feature.name} className="flex items-start gap-3">
                       {feature.included ? (
-                        <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="w-5 h-5 rounded-full bg-[var(--primary)] flex items-center justify-center shrink-0 mt-0.5">
                           <Check className="w-3 h-3 text-white stroke-[3]" />
                         </span>
                       ) : (
-                        <span className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center shrink-0 mt-0.5">
-                          <span className="w-2.5 h-0.5 bg-gray-400 rounded-full" />
+                        <span className="w-5 h-5 rounded-full border-[1.5px] border-gray-200 flex items-center justify-center shrink-0 mt-0.5">
+                          <span className="w-2 h-0.5 bg-gray-300 rounded-full" />
                         </span>
                       )}
                       <span
@@ -258,13 +258,13 @@ export default function PricingPage() {
                 ].map(([feature, us, them]) => {
                   const renderCell = (val: string | boolean, isPrimary?: boolean) => {
                     if (val === true) return (
-                      <span className="w-5 h-5 rounded-full bg-green-500 inline-flex items-center justify-center">
+                      <span className="w-5 h-5 rounded-full bg-[var(--primary)] inline-flex items-center justify-center">
                         <Check className="w-3 h-3 text-white stroke-[3]" />
                       </span>
                     )
                     if (val === false) return (
-                      <span className="w-5 h-5 rounded-full bg-gray-200 inline-flex items-center justify-center">
-                        <span className="w-2.5 h-0.5 bg-gray-400 rounded-full" />
+                      <span className="w-5 h-5 rounded-full border-[1.5px] border-gray-200 inline-flex items-center justify-center">
+                        <span className="w-2 h-0.5 bg-gray-300 rounded-full" />
                       </span>
                     )
                     return <span className={isPrimary ? "font-medium" : ""}>{val as string}</span>
