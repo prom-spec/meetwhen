@@ -215,62 +215,153 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Comparison callout */}
+      {/* Comparison Section */}
       <section className="bg-gray-50 py-16">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-2xl font-bold text-[var(--foreground)] mb-8">
-            How we compare
-          </h2>
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-4">
+            <h2 className="text-3xl font-bold text-[var(--foreground)] mb-3">
+              letsmeet.link vs Calendly
+            </h2>
+            <p className="text-[var(--text-muted)] max-w-2xl mx-auto">
+              Same features (and more). A fraction of the price.
+            </p>
+          </div>
+
+          {/* Price comparison hero cards */}
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-12 mt-8">
+            <div className="bg-white rounded-2xl border-2 border-[var(--primary)] p-6 text-center relative shadow-lg shadow-blue-100">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                SAVE 90%
+              </div>
+              <p className="text-sm font-medium text-[var(--primary)] mb-1">letsmeet.link Pro</p>
+              <p className="text-5xl font-bold text-[var(--foreground)]">$1<span className="text-lg font-normal text-[var(--text-muted)]">/mo</span></p>
+              <p className="text-xs text-[var(--text-muted)] mt-2">All features included · No per-seat pricing</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-[var(--border)] p-6 text-center opacity-75">
+              <p className="text-sm font-medium text-[var(--text-muted)] mb-1">Calendly Standard</p>
+              <p className="text-5xl font-bold text-gray-400">$10<span className="text-lg font-normal text-gray-300">/seat/mo</span></p>
+              <p className="text-xs text-gray-400 mt-2">Per seat · Missing AI & MCP features</p>
+            </div>
+          </div>
+
+          {/* Full comparison table */}
           <div className="bg-white rounded-xl border border-[var(--border)] overflow-x-auto">
-            <table className="w-full text-left min-w-[500px]">
+            <table className="w-full text-left min-w-[700px]">
               <thead>
-                <tr className="border-b border-[var(--border)]">
-                  <th className="px-6 py-4 text-sm font-medium text-[var(--text-muted)]">Feature</th>
-                  <th className="px-6 py-4 text-sm font-bold text-[var(--primary)]">letsmeet.link Pro</th>
-                  <th className="px-6 py-4 text-sm font-medium text-[var(--text-muted)]">Calendly Standard</th>
+                <tr className="border-b-2 border-[var(--border)]">
+                  <th className="px-5 py-4 text-sm font-medium text-[var(--text-muted)] w-[30%]"></th>
+                  <th className="px-4 py-4 text-center">
+                    <div className="text-xs text-[var(--text-muted)] mb-0.5">letsmeet.link</div>
+                    <div className="text-sm font-bold text-[var(--foreground)]">Free</div>
+                    <div className="text-xs text-[var(--text-muted)]">$0</div>
+                  </th>
+                  <th className="px-4 py-4 text-center bg-blue-50/50">
+                    <div className="text-xs text-[var(--primary)] mb-0.5">letsmeet.link</div>
+                    <div className="text-sm font-bold text-[var(--primary)]">Pro</div>
+                    <div className="text-xs text-[var(--primary)]">$1/mo</div>
+                  </th>
+                  <th className="px-4 py-4 text-center bg-blue-50/50">
+                    <div className="text-xs text-[var(--primary)] mb-0.5">letsmeet.link</div>
+                    <div className="text-sm font-bold text-[var(--primary)]">Enterprise</div>
+                    <div className="text-xs text-[var(--primary)]">$3/seat/mo</div>
+                  </th>
+                  <th className="px-4 py-4 text-center">
+                    <div className="text-xs text-gray-400 mb-0.5">Calendly</div>
+                    <div className="text-sm font-medium text-gray-500">Standard</div>
+                    <div className="text-xs text-gray-400">$10/seat/mo</div>
+                  </th>
+                  <th className="px-4 py-4 text-center">
+                    <div className="text-xs text-gray-400 mb-0.5">Calendly</div>
+                    <div className="text-sm font-medium text-gray-500">Teams</div>
+                    <div className="text-xs text-gray-400">$16/seat/mo</div>
+                  </th>
                 </tr>
               </thead>
               <tbody className="text-sm">
-                {[
-                  ["Price", "$1/mo", "$10/seat/mo"],
-                  ["AI Chat Scheduling", true, false],
-                  ["MCP Integration", true, false],
-                  ["Unlimited Event Types", true, true],
-                  ["Multiple Calendars", "6", "6"],
-                  ["Custom Domain", true, "Teams plan"],
-                  ["Webhooks & API", true, true],
-                  ["Remove Branding", true, true],
-                  ["Routing Forms", true, "Teams plan"],
-                  ["Meeting Polls", true, true],
-                  ["Screening Forms", true, "Standard"],
-                  ["Round-Robin", "Enterprise", "Teams plan"],
-                  ["Email Sequence Outreach", true, true],
-                  ["GA & Meta Pixel", true, "Teams plan"],
-                  ["Data Deletion API", true, "Enterprise"],
-                  ["Cancellation Policy", true, true],
-                  ["Book for Others", true, true],
-                  ["Group Events", true, true],
-                  ["Crypto Payments", true, false],
-                ].map(([feature, us, them]) => {
-                  const renderCell = (val: string | boolean, isPrimary?: boolean) => {
-                    if (val === true) return (
-                      <span className="w-2.5 h-2.5 rounded-full bg-[var(--primary)] inline-block" />
-                    )
-                    if (val === false) return (
-                      <span className="w-2.5 h-2.5 rounded-full border-2 border-[var(--primary)] opacity-30 inline-block" />
-                    )
-                    return <span className={isPrimary ? "font-medium" : ""}>{val as string}</span>
+                {([
+                  { category: "Scheduling" },
+                  ["Unlimited event types", false, true, true, true, true],
+                  ["Unlimited bookings", true, true, true, true, true],
+                  ["Meeting polls", true, true, true, true, true],
+                  ["Group event scheduling", false, true, true, true, true],
+                  ["Round-robin scheduling", false, false, true, false, true],
+                  ["Routing forms", false, true, true, false, true],
+                  ["Book on behalf of others", false, true, true, true, true],
+                  ["Cancellation policy", false, true, true, true, true],
+                  { category: "Calendars & Integrations" },
+                  ["Multiple calendars", false, true, true, true, true],
+                  ["Multiple Google accounts", false, true, true, false, false],
+                  ["Google Meet integration", true, true, true, true, true],
+                  ["Webhooks & API access", false, true, true, true, true],
+                  ["Custom domain", false, true, true, false, true],
+                  ["GA & Meta Pixel tracking", false, true, true, false, true],
+                  ["Custom embed colors", false, false, true, false, true],
+                  { category: "AI & Automation", exclusive: true },
+                  ["AI chat scheduling", true, true, true, false, false],
+                  ["MCP integration", false, true, true, false, false],
+                  ["Workflows & automations", false, true, true, true, true],
+                  ["Screening & qualification forms", false, true, true, true, true],
+                  ["Email sequence outreach", false, false, true, true, true],
+                  { category: "Business & Compliance" },
+                  ["Remove branding", false, true, true, true, true],
+                  ["Crypto payments", false, true, true, false, false],
+                  ["Data deletion API (GDPR)", false, false, true, false, false],
+                  ["Team analytics & insights", false, false, true, false, true],
+                  ["Admin-managed event types", false, false, true, false, true],
+                  ["SLA guarantee", false, false, true, false, false],
+                  ["Priority / dedicated support", false, true, true, false, false],
+                ] as (
+                  | { category: string; exclusive?: boolean }
+                  | [string, boolean, boolean, boolean, boolean, boolean]
+                )[]).map((row, i) => {
+                  if ("category" in row) {
+                    return (
+                      <tr key={row.category} className="bg-gray-50">
+                        <td colSpan={6} className="px-5 py-3 text-xs font-bold text-[var(--foreground)] uppercase tracking-wider">
+                          {row.category}
+                          {row.exclusive && (
+                            <span className="ml-2 inline-flex items-center gap-1 bg-blue-100 text-[var(--primary)] text-[10px] font-bold px-2 py-0.5 rounded-full normal-case tracking-normal">
+                              <Sparkles className="w-3 h-3" /> letsmeet.link exclusive
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
                   }
+                  const [feature, free, pro, ent, calStd, calTeams] = row;
+                  const isExclusive = pro === true && calStd === false && calTeams === false;
+                  const dot = (val: boolean, isLetsmeet: boolean) => {
+                    if (val && isLetsmeet) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--primary)] inline-block" />;
+                    if (val && !isLetsmeet) return <span className="w-2.5 h-2.5 rounded-full bg-gray-300 inline-block" />;
+                    return <span className="w-2.5 h-2.5 rounded-full border-2 border-gray-200 inline-block" />;
+                  };
                   return (
-                    <tr key={feature as string} className="border-b border-[var(--border)] last:border-0">
-                      <td className="px-6 py-3 text-[var(--foreground)]">{feature as string}</td>
-                      <td className="px-6 py-3">{renderCell(us, true)}</td>
-                      <td className="px-6 py-3 text-[var(--text-muted)]">{renderCell(them)}</td>
+                    <tr
+                      key={feature}
+                      className={`border-b border-[var(--border)] last:border-0 ${isExclusive ? "bg-blue-50/30" : ""}`}
+                    >
+                      <td className="px-5 py-3 text-[var(--foreground)]">
+                        {feature}
+                        {isExclusive && <span className="ml-1.5 text-[10px] font-bold text-[var(--primary)] align-middle">★</span>}
+                      </td>
+                      <td className="px-4 py-3 text-center">{dot(free, true)}</td>
+                      <td className="px-4 py-3 text-center bg-blue-50/30">{dot(pro, true)}</td>
+                      <td className="px-4 py-3 text-center bg-blue-50/30">{dot(ent, true)}</td>
+                      <td className="px-4 py-3 text-center">{dot(calStd, false)}</td>
+                      <td className="px-4 py-3 text-center">{dot(calTeams, false)}</td>
                     </tr>
-                  )
+                  );
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Bottom line */}
+          <div className="mt-8 text-center">
+            <p className="text-sm text-[var(--text-muted)]">
+              Our <strong className="text-[var(--foreground)]">$1/mo Pro</strong> includes more than Calendly Standard at <strong className="text-[var(--foreground)]">$10/seat/mo</strong>.
+              Our <strong className="text-[var(--foreground)]">$3/seat/mo Enterprise</strong> beats Calendly Teams at <strong className="text-[var(--foreground)]">$16/seat/mo</strong>.
+            </p>
           </div>
         </div>
       </section>
