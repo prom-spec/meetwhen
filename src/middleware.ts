@@ -16,6 +16,7 @@ const CSRF_EXEMPT_PATHS = [
   "/api/analytics/track", // Public endpoint
   "/api/chat",          // Session-authenticated, called from same origin
   "/api/cron",          // Uses Bearer token auth (CRON_SECRET)
+  "/api/webhooks/lemonsqueezy", // Uses HMAC signature auth
 ]
 
 function isCsrfExempt(pathname: string): boolean {
