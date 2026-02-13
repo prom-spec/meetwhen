@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Check, X, Sparkles, Building2, User } from "lucide-react";
+import { Check, Sparkles, Building2, User } from "lucide-react";
 
 export const metadata = {
   title: "Pricing — letsmeet.link",
@@ -195,9 +195,13 @@ export default function PricingPage() {
                   {tier.features.map((feature) => (
                     <li key={feature.name} className="flex items-start gap-3">
                       {feature.included ? (
-                        <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                        <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0 mt-0.5">
+                          <Check className="w-3 h-3 text-white stroke-[3]" />
+                        </span>
                       ) : (
-                        <X className="w-5 h-5 text-gray-300 shrink-0 mt-0.5" />
+                        <span className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center shrink-0 mt-0.5">
+                          <span className="w-2.5 h-0.5 bg-gray-400 rounded-full" />
+                        </span>
                       )}
                       <span
                         className={`text-sm ${
@@ -233,31 +237,46 @@ export default function PricingPage() {
               <tbody className="text-sm">
                 {[
                   ["Price", "$1/mo", "$10/seat/mo"],
-                  ["AI Chat Scheduling", "✅", "❌"],
-                  ["MCP Integration", "✅", "❌"],
-                  ["Unlimited Event Types", "✅", "✅"],
-                  ["Multiple Calendars", "✅ (6)", "✅ (6)"],
-                  ["Custom Domain", "✅", "❌ (Teams plan)"],
-                  ["Webhooks & API", "✅", "✅"],
-                  ["Remove Branding", "✅", "✅"],
-                  ["Routing Forms", "✅", "❌ (Teams plan)"],
-                  ["Meeting Polls", "✅", "✅"],
-                  ["Screening Forms", "✅", "✅ (Standard)"],
-                  ["Round-Robin", "✅ (Enterprise)", "❌ (Teams plan)"],
-                  ["Email Sequence Outreach", "✅", "✅"],
-                  ["GA & Meta Pixel", "✅", "❌ (Teams plan)"],
-                  ["Data Deletion API", "✅", "❌ (Enterprise)"],
-                  ["Cancellation Policy", "✅", "✅"],
-                  ["Book for Others", "✅", "✅"],
-                  ["Group Events", "✅", "✅"],
-                  ["Crypto Payments", "✅", "❌"],
-                ].map(([feature, us, them]) => (
-                  <tr key={feature} className="border-b border-[var(--border)] last:border-0">
-                    <td className="px-6 py-3 text-[var(--foreground)]">{feature}</td>
-                    <td className="px-6 py-3 font-medium">{us}</td>
-                    <td className="px-6 py-3 text-[var(--text-muted)]">{them}</td>
-                  </tr>
-                ))}
+                  ["AI Chat Scheduling", true, false],
+                  ["MCP Integration", true, false],
+                  ["Unlimited Event Types", true, true],
+                  ["Multiple Calendars", "6", "6"],
+                  ["Custom Domain", true, "Teams plan"],
+                  ["Webhooks & API", true, true],
+                  ["Remove Branding", true, true],
+                  ["Routing Forms", true, "Teams plan"],
+                  ["Meeting Polls", true, true],
+                  ["Screening Forms", true, "Standard"],
+                  ["Round-Robin", "Enterprise", "Teams plan"],
+                  ["Email Sequence Outreach", true, true],
+                  ["GA & Meta Pixel", true, "Teams plan"],
+                  ["Data Deletion API", true, "Enterprise"],
+                  ["Cancellation Policy", true, true],
+                  ["Book for Others", true, true],
+                  ["Group Events", true, true],
+                  ["Crypto Payments", true, false],
+                ].map(([feature, us, them]) => {
+                  const renderCell = (val: string | boolean, isPrimary?: boolean) => {
+                    if (val === true) return (
+                      <span className="w-5 h-5 rounded-full bg-green-500 inline-flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white stroke-[3]" />
+                      </span>
+                    )
+                    if (val === false) return (
+                      <span className="w-5 h-5 rounded-full bg-gray-200 inline-flex items-center justify-center">
+                        <span className="w-2.5 h-0.5 bg-gray-400 rounded-full" />
+                      </span>
+                    )
+                    return <span className={isPrimary ? "font-medium" : ""}>{val as string}</span>
+                  }
+                  return (
+                    <tr key={feature as string} className="border-b border-[var(--border)] last:border-0">
+                      <td className="px-6 py-3 text-[var(--foreground)]">{feature as string}</td>
+                      <td className="px-6 py-3">{renderCell(us, true)}</td>
+                      <td className="px-6 py-3 text-[var(--text-muted)]">{renderCell(them)}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

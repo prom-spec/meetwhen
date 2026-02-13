@@ -6,8 +6,10 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { CallToolRequestSchema, ListToolsRequestSchema, Tool } from "@modelcontextprotocol/sdk/types.js"
 import { PrismaClient } from "@prisma/client"
+import { getPlanFromUser, canAccess, requiredPlanFor, PLAN_NAMES, PLAN_PRICES, type Plan, type PlanFeature } from "../lib/plans"
 import { PrismaNeon } from "@prisma/adapter-neon"
 import * as dateFns from "date-fns"
+import { type Plan, type PlanFeature, canAccess, getPlanFromUser, getNumericLimit, PLAN_NAMES, PLAN_PRICES, requiredPlanFor } from "../lib/plans.js"
 
 function createPrismaClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL
@@ -21,6 +23,81 @@ function getUserId(): string {
   const userId = process.env.MCP_USER_ID
   if (!userId) throw new Error("MCP_USER_ID not set")
   return userId
+}
+
+async function getUserPlan(): Promise<Plan> {
+  const userId = getUserId()
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { plan: true } })
+  return getPlanFromUser(user || {})
+}
+
+function upgradeResponse(currentPlan: Plan, requiredFeature: PlanFeature) {
+  const needed = requiredPlanFor(requiredFeature)
+  return {
+    error: "upgrade_required",
+    currentPlan: PLAN_NAMES[currentPlan],
+    requiredPlan: PLAN_NAMES[needed],
+    requiredPlanPrice: PLAN_PRICES[needed],
+    message: `This feature requires the ${PLAN_NAMES[needed]} plan (${PLAN_PRICES[needed]}). You're currently on the ${PLAN_NAMES[currentPlan]} plan. Upgrade at https://www.letsmeet.link/dashboard/billing`,
+    upgradeUrl: "https://www.letsmeet.link/dashboard/billing",
+  }
+}
+
+async function checkPlanAccess(feature: PlanFeature): Promise<{ allowed: boolean; plan: Plan; response?: object }> {
+  const plan = await getUserPlan()
+  if (canAccess(plan, feature)) return { allowed: true, plan }
+  return { allowed: false, plan, response: upgradeResponse(plan, feature) }
+}
+
+// Plan gating: map tools to required features (null = FREE, no gate)
+const TOOL_PLAN_REQUIREMENTS: Record<string, PlanFeature | null> = {
+  create_booking: null,
+  list_availability: null,
+  set_availability: null,
+  add_date_override: null,
+  get_event_types: null,
+  get_bookings: null,
+  cancel_booking: null,
+  // PRO tools
+  create_event_type: null, // gated by maxEventTypes limit instead
+  create_webhook: "webhooks",
+  manage_contacts: "contacts",
+}
+
+async function getUserPlan(): Promise<{ plan: Plan; user: { plan?: string } }> {
+  const userId = getUserId()
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { plan: true } })
+  return { plan: getPlanFromUser(user || {}), user: user || {} }
+}
+
+function upgradeResponse(feature: string, requiredPlan: Plan, currentPlan: Plan) {
+  return {
+    content: [{
+      type: "text" as const,
+      text: JSON.stringify({
+        error: "upgrade_required",
+        feature,
+        requiredPlan,
+        requiredPlanName: PLAN_NAMES[requiredPlan],
+        requiredPlanPrice: PLAN_PRICES[requiredPlan],
+        currentPlan,
+        currentPlanName: PLAN_NAMES[currentPlan],
+        message: `This feature requires the ${PLAN_NAMES[requiredPlan]} plan (${PLAN_PRICES[requiredPlan]}). You are currently on the ${PLAN_NAMES[currentPlan]} plan. Upgrade at: https://www.letsmeet.link/dashboard/billing`,
+        upgradeUrl: "https://www.letsmeet.link/dashboard/billing",
+      }, null, 2),
+    }],
+    isError: true,
+  }
+}
+
+async function checkPlanGate(toolName: string): Promise<ReturnType<typeof upgradeResponse> | null> {
+  const requiredFeature = TOOL_PLAN_REQUIREMENTS[toolName]
+  if (!requiredFeature) return null
+
+  const { plan } = await getUserPlan()
+  if (canAccess(plan, requiredFeature)) return null
+
+  return upgradeResponse(requiredFeature, requiredPlanFor(requiredFeature), plan)
 }
 
 const tools: Tool[] = [
@@ -52,6 +129,11 @@ const tools: Tool[] = [
       },
       required: ["eventTypeId", "date"],
     },
+  },
+  {
+    name: "get_plan",
+    description: "Get the user's current subscription plan and available features.",
+    inputSchema: { type: "object" as const, properties: {}, required: [] },
   },
   {
     name: "set_availability",
@@ -108,6 +190,45 @@ const tools: Tool[] = [
         reason: { type: "string", description: "Optional cancellation reason" },
       },
       required: ["bookingId"],
+    },
+  },
+  {
+    name: "create_event_type",
+    description: "Create a new event type. Free plan limited to 1 event type; Pro plan allows unlimited.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        title: { type: "string", description: "Event type name (e.g. '30 Minute Meeting')" },
+        slug: { type: "string", description: "URL slug (lowercase, hyphens only)" },
+        duration: { type: "number", description: "Duration in minutes" },
+        description: { type: "string", description: "Optional description" },
+        locationType: { type: "string", enum: ["GOOGLE_MEET", "ZOOM", "IN_PERSON", "PHONE", "CUSTOM"], description: "Meeting location type. Default: GOOGLE_MEET" },
+      },
+      required: ["title", "slug", "duration"],
+    },
+  },
+  {
+    name: "create_webhook",
+    description: "Create a webhook endpoint to receive booking events. Requires Pro plan.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        url: { type: "string", description: "Webhook endpoint URL" },
+        events: { type: "array", items: { type: "string" }, description: "Events to subscribe to: booking.created, booking.cancelled, booking.rescheduled" },
+      },
+      required: ["url", "events"],
+    },
+  },
+  {
+    name: "manage_contacts",
+    description: "List or search contacts. Requires Pro plan.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        search: { type: "string", description: "Search by name or email" },
+        limit: { type: "number", description: "Max results. Default 20" },
+      },
+      required: [],
     },
   },
 ]
@@ -381,6 +502,85 @@ async function cancelBooking(params: { bookingId: string; reason?: string }) {
   return { success: true, message: `Booking ${params.bookingId} has been cancelled` }
 }
 
+async function createEventType(params: {
+  title: string
+  slug: string
+  duration: number
+  description?: string
+  locationType?: string
+}) {
+  const userId = getUserId()
+
+  // Check event type limit
+  const { plan } = await getUserPlan()
+  const maxAllowed = getNumericLimit(plan, "maxEventTypes")
+  const existingCount = await prisma.eventType.count({ where: { userId } })
+  if (existingCount >= maxAllowed) {
+    return {
+      error: "upgrade_required",
+      feature: "maxEventTypes",
+      currentCount: existingCount,
+      maxAllowed,
+      currentPlan: plan,
+      message: `You've reached your limit of ${maxAllowed} event type${maxAllowed === 1 ? "" : "s"} on the ${PLAN_NAMES[plan]} plan. Upgrade to create more.`,
+      upgradeUrl: "https://www.letsmeet.link/dashboard/billing",
+    }
+  }
+
+  const eventType = await prisma.eventType.create({
+    data: {
+      userId,
+      title: params.title,
+      slug: params.slug,
+      duration: params.duration,
+      description: params.description || null,
+      locationType: (params.locationType as any) || "GOOGLE_MEET",
+      color: "#3B82F6",
+      isActive: true,
+    },
+  })
+
+  return { success: true, eventType: { id: eventType.id, title: eventType.title, slug: eventType.slug, duration: eventType.duration } }
+}
+
+async function createWebhookMcp(params: { url: string; events: string[] }) {
+  const userId = getUserId()
+  const { randomBytes } = await import("crypto")
+
+  const webhook = await prisma.webhook.create({
+    data: {
+      userId,
+      url: params.url,
+      events: params.events,
+      secret: randomBytes(32).toString("hex"),
+      active: true,
+    },
+  })
+
+  return { success: true, webhook: { id: webhook.id, url: webhook.url, events: webhook.events, active: webhook.active } }
+}
+
+async function manageContacts(params: { search?: string; limit?: number }) {
+  const userId = getUserId()
+  const limit = params.limit || 20
+  const where: Record<string, unknown> = { userId }
+  if (params.search) {
+    where.OR = [
+      { name: { contains: params.search, mode: "insensitive" } },
+      { email: { contains: params.search, mode: "insensitive" } },
+    ]
+  }
+
+  const contacts = await prisma.contact.findMany({
+    where,
+    orderBy: { updatedAt: "desc" },
+    take: limit,
+    select: { id: true, name: true, email: true, phone: true, company: true, _count: { select: { bookings: true } } },
+  })
+
+  return { contacts }
+}
+
 // Main server setup
 const server = new Server(
   { name: "letsmeet-mcp", version: "1.0.0" },
@@ -412,15 +612,33 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     let result: unknown
 
     switch (name) {
+      case "get_plan": {
+        const plan = await getUserPlan()
+        const features = await import("../lib/plans").then(m => m.PLAN_FEATURES[plan])
+        result = {
+          plan: PLAN_NAMES[plan],
+          features,
+          upgradeUrl: plan !== "ENTERPRISE" ? "https://www.letsmeet.link/dashboard/billing" : undefined,
+          message: plan === "FREE"
+            ? "You're on the Free plan. Upgrade to Pro ($1/mo) for unlimited event types, workflows, webhooks, and more."
+            : plan === "PRO"
+            ? "You're on the Pro plan. Upgrade to Enterprise ($3/seat/mo) for teams, SSO, audit logs, and more."
+            : "You're on the Enterprise plan with all features."
+        }
+        break
+      }
       case "create_booking":
         result = await createBooking(args as CreateBookingArgs)
         break
       case "list_availability":
         result = await listAvailability(args as ListAvailabilityArgs)
         break
-      case "set_availability":
+      case "set_availability": {
+        const check = await checkPlanAccess("workflows")
+        if (!check.allowed) { result = check.response; break }
         result = await setAvailability(args as SetAvailabilityArgs)
         break
+      }
       case "add_date_override":
         result = await addDateOverride(args as AddDateOverrideArgs)
         break
