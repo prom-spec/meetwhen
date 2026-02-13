@@ -80,6 +80,7 @@ export default function WorkflowsPage() {
   }
 
   return (
+    <PlanGate feature="workflows" featureLabel="Workflows & Automations" description="Automate your booking flow with custom workflows, email sequences, and webhook triggers.">
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -191,6 +192,7 @@ export default function WorkflowsPage() {
         )}
       </div>
     </div>
+    </PlanGate>
   )
 }
 
@@ -330,7 +332,6 @@ function StepEditor({
   const ActionIcon = ACTIONS.find((a) => a.value === step.action)?.icon || Zap
 
   return (
-    <PlanGate feature="workflows" featureLabel="Workflows & Automations" description="Automate your booking flow with custom workflows, email sequences, and webhook triggers.">
     <div className="bg-white border border-gray-200 rounded-lg p-3">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -426,6 +427,5 @@ function StepEditor({
         </p>
       )}
     </div>
-    </PlanGate>
   )
 }
