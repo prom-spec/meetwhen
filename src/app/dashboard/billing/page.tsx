@@ -14,8 +14,10 @@ const plans = [
   {
     id: "FREE",
     name: "Free",
-    price: "$0",
-    period: "forever",
+    monthlyPrice: "$0",
+    yearlyPrice: "$0",
+    monthlyPeriod: "forever",
+    yearlyPeriod: "forever",
     icon: Crown,
     features: [
       { label: "3 event types", included: true },
@@ -31,8 +33,11 @@ const plans = [
   {
     id: "PRO",
     name: "Pro",
-    price: "$1",
-    period: "/month",
+    monthlyPrice: "$1",
+    yearlyPrice: "$10",
+    monthlyPeriod: "/month",
+    yearlyPeriod: "/year",
+    yearlySavings: "Save $2",
     icon: Sparkles,
     features: [
       { label: "Unlimited event types", included: true },
@@ -48,8 +53,11 @@ const plans = [
   {
     id: "ENTERPRISE",
     name: "Enterprise",
-    price: "$3",
-    period: "/seat/month",
+    monthlyPrice: "$3",
+    yearlyPrice: "$30",
+    monthlyPeriod: "/seat/month",
+    yearlyPeriod: "/seat/year",
+    yearlySavings: "Save $6/seat",
     icon: Building2,
     features: [
       { label: "Unlimited event types", included: true },
@@ -69,6 +77,7 @@ export default function BillingPage() {
   const [currentPlan, setCurrentPlan] = useState("FREE")
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState("")
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly")
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null)
 
   useEffect(() => {
@@ -138,11 +147,44 @@ export default function BillingPage() {
         </div>
       </div>
 
+      {/* Billing Period Toggle */}
+      <div className="flex items-center justify-center gap-3 mb-6">
+        <button
+          onClick={() => setBillingPeriod("monthly")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            billingPeriod === "monthly"
+              ? "bg-[#0066FF] text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          Monthly
+        </button>
+        <button
+          onClick={() => setBillingPeriod("yearly")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+            billingPeriod === "yearly"
+              ? "bg-[#0066FF] text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          Yearly
+          <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+            billingPeriod === "yearly"
+              ? "bg-white/20 text-white"
+              : "bg-green-100 text-green-700"
+          }`}>
+            Save 17%
+          </span>
+        </button>
+      </div>
+
       {/* Plan Cards */}
       <div className="grid md:grid-cols-3 gap-4 mb-8">
         {plans.map((plan) => {
           const Icon = plan.icon
           const isCurrent = currentPlan === plan.id
+          const price = billingPeriod === "yearly" ? plan.yearlyPrice : plan.monthlyPrice
+          const period = billingPeriod === "yearly" ? plan.yearlyPeriod : plan.monthlyPeriod
           return (
             <div
               key={plan.id}
@@ -159,10 +201,14 @@ export default function BillingPage() {
                   </span>
                 )}
               </div>
-              <div className="mb-3">
-                <span className="text-2xl font-bold text-gray-900">{plan.price}</span>
-                <span className="text-gray-500 text-sm">{plan.period}</span>
+              <div className="mb-1">
+                <span className="text-2xl font-bold text-gray-900">{price}</span>
+                <span className="text-gray-500 text-sm">{period}</span>
               </div>
+              {billingPeriod === "yearly" && plan.yearlySavings && (
+                <p className="text-xs text-green-600 font-medium mb-3">{plan.yearlySavings}</p>
+              )}
+              {!(billingPeriod === "yearly" && plan.yearlySavings) && <div className="mb-3" />}
               <ul className="space-y-2 mb-4 flex-1">
                 {plan.features.map((f) => (
                   <li key={f.label} className="flex items-center gap-2 text-sm text-gray-600">
@@ -200,23 +246,11 @@ export default function BillingPage() {
       <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-xl border border-violet-200 p-6 mb-8">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="w-5 h-5 text-violet-500" />
-          <h2 className="text-lg font-bold text-gray-900">Pay Yearly & Save</h2>
+          <h2 className="text-lg font-bold text-gray-900">Pay with Crypto</h2>
         </div>
         <p className="text-sm text-gray-600 mb-4">
-          Pay for a full year upfront and save. Available via crypto (ETH, BTC) — send the exact amount and email us your transaction hash.
+          Pay with ETH or BTC. Send the exact amount and email us your transaction hash.
         </p>
-        <div className="grid sm:grid-cols-2 gap-4 mb-4">
-          <div className="bg-white rounded-lg p-4 border border-violet-100">
-            <p className="text-sm font-semibold text-gray-900 mb-1">Pro — 1 Year</p>
-            <p className="text-2xl font-bold text-gray-900">$10 <span className="text-sm font-normal text-gray-500 line-through">$12</span></p>
-            <p className="text-xs text-green-600 mt-1">Save $2 (2 months free)</p>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-violet-100">
-            <p className="text-sm font-semibold text-gray-900 mb-1">Enterprise — 1 Year/seat</p>
-            <p className="text-2xl font-bold text-gray-900">$30 <span className="text-sm font-normal text-gray-500 line-through">$36</span></p>
-            <p className="text-xs text-green-600 mt-1">Save $6 (2 months free)</p>
-          </div>
-        </div>
         <div className="space-y-3">
           {[
             { label: "ETH (ERC-20)", address: "0xf1a6c6D72CD1e4213f5A6d501416FF364930474B" },
