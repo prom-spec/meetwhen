@@ -38,8 +38,8 @@ const tiers = [
     period: "/month",
     description: "For professionals who schedule often",
     icon: Sparkles,
-    cta: "Start Pro Trial",
-    ctaHref: "/dashboard/billing/checkout?plan=pro",
+    cta: "Upgrade to Pro",
+    ctaHref: "/dashboard/billing",
     highlight: true,
     features: [
       { name: "Unlimited event types", included: true },
@@ -70,8 +70,8 @@ const tiers = [
     period: "/seat/month",
     description: "For teams and organizations",
     icon: Building2,
-    cta: "Start Enterprise Trial",
-    ctaHref: "/dashboard/billing/checkout?plan=enterprise",
+    cta: "Upgrade to Enterprise",
+    ctaHref: "/dashboard/billing",
     highlight: false,
     features: [
       { name: "Everything in Pro", included: true },
@@ -101,7 +101,7 @@ const faqs = [
   },
   {
     q: "What payment methods do you accept?",
-    a: "We accept crypto payments (ETH, BTC) for yearly plans with a 20% discount. Credit card payments coming soon.",
+    a: "We accept credit/debit cards via Lemon Squeezy, plus crypto payments (ETH, BTC) for yearly plans with a 20% discount.",
   },
   {
     q: "How does the 14-day trial work?",
