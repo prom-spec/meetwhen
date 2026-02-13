@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect, useRef } from "react"
-import { Menu, X, Loader2, ChevronDown, Heart } from "lucide-react"
+import { Menu, X, Loader2, ChevronDown, Heart, Sparkles } from "lucide-react"
 import ChatInterface from "@/components/ChatInterface"
 
 const primaryLinks = [
@@ -39,6 +39,7 @@ export default function DashboardLayout({
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
+  const [userPlan, setUserPlan] = useState<string>("FREE")
   const moreRef = useRef<HTMLDivElement>(null)
 
   // Close mobile menu on route change
@@ -46,6 +47,16 @@ export default function DashboardLayout({
     setMobileMenuOpen(false)
     setMoreOpen(false)
   }, [pathname])
+
+  // Fetch user plan
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((data) => setUserPlan((data.plan || "free").toUpperCase()))
+      .catch(() => {})
+  }, [])
+
+  const showUpgrade = userPlan === "FREE"
 
   // Close "More" dropdown on outside click
   useEffect(() => {
@@ -109,6 +120,15 @@ export default function DashboardLayout({
               
               {/* Desktop Navigation */}
               <div className="hidden md:ml-6 md:flex md:items-center md:space-x-1 lg:ml-8 lg:space-x-2">
+                {showUpgrade && (
+                  <Link
+                    href="/dashboard/billing"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold bg-gradient-to-r from-[var(--primary)] to-indigo-500 text-white hover:opacity-90 transition-opacity mr-1"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Upgrade
+                  </Link>
+                )}
                 {primaryLinks.map((link) => (
                   <Link
                     key={link.href}
@@ -209,6 +229,15 @@ export default function DashboardLayout({
         {/* Mobile menu - visible below md (768px) */}
         <div className={`md:hidden ${mobileMenuOpen ? "block" : "hidden"}`}>
           <div className="pt-2 pb-3 space-y-1 bg-white border-b border-gray-200">
+            {showUpgrade && (
+              <Link
+                href="/dashboard/billing"
+                className="flex items-center gap-2 pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-semibold bg-gradient-to-r from-[var(--primary-light)] to-indigo-50 text-[var(--primary)]"
+              >
+                <Sparkles className="w-4 h-4" />
+                Upgrade to Pro
+              </Link>
+            )}
             {navLinks.map((link) => (
               <Link
                 key={link.href}
