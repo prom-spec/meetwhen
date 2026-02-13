@@ -957,7 +957,7 @@ export default function EventTypesPage() {
                     <p className="text-xs text-gray-500">Which Google accounts should this event type use? Leave unchecked for all accounts.</p>
                     <div className="space-y-2 mt-2">
                       {linkedAccounts.map((acc: { id: string; providerAccountId: string; email?: string }) => {
-                        const selected: string[] = formData.calendarAccountIds ? JSON.parse(formData.calendarAccountIds || "[]") : []
+                        const selected: string[] = (() => { try { return formData.calendarAccountIds ? JSON.parse(formData.calendarAccountIds) : [] } catch { return [] } })()
                         const isChecked = selected.includes(acc.providerAccountId)
                         return (
                           <label key={acc.id} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
