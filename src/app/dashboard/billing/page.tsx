@@ -86,11 +86,16 @@ export default function BillingPage() {
     if (!checkoutUrl || !userId) return
     const url = new URL(checkoutUrl)
     url.searchParams.set("checkout[custom][user_id]", userId)
+    // Try overlay first, fallback to new tab
     try {
       ;(window as any).createLemonSqueezy?.()
-      ;(window as any).LemonSqueezy?.Url?.Open?.(url.toString())
+      const ls = (window as any).LemonSqueezy
+      if (ls?.Url?.Open) {
+        ls.Url.Open(url.toString())
+      } else {
+        window.open(url.toString(), "_blank")
+      }
     } catch {
-      // Fallback: open in new tab
       window.open(url.toString(), "_blank")
     }
   }
