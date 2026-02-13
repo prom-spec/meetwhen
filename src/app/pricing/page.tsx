@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Check, Sparkles, Building2, User } from "lucide-react";
+import { Sparkles, Building2, User } from "lucide-react";
 
 export const metadata = {
   title: "Pricing — letsmeet.link",
@@ -195,13 +195,9 @@ export default function PricingPage() {
                   {tier.features.map((feature) => (
                     <li key={feature.name} className="flex items-start gap-3">
                       {feature.included ? (
-                        <span className="w-[18px] h-[18px] rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shrink-0 mt-[3px] shadow-[0_1px_3px_rgba(16,185,129,0.4)]">
-                          <Check className="w-[10px] h-[10px] text-white stroke-[3]" />
-                        </span>
+                        <span className="w-2.5 h-2.5 rounded-full bg-[var(--primary)] shrink-0 mt-[7px]" />
                       ) : (
-                        <span className="w-[18px] h-[18px] rounded-full bg-gray-100 flex items-center justify-center shrink-0 mt-[3px]">
-                          <span className="w-[8px] h-[1.5px] bg-gray-300 rounded-full" />
-                        </span>
+                        <span className="w-2.5 h-2.5 rounded-full border-2 border-[var(--primary)] opacity-30 shrink-0 mt-[7px]" />
                       )}
                       <span
                         className={`text-sm ${
@@ -258,14 +254,10 @@ export default function PricingPage() {
                 ].map(([feature, us, them]) => {
                   const renderCell = (val: string | boolean, isPrimary?: boolean) => {
                     if (val === true) return (
-                      <span className="w-5 h-5 rounded-full bg-[var(--primary)] inline-flex items-center justify-center">
-                        <Check className="w-3 h-3 text-white stroke-[3]" />
-                      </span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-[var(--primary)] inline-block" />
                     )
                     if (val === false) return (
-                      <span className="w-5 h-5 rounded-full border-[1.5px] border-gray-200 inline-flex items-center justify-center">
-                        <span className="w-2 h-0.5 bg-gray-300 rounded-full" />
-                      </span>
+                      <span className="w-2.5 h-2.5 rounded-full border-2 border-[var(--primary)] opacity-30 inline-block" />
                     )
                     return <span className={isPrimary ? "font-medium" : ""}>{val as string}</span>
                   }

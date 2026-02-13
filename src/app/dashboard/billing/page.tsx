@@ -213,13 +213,9 @@ export default function BillingPage() {
                 {plan.features.map((f) => (
                   <li key={f.label} className="flex items-center gap-2 text-sm text-gray-600">
                     {f.included ? (
-                      <span className="w-[18px] h-[18px] rounded-full bg-[#0066FF] inline-flex items-center justify-center shrink-0">
-                        <Check className="w-3 h-3 text-white stroke-[3]" />
-                      </span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#0066FF] shrink-0" />
                     ) : (
-                      <span className="w-[18px] h-[18px] rounded-full border-[1.5px] border-gray-200 inline-flex items-center justify-center shrink-0">
-                        <span className="w-2 h-0.5 bg-gray-300 rounded-full" />
-                      </span>
+                      <span className="w-2.5 h-2.5 rounded-full border-2 border-[#0066FF] opacity-30 shrink-0" />
                     )}
                     <span className={f.included ? "" : "text-gray-400"}>{f.label}</span>
                   </li>
