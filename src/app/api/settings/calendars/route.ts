@@ -12,8 +12,18 @@ export async function GET() {
 
     const result = await listAllUserCalendars(session.user.id)
     return NextResponse.json(result)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching calendars:", error)
-    return NextResponse.json({ error: "Failed to fetch calendars" }, { status: 500 })
+    const message = error instanceof Error ? error.message : ""
+    if (message.includes("invalid_grant") || message.includes("Token has been expired") || message.includes("refresh token")) {
+      return NextResponse.json({ 
+        error: "Your Google calendar connection has expired. Please reconnect your Google account in Settings.", 
+        code: "REAUTH_REQUIRED" 
+      }, { status: 401 })
+    }
+    return NextResponse.json({ 
+      error: "Unable to load calendars right now. Please try again in a moment.", 
+      code: "FETCH_FAILED" 
+    }, { status: 500 })
   }
 }
