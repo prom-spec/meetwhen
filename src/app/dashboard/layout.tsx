@@ -126,7 +126,7 @@ export default function DashboardLayout({
                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold bg-gradient-to-r from-[var(--primary)] to-indigo-500 text-white hover:opacity-90 transition-opacity mr-1"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    Upgrade
+                    Upgrade for $1
                   </Link>
                 )}
                 {primaryLinks.map((link) => (
@@ -235,7 +235,7 @@ export default function DashboardLayout({
                 className="flex items-center gap-2 pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-semibold bg-gradient-to-r from-[var(--primary-light)] to-indigo-50 text-[var(--primary)]"
               >
                 <Sparkles className="w-4 h-4" />
-                Upgrade to Pro
+                Upgrade for $1
               </Link>
             )}
             {navLinks.map((link) => (
