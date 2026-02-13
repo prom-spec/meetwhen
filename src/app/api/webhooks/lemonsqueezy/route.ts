@@ -1,15 +1,21 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
-import { prisma } from "@/lib/prisma"
+import prisma from "@/lib/prisma"
 
 const WEBHOOK_SECRET = process.env.LEMONSQUEEZY_WEBHOOK_SECRET || ""
 
 function verifySignature(rawBody: string, signature: string): boolean {
-  if (!WEBHOOK_SECRET) return false
-  const hmac = crypto.createHmac("sha256", WEBHOOK_SECRET)
-  const digest = hmac.update(rawBody).digest("hex")
-  return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signature))
+  if (!WEBHOOK_SECRET || !signature) return false
+  try {
+    const hmac = crypto.createHmac("sha256", WEBHOOK_SECRET)
+    const digest = hmac.update(rawBody).digest("hex")
+    const digestBuf = Buffer.from(digest, "utf8")
+    const sigBuf = Buffer.from(signature, "utf8")
+    if (digestBuf.byteLength !== sigBuf.byteLength) return false
+    return crypto.timingSafeEqual(digestBuf, sigBuf)
+  } catch {
+    return false
+  }
 }
 
 function mapVariantToPlan(variantName: string): string {
@@ -51,12 +57,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true })
   }
 
+  // Verify user exists before updating
+  const user = await prisma.user.findUnique({ where: { id: userId } })
+  if (!user) {
+    console.warn(`[LemonSqueezy] User ${userId} not found, ignoring`)
+    return NextResponse.json({ received: true })
+  }
+
+  // For update/cancel events on existing subscriptions, verify subscription ID matches
+  if (eventName !== "subscription_created" && user.lemonSubscriptionId && user.lemonSubscriptionId !== lemonSubscriptionId) {
+    console.warn(`[LemonSqueezy] Subscription ID mismatch for user ${userId}: expected ${user.lemonSubscriptionId}, got ${lemonSubscriptionId}`)
+    return NextResponse.json({ received: true })
+  }
+
   try {
     switch (eventName) {
       case "subscription_created":
       case "subscription_updated": {
         const plan = mapVariantToPlan(variantName)
-        // If cancelled or expired, revert to FREE
         const effectivePlan = ["cancelled", "expired"].includes(status) ? "FREE" : plan
         await prisma.user.update({
           where: { id: userId },
@@ -64,7 +82,6 @@ export async function POST(req: NextRequest) {
             plan: effectivePlan,
             lemonCustomerId,
             lemonSubscriptionId,
-            planUpdatedAt: new Date(),
             ...(attrs.ends_at ? { planExpiresAt: new Date(attrs.ends_at) } : {}),
           },
         })
@@ -72,25 +89,25 @@ export async function POST(req: NextRequest) {
       }
 
       case "subscription_cancelled": {
-        // Set plan to expire at period end
+        // Set expiry and downgrade plan when period ends
+        const endsAt = attrs.ends_at ? new Date(attrs.ends_at) : new Date()
+        const isPastEnd = endsAt <= new Date()
         await prisma.user.update({
           where: { id: userId },
           data: {
-            planExpiresAt: attrs.ends_at ? new Date(attrs.ends_at) : new Date(),
-            planUpdatedAt: new Date(),
+            plan: isPastEnd ? "FREE" : user.plan, // downgrade immediately if already past end
+            planExpiresAt: endsAt,
           },
         })
         break
       }
 
       case "subscription_payment_success": {
-        // Extend/confirm plan
         const plan = mapVariantToPlan(variantName)
         await prisma.user.update({
           where: { id: userId },
           data: {
             plan,
-            planUpdatedAt: new Date(),
             ...(attrs.renews_at ? { planExpiresAt: new Date(attrs.renews_at) } : {}),
           },
         })
@@ -99,7 +116,6 @@ export async function POST(req: NextRequest) {
 
       case "subscription_payment_failed": {
         console.warn(`[LemonSqueezy] Payment failed for user ${userId}`)
-        // Could add grace period logic here
         break
       }
 
@@ -107,8 +123,9 @@ export async function POST(req: NextRequest) {
         console.log(`[LemonSqueezy] Unhandled event: ${eventName}`)
     }
   } catch (err) {
+    // Return 500 for transient DB errors so Lemon Squeezy retries
     console.error(`[LemonSqueezy] DB error:`, err)
-    // Still return 200 to avoid retries for DB issues
+    return NextResponse.json({ error: "Internal error" }, { status: 500 })
   }
 
   return NextResponse.json({ received: true })
