@@ -6,6 +6,7 @@ import { handleFormError } from "@/lib/form-errors"
 import Link from "next/link"
 import { useToast } from "@/components/ToastProvider"
 import ConfirmDialog from "@/components/ConfirmDialog"
+import PlanGate from "@/components/PlanGate"
 
 interface TeamMember {
   id: string
@@ -129,6 +130,7 @@ export default function TeamsPage() {
   }
 
   return (
+    <PlanGate feature="teams" featureLabel="Teams & Round-Robin" description="Collaborate with your team using round-robin scheduling and shared event types.">
     <div className="px-4 sm:px-0">
       <ConfirmDialog
         open={!!confirmDeleteTeam}
@@ -319,5 +321,6 @@ export default function TeamsPage() {
         </div>
       )}
     </div>
+    </PlanGate>
   )
 }

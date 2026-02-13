@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Shield, Save, Loader2, AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import PlanGate from "@/components/PlanGate"
 
 interface SSOConfig {
   id: string
@@ -95,6 +96,7 @@ export default function SSOSettingsPage({ params }: { params: Promise<{ id: stri
   }
 
   return (
+    <PlanGate feature="sso" featureLabel="SSO & SAML" description="Enable single sign-on for your team with SAML 2.0 integration.">
     <div className="max-w-2xl mx-auto p-6">
       <Link
         href={`/dashboard/teams/${teamId}`}
@@ -251,5 +253,6 @@ export default function SSOSettingsPage({ params }: { params: Promise<{ id: stri
         </button>
       </form>
     </div>
+    </PlanGate>
   )
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, Zap, Mail, Globe, Clock, Power } from "lucide-react"
 import Link from "next/link"
+import PlanGate from "@/components/PlanGate"
 
 interface WorkflowStep {
   id?: string
@@ -329,6 +330,7 @@ function StepEditor({
   const ActionIcon = ACTIONS.find((a) => a.value === step.action)?.icon || Zap
 
   return (
+    <PlanGate feature="workflows" featureLabel="Workflows & Automations" description="Automate your booking flow with custom workflows, email sequences, and webhook triggers.">
     <div className="bg-white border border-gray-200 rounded-lg p-3">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -424,5 +426,6 @@ function StepEditor({
         </p>
       )}
     </div>
+    </PlanGate>
   )
 }

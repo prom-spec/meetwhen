@@ -6,6 +6,7 @@ import {
   Globe, Check, RefreshCw, Shield, Palette, Users, ChevronLeft,
   Copy, Trash2, Building2, AlertTriangle
 } from "lucide-react"
+import PlanGate from "@/components/PlanGate"
 
 interface DomainClaim {
   id: string
@@ -166,6 +167,7 @@ export default function DomainSettingsPage() {
   }
 
   return (
+    <PlanGate feature="customDomain" featureLabel="Custom Domain" description="Use your own domain for a professional booking experience.">
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex items-center gap-3 mb-8">
@@ -462,5 +464,6 @@ export default function DomainSettingsPage() {
         </div>
       </div>
     </div>
+    </PlanGate>
   )
 }

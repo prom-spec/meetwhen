@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Plus, Trash2, Loader2, Mail, Power, Pencil } from "lucide-react"
 import Link from "next/link"
+import PlanGate from "@/components/PlanGate"
 
 interface EmailSequence {
   id: string
@@ -88,6 +89,7 @@ export default function SequencesPage() {
   }
 
   return (
+    <PlanGate feature="sequences" featureLabel="Email Sequences" description="Send automated email sequences before and after meetings.">
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -187,5 +189,6 @@ export default function SequencesPage() {
         </div>
       )}
     </div>
+    </PlanGate>
   )
 }

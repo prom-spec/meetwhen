@@ -19,6 +19,7 @@ import {
   ChevronUp,
 } from "lucide-react"
 import ConfirmDialog from "@/components/ConfirmDialog"
+import PlanGate from "@/components/PlanGate"
 
 interface WebhookData {
   id: string
@@ -234,6 +235,7 @@ export default function WebhooksPage() {
   }
 
   return (
+    <PlanGate feature="webhooks" featureLabel="Webhooks & API Access" description="Send real-time booking data to your apps and services via webhooks.">
     <div className="px-4 py-6 sm:px-0">
       <ConfirmDialog
         open={!!confirmDeleteWebhook}
@@ -630,5 +632,6 @@ function verifyWebhook(payload, signature, secret) {
         </div>
       </div>
     </div>
+    </PlanGate>
   )
 }

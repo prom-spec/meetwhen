@@ -82,6 +82,16 @@ export async function POST(request: NextRequest) {
     
     apiLogger.info("Creating event type", { visitorId: session.user.id })
 
+    // Plan gating: check event type limit
+    const { getPlanFromUser, getNumericLimit } = await import("@/lib/plans")
+    const currentUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } })
+    const userPlan = getPlanFromUser(currentUser || {})
+    const maxAllowed = getNumericLimit(userPlan, "maxEventTypes")
+    const existingCount = await prisma.eventType.count({ where: { userId: session.user.id } })
+    if (existingCount >= maxAllowed) {
+      return NextResponse.json({ error: `You've reached your limit of ${maxAllowed} event type${maxAllowed === 1 ? "" : "s"}. Upgrade your plan to create more.` }, { status: 403 })
+    }
+
     const body = await request.json()
     const parsed = createEventTypeSchema.safeParse(body)
     if (!parsed.success) {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { Search, Plus, User, Building2, Mail, Phone, ChevronRight, X } from "lucide-react"
+import PlanGate from "@/components/PlanGate"
 
 interface Contact {
   id: string
@@ -58,6 +59,7 @@ export default function ContactsPage() {
   }
 
   return (
+    <PlanGate feature="contacts" featureLabel="Contacts Management" description="Manage your contacts and see their booking history in one place.">
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -173,5 +175,6 @@ export default function ContactsPage() {
         </div>
       )}
     </div>
+    </PlanGate>
   )
 }

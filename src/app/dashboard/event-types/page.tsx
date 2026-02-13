@@ -8,6 +8,8 @@ import { handleFormError } from "@/lib/form-errors"
 import { useToast } from "@/components/ToastProvider"
 import ConfirmDialog from "@/components/ConfirmDialog"
 import ShareModal from "@/components/ShareModal"
+import UpgradePrompt from "@/components/UpgradePrompt"
+import { usePlan } from "@/hooks/usePlan"
 
 type LocationType = "IN_PERSON" | "GOOGLE_MEET" | "ZOOM" | "PHONE" | "CUSTOM"
 
@@ -232,6 +234,9 @@ export default function EventTypesPage() {
   const [shareEventType, setShareEventType] = useState<EventType | null>(null)
   const [linkedAccounts, setLinkedAccounts] = useState<{ id: string; providerAccountId: string; email?: string }[]>([])
   const { toast } = useToast()
+  const { plan, getLimit } = usePlan()
+  const maxEventTypes = getLimit("maxEventTypes")
+  const atLimit = eventTypes.length >= maxEventTypes
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
@@ -465,14 +470,25 @@ export default function EventTypesPage() {
             Create events that people can book on your calendar
           </p>
         </div>
-        <Link
-          href="/dashboard/event-types/new"
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          New Event Type
-        </Link>
+        {!atLimit && (
+          <Link
+            href="/dashboard/event-types/new"
+            className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Event Type
+          </Link>
+        )}
       </div>
+
+      {atLimit && (
+        <UpgradePrompt
+          requiredPlan={plan === "FREE" ? "PRO" : "ENTERPRISE"}
+          feature="more event types"
+          description={`You've reached your limit of ${maxEventTypes} event type${maxEventTypes === 1 ? "" : "s"} on the ${plan} plan. Upgrade to create unlimited event types.`}
+          currentPlan={plan}
+        />
+      )}
 
       {eventTypes.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-lg border border-gray-200">

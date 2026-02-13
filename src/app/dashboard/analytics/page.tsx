@@ -27,6 +27,7 @@ import {
 } from "lucide-react"
 import BookingTrendsChart from "@/components/BookingTrendsChart"
 import BusiestTimesHeatmap from "@/components/BusiestTimesHeatmap"
+import PlanGate from "@/components/PlanGate"
 
 interface ExpandedAnalytics {
   polls: {
@@ -577,11 +578,13 @@ function MiniStat({
   highlight?: boolean
 }) {
   return (
+    <PlanGate feature="analytics" featureLabel="Detailed Analytics" description="Get deeper insights into your booking performance with advanced analytics.">
     <div className="text-center p-3 bg-gray-50 rounded-lg">
       <p className={`text-xl font-bold ${highlight ? "text-green-600" : "text-[#1a1a2e]"}`}>
         {value}
       </p>
       <p className="text-xs text-gray-500 mt-1">{label}</p>
     </div>
+    </PlanGate>
   )
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Copy, Check, Code, Monitor, MessageSquare, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ToastProvider"
+import PlanGate from "@/components/PlanGate"
 
 interface EventType {
   id: string
@@ -96,6 +97,7 @@ export default function EmbedPage() {
   }
 
   return (
+    <PlanGate feature="embedCustomization" featureLabel="Embed Customization" description="Customize the look and feel of your embedded booking widget.">
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Embed Widget</h1>
@@ -282,5 +284,6 @@ export default function EmbedPage() {
         </div>
       </div>
     </div>
+    </PlanGate>
   )
 }

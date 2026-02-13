@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Plus, Trash2, Copy, ExternalLink, ChevronDown, ChevronUp, GripVertical, Loader2, ArrowRight, Share2 } from "lucide-react"
 import { useToast } from "@/components/ToastProvider"
 import ConfirmDialog from "@/components/ConfirmDialog"
+import PlanGate from "@/components/PlanGate"
 
 interface Field {
   id?: string
@@ -223,6 +224,7 @@ export default function RoutingFormsPage() {
   }
 
   return (
+    <PlanGate feature="routing" featureLabel="Routing Forms" description="Route invitees to the right event type or team member based on their answers.">
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -472,5 +474,6 @@ export default function RoutingFormsPage() {
         onCancel={() => setDeleteId(null)}
       />
     </div>
+    </PlanGate>
   )
 }

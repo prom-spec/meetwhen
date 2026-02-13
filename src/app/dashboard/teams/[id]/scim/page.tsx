@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Copy, Check, RefreshCw, Key, Shield } from "lucide-react";
 import Link from "next/link";
+import PlanGate from "@/components/PlanGate"
 
 export default function SCIMSettingsPage() {
   const params = useParams();
@@ -46,6 +47,7 @@ export default function SCIMSettingsPage() {
   };
 
   return (
+    <PlanGate feature="scim" featureLabel="SCIM Provisioning" description="Automatically provision and deprovision team members from your identity provider.">
     <div className="max-w-3xl mx-auto p-6">
       <Link
         href={`/dashboard/teams/${teamId}`}
@@ -162,5 +164,6 @@ export default function SCIMSettingsPage() {
         </div>
       </div>
     </div>
+    </PlanGate>
   );
 }

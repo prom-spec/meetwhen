@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { ArrowLeft, ChevronLeft, ChevronRight, Filter } from "lucide-react"
 import Link from "next/link"
+import PlanGate from "@/components/PlanGate"
 
 interface AuditLogEntry {
   id: string
@@ -71,6 +72,7 @@ export default function AuditLogPage() {
   }
 
   return (
+    <PlanGate feature="auditLogs" featureLabel="Audit Logs" description="Track all changes and actions across your organization for compliance.">
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="mb-6">
         <Link
@@ -193,5 +195,6 @@ export default function AuditLogPage() {
         </div>
       )}
     </div>
+    </PlanGate>
   )
 }

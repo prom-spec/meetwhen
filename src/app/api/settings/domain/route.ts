@@ -38,6 +38,13 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+  // Plan gating
+  const { getPlanFromUser, canAccess } = await import("@/lib/plans")
+  const planUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } })
+  if (!canAccess(getPlanFromUser(planUser || {}), "customDomain")) {
+    return NextResponse.json({ error: "Custom domains require a Pro plan. Upgrade at /dashboard/billing" }, { status: 403 })
+  }
+
   const body = await req.json()
   const { action, domain } = body
 
