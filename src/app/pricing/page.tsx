@@ -101,7 +101,7 @@ const faqs = [
   },
   {
     q: "What payment methods do you accept?",
-    a: "We accept credit/debit cards via Lemon Squeezy, plus crypto payments (ETH, BTC) for yearly plans with a 20% discount.",
+    a: "We accept credit/debit cards via Lemon Squeezy, plus crypto payments (ETH, BTC) for yearly plans with a 10% discount.",
   },
   {
     q: "How does the 14-day trial work?",

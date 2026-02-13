@@ -56,12 +56,12 @@ function isRateLimited(ip: string): boolean {
 // CSP policy
 const CSP_POLICY = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://static.cloudflareinsights.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://static.cloudflareinsights.com https://app.lemonsqueezy.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: https:",
   "font-src 'self'",
-  "connect-src 'self' https://accounts.google.com https://www.googleapis.com https://www.google-analytics.com https://region1.google-analytics.com https://cloudflareinsights.com",
-  "frame-src 'self' https://accounts.google.com",
+  "connect-src 'self' https://accounts.google.com https://www.googleapis.com https://www.google-analytics.com https://region1.google-analytics.com https://cloudflareinsights.com https://app.lemonsqueezy.com",
+  "frame-src 'self' https://accounts.google.com https://app.lemonsqueezy.com https://*.lemonsqueezy.com",
 ].join("; ")
 
 // Known app hostnames that should NOT trigger custom domain routing
