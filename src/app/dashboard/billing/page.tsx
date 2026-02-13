@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import { useEffect, useState } from "react"
 import Script from "next/script"
 import Link from "next/link"
-import { Crown, Sparkles, Building2, Check, ExternalLink, Heart, Copy, CheckCheck } from "lucide-react"
+import { Crown, Sparkles, Building2, ExternalLink, Heart, Copy, CheckCheck } from "lucide-react"
 
 const PRO_CHECKOUT = process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_CHECKOUT_URL || ""
 const ENTERPRISE_CHECKOUT = process.env.NEXT_PUBLIC_LEMONSQUEEZY_ENTERPRISE_CHECKOUT_URL || ""
