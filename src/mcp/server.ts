@@ -219,7 +219,7 @@ async function handleGetPlan() {
     message: plan === "FREE"
       ? "You're on the Free plan. Upgrade to Pro ($1/mo) for unlimited event types, workflows, webhooks, and more."
       : plan === "PRO"
-      ? "You're on the Pro plan. Upgrade to Enterprise ($3/seat/mo) for teams, SSO, audit logs, and more."
+      ? "You're on the Pro plan. Upgrade to Enterprise ($5/seat/mo) for teams, SSO, audit logs, and more."
       : "You're on the Enterprise plan with all features.",
   }
 }

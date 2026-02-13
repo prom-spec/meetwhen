@@ -66,7 +66,7 @@ const tiers = [
   },
   {
     name: "Enterprise",
-    price: "$3",
+    price: "$5",
     period: "/seat/month",
     description: "For teams and organizations",
     icon: Building2,
@@ -101,7 +101,7 @@ const faqs = [
   },
   {
     q: "What payment methods do you accept?",
-    a: "We accept credit/debit cards via Lemon Squeezy. Pay yearly and save — $10/year for Pro (instead of $12), $30/year for Enterprise (instead of $36).",
+    a: "We accept credit/debit cards via Lemon Squeezy. Pay yearly and save — $10/year for Pro (instead of $12), $50/year for Enterprise (instead of $60).",
   },
   {
     q: "How does the 14-day trial work?",
@@ -263,7 +263,7 @@ export default function PricingPage() {
                   <th className="px-4 py-4 text-center bg-blue-50/50">
                     <div className="text-xs text-[var(--primary)] mb-0.5">letsmeet.link</div>
                     <div className="text-sm font-bold text-[var(--primary)]">Enterprise</div>
-                    <div className="text-xs text-[var(--primary)]">$3/seat/mo</div>
+                    <div className="text-xs text-[var(--primary)]">$5/seat/mo</div>
                   </th>
                   <th className="px-4 py-4 text-center">
                     <div className="text-xs text-gray-400 mb-0.5">Calendly</div>
@@ -360,7 +360,7 @@ export default function PricingPage() {
           <div className="mt-8 text-center">
             <p className="text-sm text-[var(--text-muted)]">
               Our <strong className="text-[var(--foreground)]">$1/mo Pro</strong> includes more than Calendly Standard at <strong className="text-[var(--foreground)]">$10/seat/mo</strong>.
-              Our <strong className="text-[var(--foreground)]">$3/seat/mo Enterprise</strong> beats Calendly Teams at <strong className="text-[var(--foreground)]">$16/seat/mo</strong>.
+              Our <strong className="text-[var(--foreground)]">$5/seat/mo Enterprise</strong> beats Calendly Teams at <strong className="text-[var(--foreground)]">$16/seat/mo</strong>.
             </p>
           </div>
         </div>

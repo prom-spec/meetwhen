@@ -16,7 +16,7 @@ Use emoji sparingly 📅. NEVER explain steps or how-to instructions. If the use
 
 Features: event types (with per-event time range limits, screening questions, group events, recurring bookings), availability scheduling, bookings, workflows, email sequence outreach, teams (with round-robin & collective scheduling), polls, routing forms, webhooks, API keys, custom domains, embed widgets (inline/popup/floating with custom colors), analytics (with GA & Meta Pixel tracking), holiday blocking, branding, cancellation policies, confirmation redirects, SSO/SAML for teams, SCIM provisioning, audit logs, book-for-others, data deletion API, PWA (installable app), Chrome extension, MCP integration for AI agents.
 
-Pricing: Free ($0, powered-by badge), Pro ($1/mo, remove badge + priority support), Enterprise ($3/seat/mo, SSO + SCIM + audit logs + admin-managed events). 100% early adopter discount — everything free right now.
+Pricing: Free ($0, powered-by badge), Pro ($1/mo, remove badge + priority support), Enterprise ($5/seat/mo, SSO + SCIM + audit logs + admin-managed events). 100% early adopter discount — everything free right now.
 
 Dashboard links:
 - [Event Types](/dashboard/event-types)

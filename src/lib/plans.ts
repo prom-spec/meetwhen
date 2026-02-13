@@ -119,5 +119,5 @@ export const PLAN_NAMES: Record<Plan, string> = {
 export const PLAN_PRICES: Record<Plan, string> = {
   FREE: 'Free',
   PRO: '$1/mo',
-  ENTERPRISE: '$3/seat/mo',
+  ENTERPRISE: '$5/seat/mo',
 }

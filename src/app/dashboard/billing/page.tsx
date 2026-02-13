@@ -53,11 +53,11 @@ const plans = [
   {
     id: "ENTERPRISE",
     name: "Enterprise",
-    monthlyPrice: "$3",
-    yearlyPrice: "$30",
+    monthlyPrice: "$5",
+    yearlyPrice: "$50",
     monthlyPeriod: "/seat/month",
     yearlyPeriod: "/seat/year",
-    yearlySavings: "Save $6/seat",
+    yearlySavings: "Save $10/seat",
     icon: Building2,
     features: [
       { label: "Unlimited event types", included: true },
