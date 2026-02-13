@@ -768,12 +768,16 @@ export default function SettingsPage() {
                     {!acc.isPrimary && (
                       <button
                         onClick={async () => {
-                          await fetch("/api/settings", {
+                          const res = await fetch("/api/settings", {
                             method: "PATCH",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ primaryAccountId: acc.providerAccountId }),
                           })
-                          fetchLinkedAccounts()
+                          if (res.ok) {
+                            await fetchLinkedAccounts()
+                          } else {
+                            console.error("Failed to set primary account", await res.text())
+                          }
                         }}
                         className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded hover:bg-blue-50"
                       >
