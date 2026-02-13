@@ -139,7 +139,7 @@ export default function BillingPage() {
               href="https://app.lemonsqueezy.com/my-orders"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-[#0066FF] hover:underline flex items-center gap-1"
+              className="text-sm text-[var(--primary)] hover:underline flex items-center gap-1"
             >
               Manage subscription <ExternalLink className="w-3 h-3" />
             </a>
@@ -153,7 +153,7 @@ export default function BillingPage() {
           onClick={() => setBillingPeriod("monthly")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             billingPeriod === "monthly"
-              ? "bg-[#0066FF] text-white"
+              ? "bg-[var(--primary)] text-white"
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
         >
@@ -163,7 +163,7 @@ export default function BillingPage() {
           onClick={() => setBillingPeriod("yearly")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
             billingPeriod === "yearly"
-              ? "bg-[#0066FF] text-white"
+              ? "bg-[var(--primary)] text-white"
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
         >
@@ -189,14 +189,14 @@ export default function BillingPage() {
             <div
               key={plan.id}
               className={`rounded-xl border-2 p-6 flex flex-col ${
-                isCurrent ? "border-[#0066FF] bg-blue-50/30" : "border-gray-200"
+                isCurrent ? "border-[var(--primary)] bg-[var(--primary-light)]/30" : "border-gray-200"
               }`}
             >
               <div className="flex items-center gap-2 mb-3">
-                <Icon className={`w-5 h-5 ${isCurrent ? "text-[#0066FF]" : "text-gray-400"}`} />
+                <Icon className={`w-5 h-5 ${isCurrent ? "text-[var(--primary)]" : "text-gray-400"}`} />
                 <h3 className="font-bold text-gray-900">{plan.name}</h3>
                 {isCurrent && (
-                  <span className="ml-auto text-xs bg-[#0066FF] text-white px-2 py-0.5 rounded-full">
+                  <span className="ml-auto text-xs bg-[var(--primary)] text-white px-2 py-0.5 rounded-full">
                     Current
                   </span>
                 )}
@@ -213,9 +213,9 @@ export default function BillingPage() {
                 {plan.features.map((f) => (
                   <li key={f.label} className="flex items-center gap-2 text-sm text-gray-600">
                     {f.included ? (
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#0066FF] shrink-0" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-[var(--primary)] shrink-0" />
                     ) : (
-                      <span className="w-2.5 h-2.5 rounded-full border-2 border-[#0066FF] opacity-30 shrink-0" />
+                      <span className="w-2.5 h-2.5 rounded-full border-2 border-[var(--primary)] opacity-30 shrink-0" />
                     )}
                     <span className={f.included ? "" : "text-gray-400"}>{f.label}</span>
                   </li>
@@ -230,7 +230,7 @@ export default function BillingPage() {
                   onClick={() => handleCheckout(plan.checkoutUrl)}
                   className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
                     plan.id === "PRO"
-                      ? "bg-[#0066FF] text-white hover:bg-[#0052CC]"
+                      ? "bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)]"
                       : "bg-gray-900 text-white hover:bg-gray-800"
                   }`}
                 >
