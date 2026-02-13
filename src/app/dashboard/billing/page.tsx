@@ -200,18 +200,15 @@ export default function BillingPage() {
           <p className="text-sm font-medium text-gray-900 mb-3">Donate with card</p>
           <div className="flex gap-2">
             {[5, 10, 25, 50].map((amount) => (
-              <a
+              <span
                 key={amount}
-                href={`https://buy.stripe.com/test_placeholder?amount=${amount}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 text-center py-2 bg-pink-50 hover:bg-pink-100 text-pink-700 rounded-lg text-sm font-medium transition-colors border border-pink-200"
+                className="flex-1 text-center py-2 bg-gray-50 text-gray-400 rounded-lg text-sm font-medium border border-gray-200 cursor-not-allowed"
               >
                 ${amount}
-              </a>
+              </span>
             ))}
           </div>
-          <p className="text-xs text-gray-400 mt-2">Powered by Stripe · Coming soon</p>
+          <p className="text-xs text-gray-400 mt-2">Stripe donations coming soon!</p>
         </div>
 
         {/* Crypto Donate */}
