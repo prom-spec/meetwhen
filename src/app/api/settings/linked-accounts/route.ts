@@ -11,6 +11,11 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { primaryAccountId: true },
+    })
+
     const accounts = await prisma.account.findMany({
       where: { userId: session.user.id },
       select: {
@@ -23,13 +28,14 @@ export async function GET() {
       orderBy: { id: "asc" },
     })
 
-    // The first account is considered the primary one
+    // Use the user's primaryAccountId if set, otherwise fall back to first account
+    const primaryId = user?.primaryAccountId
     const result = accounts.map((acc, index) => ({
       id: acc.id,
       provider: acc.provider,
       email: acc.email,
       hasCalendarScope: acc.scope?.includes("calendar") ?? false,
-      isPrimary: index === 0,
+      isPrimary: primaryId ? acc.providerAccountId === primaryId : index === 0,
     }))
 
     return NextResponse.json({ accounts: result })
@@ -52,24 +58,34 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Missing account id" }, { status: 400 })
     }
 
-    // Get all accounts for this user
-    const accounts = await prisma.account.findMany({
-      where: { userId: session.user.id },
-      select: { id: true },
-      orderBy: { id: "asc" },
-    })
+    // Get all accounts and user's primary setting
+    const [accounts, currentUser] = await Promise.all([
+      prisma.account.findMany({
+        where: { userId: session.user.id },
+        select: { id: true, providerAccountId: true },
+        orderBy: { id: "asc" },
+      }),
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { primaryAccountId: true },
+      }),
+    ])
 
     if (accounts.length <= 1) {
       return NextResponse.json({ error: "Cannot remove your only linked account" }, { status: 400 })
     }
 
-    // Ensure the account belongs to this user and is not the primary (first)
     const account = accounts.find(a => a.id === accountId)
     if (!account) {
       return NextResponse.json({ error: "Account not found" }, { status: 404 })
     }
 
-    if (accounts[0].id === accountId) {
+    // Check if this is the primary account
+    const isPrimary = currentUser?.primaryAccountId
+      ? account.providerAccountId === currentUser.primaryAccountId
+      : accounts[0].id === accountId
+
+    if (isPrimary) {
       return NextResponse.json({ error: "Cannot remove primary account" }, { status: 400 })
     }
 
