@@ -14,7 +14,7 @@ const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"])
 const CSRF_EXEMPT_PATHS = [
   "/api/mcp",           // Uses Bearer token auth
   "/api/analytics/track", // Public endpoint
-  "/api/chat",          // Session-authenticated, called from same origin
+  "/api/chat",          // Requires NextAuth session (SameSite=Lax cookie blocks cross-origin POSTs)
   "/api/cron",          // Uses Bearer token auth (CRON_SECRET)
   "/api/webhooks/lemonsqueezy", // Uses HMAC signature auth
 ]
