@@ -138,7 +138,7 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <h1 className="text-2xl font-bold">LetsMeet Admin</h1>
+          <h1 className="text-2xl font-bold">letsmeet.link Admin</h1>
           <div className="flex gap-2">
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
