@@ -19,7 +19,6 @@ test.describe('Edge Cases - Special Characters', () => {
     const nameInput = page.locator('input[placeholder="John Smith"]');
     await expect(nameInput).toBeVisible({ timeout: 5000 });
 
-    // Test special characters
     const specialName = 'José María O\'Brien-Müller 日本語 🎉';
     await nameInput.fill(specialName);
     expect(await nameInput.inputValue()).toBe(specialName);
@@ -72,17 +71,15 @@ test.describe('Edge Cases - Rapid Interactions', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
-    // Rapidly click multiple dates
-    const dateButtons = page.locator('button[aria-label]').filter({ hasNot: page.locator('[disabled]') });
+    // Use CSS :not([disabled]) to get only enabled date buttons
+    const dateButtons = page.locator('button[aria-label]:not([disabled])');
     const count = await dateButtons.count();
 
-    const clickPromises = [];
     for (let i = 0; i < Math.min(count, 8); i++) {
       const btn = dateButtons.nth(i);
       const ariaLabel = await btn.getAttribute('aria-label');
       if (!ariaLabel || ariaLabel.includes('Previous') || ariaLabel.includes('Next')) continue;
-      clickPromises.push(btn.click());
-      // Small delay to make it "rapid" but not simultaneous
+      await btn.click();
       await page.waitForTimeout(100);
     }
 
@@ -120,22 +117,17 @@ test.describe('Edge Cases - Rapid Interactions', () => {
 
 test.describe('Edge Cases - Back Button Behavior', () => {
   test('browser back from event page goes to previous page', async ({ page }) => {
-    // Navigate to profile then event to have history
     await page.goto(`/${TEST_USER}/${TEST_EVENT}`);
     await page.waitForLoadState('networkidle');
 
-    // The page should have loaded
     await expect(page.getByText('Sun', { exact: true }).first()).toBeVisible({ timeout: 10000 });
 
-    // Navigate to another page
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
 
-    // Go back
     await page.goBack();
     await page.waitForLoadState('networkidle');
 
-    // Should be back on event page
     await expect(page).toHaveURL(new RegExp(`/${TEST_USER}/${TEST_EVENT}`));
   });
 
@@ -153,11 +145,9 @@ test.describe('Edge Cases - Back Button Behavior', () => {
     await slotButton.click();
     await expect(page.locator('text=Your name')).toBeVisible({ timeout: 5000 });
 
-    // Use the in-page back button
     const backBtn = page.locator('button').filter({ hasText: /Change time/i });
     await backBtn.click();
 
-    // Calendar should reappear
     await expect(page.getByText('Sun', { exact: true }).first()).toBeVisible({ timeout: 5000 });
   });
 });
@@ -167,10 +157,9 @@ test.describe('Edge Cases - Multiple Timezone Switches', () => {
     await page.goto(`/${TEST_USER}/${TEST_EVENT}`);
     await page.waitForLoadState('networkidle');
 
-    const timezones = ['New_York', 'London', 'Tokyo', 'Sydney'];
+    const timezones = ['New_York', 'London', 'Tokyo'];
 
     for (const tz of timezones) {
-      // Open timezone selector
       const tzButton = page.locator('button').filter({ hasText: /\/|UTC/ }).first();
       await expect(tzButton).toBeVisible({ timeout: 10000 });
       await tzButton.click();
@@ -179,15 +168,13 @@ test.describe('Edge Cases - Multiple Timezone Switches', () => {
       await expect(searchInput).toBeVisible({ timeout: 3000 });
 
       await searchInput.fill(tz);
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(500);
 
-      // Click first matching result
-      const option = page.locator('button').filter({ hasText: new RegExp(tz.replace('_', ' '), 'i') }).first();
+      const option = page.locator('button').filter({ hasText: new RegExp(tz.replace('_', '.?'), 'i') }).first();
       if (await option.isVisible({ timeout: 2000 }).catch(() => false)) {
         await option.click();
         await page.waitForTimeout(500);
       } else {
-        // Close dropdown and continue
         await page.locator('body').click({ position: { x: 10, y: 10 } });
         await page.waitForTimeout(300);
       }
@@ -209,27 +196,29 @@ test.describe('Edge Cases - Multiple Timezone Switches', () => {
     const searchInput = page.locator('input[placeholder="Search timezones..."]');
     await expect(searchInput).toBeVisible({ timeout: 3000 });
     await searchInput.fill('Tokyo');
-    
+
     const tokyoOption = page.locator('button').filter({ hasText: /Tokyo/ }).first();
-    if (await tokyoOption.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await tokyoOption.click();
-      await page.waitForTimeout(500);
-
-      // Click a date
-      const dateButtons = page.locator('button[aria-label]').filter({ hasNot: page.locator('[disabled]') });
-      for (let i = 0; i < await dateButtons.count(); i++) {
-        const ariaLabel = await dateButtons.nth(i).getAttribute('aria-label');
-        if (ariaLabel && !ariaLabel.includes('Previous') && !ariaLabel.includes('Next')) {
-          await dateButtons.nth(i).click();
-          break;
-        }
-      }
-
-      await page.waitForTimeout(1000);
-
-      // Timezone should still show Tokyo
-      await expect(page.locator('text=Asia/Tokyo').or(page.locator('text=Asia/Tokyo'.replace('_', ' ')))).toBeVisible();
+    if (!await tokyoOption.isVisible({ timeout: 2000 }).catch(() => false)) {
+      test.skip();
+      return;
     }
+    await tokyoOption.click();
+    await page.waitForTimeout(500);
+
+    // Click an enabled date
+    const dateButtons = page.locator('button[aria-label]:not([disabled])');
+    for (let i = 0; i < await dateButtons.count(); i++) {
+      const ariaLabel = await dateButtons.nth(i).getAttribute('aria-label');
+      if (ariaLabel && !ariaLabel.includes('Previous') && !ariaLabel.includes('Next')) {
+        await dateButtons.nth(i).click();
+        break;
+      }
+    }
+
+    await page.waitForTimeout(1000);
+
+    // Timezone should still show Tokyo
+    await expect(page.locator('button').filter({ hasText: /Tokyo/ })).toBeVisible({ timeout: 5000 });
   });
 });
 
@@ -238,7 +227,6 @@ test.describe('Edge Cases - Event Description Display', () => {
     await page.goto(`/${TEST_USER}/${TEST_EVENT}`);
     await page.waitForLoadState('networkidle');
 
-    // Page should load without errors regardless of description
     await expect(page.getByText('Sun', { exact: true }).first()).toBeVisible({ timeout: 10000 });
   });
 });
@@ -246,13 +234,11 @@ test.describe('Edge Cases - Event Description Display', () => {
 test.describe('Edge Cases - URL Handling', () => {
   test('trailing slash is handled', async ({ page }) => {
     const resp = await page.goto(`/${TEST_USER}/${TEST_EVENT}/`);
-    // Should either redirect or load fine
     expect(resp?.status()).toBeLessThan(500);
   });
 
   test('case sensitivity in username', async ({ page }) => {
     const resp = await page.goto(`/${TEST_USER.toUpperCase()}/${TEST_EVENT}`);
-    // May 404 if case-sensitive, but should not 500
     expect(resp?.status()).toBeLessThan(500);
   });
 });

@@ -6,7 +6,11 @@ test.describe('Homepage', () => {
   test('loads with correct title and CTA', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveTitle(/letsmeet\.link/);
-    await expect(page.locator('text=Stop paying $10/mo')).toBeVisible();
+    // A/B test may show different headlines
+    const headline = page.locator('h1').first();
+    await expect(headline).toBeVisible();
+    const text = await headline.textContent();
+    expect(text).toMatch(/Stop paying|Free scheduling|scheduling/i);
     await expect(page.locator('a:has-text("Start scheduling free")').first()).toBeVisible();
   });
 
