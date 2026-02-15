@@ -5,15 +5,33 @@ function unauthorized() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 
+// Simple rate limiting for admin endpoint
+const adminRateLimit = new Map<string, { count: number; resetAt: number }>();
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = adminRateLimit.get(ip);
+  if (!entry || entry.resetAt < now) {
+    adminRateLimit.set(ip, { count: 1, resetAt: now + 60000 });
+    return false;
+  }
+  entry.count++;
+  return entry.count > 10; // 10 attempts per minute
+}
+
 function checkAuth(req: NextRequest): boolean {
   const secret = process.env.ADMIN_SECRET;
   if (!secret) return false;
   const fromHeader = req.headers.get("x-admin-secret");
+  const fromCookie = req.cookies.get("admin_secret")?.value;
   const fromQuery = new URL(req.url).searchParams.get("secret");
-  return fromHeader === secret || fromQuery === secret;
+  return fromHeader === secret || fromCookie === secret || fromQuery === secret;
 }
 
 export async function GET(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+  if (isRateLimited(ip)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
   if (!checkAuth(req)) return unauthorized();
 
   const now = new Date();

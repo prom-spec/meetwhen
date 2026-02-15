@@ -36,7 +36,7 @@ export default function PoweredByFooter({
           href="https://letsmeet.link/?ref=powered-by"
           className="font-medium text-[#0066FF] hover:text-[#0052cc] transition-colors"
         >
-          Create your own
+          Get your free booking page
         </Link>
       </div>
     </div>

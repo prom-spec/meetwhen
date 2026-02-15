@@ -30,12 +30,12 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     removeBranding: false,
     workflows: false,
     webhooks: false,
-    screening: false,
+    screening: true,      // Screening drives stickiness, keep in free
     customDomain: false,
     routing: false,
     cancellationPolicy: false,
     bookOnBehalf: false,
-    analytics: false,
+    analytics: true,       // Basic analytics in free to show value
     embedCustomization: false,
     sequences: false,
     contacts: false,

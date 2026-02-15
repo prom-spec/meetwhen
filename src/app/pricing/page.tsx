@@ -3,8 +3,8 @@ import Image from "next/image";
 import { Sparkles, Building2, User } from "lucide-react";
 
 export const metadata = {
-  title: "Pricing — letsmeet.link",
-  description: "Simple, transparent pricing. Free for individuals, powerful for teams.",
+  title: "Pricing — letsmeet.link | Free Calendly Alternative",
+  description: "Free scheduling with 3 event types + AI chat. Pro for $1/mo. Compare with Calendly ($10/mo) and save 90%.",
 };
 
 const tiers = [
@@ -26,6 +26,8 @@ const tiers = [
       { name: "AI chat scheduling", included: true },
       { name: "Meeting polls", included: true },
       { name: "Email confirmations & reminders", included: true },
+      { name: "Screening & qualification forms", included: true },
+      { name: "Basic analytics", included: true },
       { name: "Multiple event types", included: false },
       { name: "Multiple calendars", included: false },
       { name: "Remove branding", included: false },
@@ -405,7 +407,10 @@ export default function PricingPage() {
           <p className="text-sm text-[var(--text-muted)]">
             © {new Date().getFullYear()} letsmeet.link. All rights reserved.
           </p>
-          <div className="flex gap-6 text-sm text-[var(--text-muted)]">
+          <div className="flex flex-wrap gap-6 text-sm text-[var(--text-muted)]">
+            <Link href="/alternatives/calendly" className="hover:text-[var(--foreground)]">Calendly Alternative</Link>
+            <Link href="/compare/calendly-vs-letsmeet" className="hover:text-[var(--foreground)]">Compare</Link>
+            <Link href="/blog" className="hover:text-[var(--foreground)]">Blog</Link>
             <Link href="/about" className="hover:text-[var(--foreground)]">About</Link>
             <Link href="/terms" className="hover:text-[var(--foreground)]">Terms</Link>
             <Link href="/privacy" className="hover:text-[var(--foreground)]">Privacy</Link>

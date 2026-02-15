@@ -79,8 +79,16 @@ export default function AdminDashboard() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/admin/stats?secret=${encodeURIComponent(secret)}`);
+      // Store secret as httpOnly-safe cookie via header auth (no query param in URL)
+      document.cookie = `admin_secret=${encodeURIComponent(secret)};path=/admin;max-age=86400;SameSite=Strict`;
+      const res = await fetch("/api/admin/stats", {
+        headers: { "x-admin-secret": secret },
+      });
       if (!res.ok) throw new Error(res.status === 401 ? "Invalid secret" : `Error ${res.status}`);
+      // Clean URL if secret was in query params
+      if (window.location.search.includes("secret=")) {
+        window.history.replaceState({}, "", "/admin");
+      }
       setData(await res.json());
     } catch (e: any) {
       setError(e.message);
@@ -95,12 +103,16 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, [autoRefresh, secret, fetchStats]);
 
-  // Try to load secret from URL on mount
+  // Try to load secret from URL or cookie on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const s = params.get("secret");
     if (s) {
       setSecret(s);
+    } else {
+      // Try loading from cookie
+      const match = document.cookie.match(/admin_secret=([^;]+)/);
+      if (match) setSecret(decodeURIComponent(match[1]));
     }
   }, []);
 

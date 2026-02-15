@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Calendar, Clock, Users, CalendarX } from "lucide-react"
 import BookingTrendsChart from "@/components/BookingTrendsChart"
 import BusiestTimesHeatmap from "@/components/BusiestTimesHeatmap"
+import OnboardingWizard from "@/components/OnboardingWizard"
 
 export const metadata = {
   title: "Dashboard",
@@ -17,7 +18,7 @@ export default async function DashboardPage() {
     return null
   }
 
-  const [eventTypesCount, upcomingBookings, totalBookings] = await Promise.all([
+  const [eventTypesCount, upcomingBookings, totalBookings, user] = await Promise.all([
     prisma.eventType.count({ where: { userId: session.user.id } }),
     prisma.booking.findMany({
       where: {
@@ -30,11 +31,14 @@ export default async function DashboardPage() {
       take: 5,
     }),
     prisma.booking.count({ where: { hostId: session.user.id } }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { username: true } }),
   ])
 
   return (
     <div className="px-4 sm:px-0">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
+      
+      <OnboardingWizard username={user?.username} />
       
       <div className="grid gap-4 md:grid-cols-3 mb-8">
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">

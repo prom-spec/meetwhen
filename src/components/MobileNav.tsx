@@ -27,6 +27,15 @@ export default function MobileNav() {
       {open && (
         <div className="absolute top-16 left-0 right-0 bg-white border-b border-gray-100 shadow-lg z-50">
           <div className="px-4 py-3 space-y-3">
+            <Link href="/pricing" onClick={() => setOpen(false)} className="block text-sm font-medium text-gray-600 hover:text-gray-900 py-2">
+              Pricing
+            </Link>
+            <Link href="/blog" onClick={() => setOpen(false)} className="block text-sm font-medium text-gray-600 hover:text-gray-900 py-2">
+              Blog
+            </Link>
+            <Link href="/alternatives/calendly" onClick={() => setOpen(false)} className="block text-sm font-medium text-gray-600 hover:text-gray-900 py-2">
+              Calendly Alternative
+            </Link>
             <Link href="/mcp" onClick={() => setOpen(false)} className="block text-sm font-medium text-gray-600 hover:text-gray-900 py-2">
               MCP for AI
             </Link>
@@ -37,7 +46,7 @@ export default function MobileNav() {
               Sign in
             </Link>
             <Link href="/login" onClick={() => setOpen(false)} className="block text-sm font-medium text-white bg-[#0066FF] hover:bg-[#0052cc] px-4 py-2 rounded-lg transition-colors text-center">
-              Schedule with AI
+              Start scheduling free
             </Link>
           </div>
         </div>
