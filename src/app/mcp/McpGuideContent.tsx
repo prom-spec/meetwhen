@@ -315,6 +315,19 @@ export default function McpGuideContent() {
         </article>
       </main>
 
+            {/* Related links */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        <div className="border-t border-gray-100 pt-6">
+          <h3 className="text-sm font-medium text-gray-500 mb-3">Related reading</h3>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/blog/mcp-ai-agent-booking" className="text-sm text-[#0066FF] hover:underline">MCP: Let Your AI Agent Book Meetings →</Link>
+            <Link href="/blog/ai-powered-scheduling-setup" className="text-sm text-[#0066FF] hover:underline">AI-Powered Scheduling Setup →</Link>
+            <Link href="/use-cases/ai-agents" className="text-sm text-[#0066FF] hover:underline">AI Agents Use Case →</Link>
+            <Link href="/alternatives/calendly" className="text-sm text-[#0066FF] hover:underline">Calendly Alternative →</Link>
+          </div>
+        </div>
+      </div>
+
       {/* Footer */}
       <footer className="border-t border-gray-200 bg-white py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

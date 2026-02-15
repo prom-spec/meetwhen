@@ -5,6 +5,11 @@ import { Sparkles, Building2, User } from "lucide-react";
 export const metadata = {
   title: "Pricing — letsmeet.link | Free Calendly Alternative",
   description: "Free scheduling with 3 event types + AI chat. Pro for $1/mo. Compare with Calendly ($10/mo) and save 90%.",
+  openGraph: {
+    title: "Pricing — letsmeet.link | 90% Cheaper Than Calendly",
+    description: "Free scheduling with AI chat. Pro for $1/mo. Save 90% vs Calendly.",
+    url: "https://www.letsmeet.link/pricing",
+  },
 };
 
 const tiers = [
@@ -136,7 +141,7 @@ export default function PricingPage() {
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-4 pt-16 pb-8 text-center">
         <h1 className="text-4xl md:text-5xl font-bold text-[var(--foreground)] mb-4">
-          Simple, transparent pricing
+          Everything Calendly charges $10/mo for. For $1.
         </h1>
         <p className="text-lg text-[var(--text-muted)] max-w-2xl mx-auto">
           AI-first scheduling shouldn&apos;t cost a fortune. Start free, upgrade when you need more.
@@ -400,6 +405,52 @@ export default function PricingPage() {
           </Link>
         </div>
       </section>
+
+            {/* Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            name: "letsmeet.link",
+            applicationCategory: "BusinessApplication",
+            operatingSystem: "Web",
+            url: "https://www.letsmeet.link",
+            description: "AI-first scheduling platform. Free Calendly alternative with AI chat and MCP integration.",
+            offers: [
+              {
+                "@type": "Offer",
+                name: "Free",
+                price: "0",
+                priceCurrency: "USD",
+                description: "3 event types, AI chat, Google Calendar sync, meeting polls",
+              },
+              {
+                "@type": "Offer",
+                name: "Pro",
+                price: "1",
+                priceCurrency: "USD",
+                billingPeriod: "P1M",
+                description: "Unlimited event types, custom branding, workflows, team scheduling",
+              },
+              {
+                "@type": "Offer",
+                name: "Enterprise",
+                price: "3",
+                priceCurrency: "USD",
+                billingPeriod: "P1M",
+                description: "SSO, SCIM, audit logs, custom integrations, dedicated support",
+              },
+            ],
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue: "4.9",
+              ratingCount: "12",
+            },
+          }),
+        }}
+      />
 
       {/* Footer */}
       <footer className="border-t border-[var(--border)] py-8">

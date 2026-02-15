@@ -36,6 +36,12 @@ export default function MobileNav() {
             <Link href="/alternatives/calendly" onClick={() => setOpen(false)} className="block text-sm font-medium text-gray-600 hover:text-gray-900 py-2">
               Calendly Alternative
             </Link>
+            <Link href="/use-cases/freelancers" onClick={() => setOpen(false)} className="block text-sm font-medium text-gray-600 hover:text-gray-900 py-2">
+              Use Cases
+            </Link>
+            <Link href="/tools/meeting-cost-calculator" onClick={() => setOpen(false)} className="block text-sm font-medium text-gray-600 hover:text-gray-900 py-2">
+              Meeting Cost Calculator
+            </Link>
             <Link href="/mcp" onClick={() => setOpen(false)} className="block text-sm font-medium text-gray-600 hover:text-gray-900 py-2">
               MCP for AI
             </Link>

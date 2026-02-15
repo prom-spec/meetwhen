@@ -12,13 +12,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/terms`, changeFrequency: "yearly" as const, priority: 0.3 },
   ];
 
-  const alternatives = ["calendly", "cal-com", "tidycal", "acuity", "doodle"].map((slug) => ({
+  const alternatives = ["calendly", "cal-com", "tidycal", "acuity", "doodle", "savvycal"].map((slug) => ({
     url: `${BASE_URL}/alternatives/${slug}`,
     changeFrequency: "monthly" as const,
     priority: 0.8,
   }));
 
-  const comparisons = ["calendly-vs-letsmeet", "cal-com-vs-letsmeet"].map((slug) => ({
+  const comparisons = ["calendly-vs-letsmeet", "cal-com-vs-letsmeet", "doodle-vs-letsmeet", "savvycal-vs-letsmeet"].map((slug) => ({
     url: `${BASE_URL}/compare/${slug}`,
     changeFrequency: "monthly" as const,
     priority: 0.8,

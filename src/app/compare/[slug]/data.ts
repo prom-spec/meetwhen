@@ -118,4 +118,100 @@ export const comparisons: Record<string, Comparison> = {
     ],
     verdict: "Cal.com is best for developers who want full control and don't mind self-hosting. letsmeet.link is best for everyone else — instant setup, AI-native features, and 92% cheaper than Cal.com Cloud. If you want AI scheduling without DevOps, letsmeet.link wins.",
   },
+  "doodle-vs-letsmeet": {
+    leftName: "Doodle",
+    rightName: "letsmeet.link",
+    title: "Doodle vs letsmeet.link — Full Comparison (2026)",
+    description: "Doodle is great for polls but limited as a scheduling platform. See how letsmeet.link compares on features, pricing, and AI capabilities.",
+    categories: [
+      {
+        name: "Pricing",
+        features: [
+          { name: "Free plan", left: "Ad-supported, limited", right: "Ad-free, 3 event types", winner: "right" },
+          { name: "Pro price", left: "$6.95/mo", right: "$1/mo", winner: "right" },
+          { name: "Team price", left: "$8.95/mo/seat", right: "$5/mo/seat", winner: "right" },
+          { name: "Remove branding", left: "$6.95/mo", right: "$1/mo", winner: "right" },
+        ],
+      },
+      {
+        name: "AI & Automation",
+        features: [
+          { name: "AI chat scheduling", left: false, right: true, winner: "right" },
+          { name: "MCP for AI agents", left: false, right: true, winner: "right" },
+          { name: "Workflow automations", left: false, right: true, winner: "right" },
+          { name: "Email sequences", left: false, right: true, winner: "right" },
+        ],
+      },
+      {
+        name: "Core Features",
+        features: [
+          { name: "Meeting polls", left: true, right: true, winner: "tie" },
+          { name: "Booking pages", left: "Paid only", right: true, winner: "right" },
+          { name: "Google Calendar sync", left: true, right: true, winner: "tie" },
+          { name: "Custom booking questions", left: false, right: true, winner: "right" },
+          { name: "Team scheduling", left: "Paid only", right: true, winner: "right" },
+          { name: "Routing forms", left: false, right: true, winner: "right" },
+          { name: "Crypto payments", left: false, right: true, winner: "right" },
+        ],
+      },
+      {
+        name: "User Experience",
+        features: [
+          { name: "Ad-free interface", left: "Paid only", right: true, winner: "right" },
+          { name: "Mobile responsive", left: true, right: true, winner: "tie" },
+          { name: "Custom branding", left: "Paid only", right: "$1/mo", winner: "right" },
+          { name: "Time to first booking", left: "5 min", right: "2 min", winner: "right" },
+        ],
+      },
+    ],
+    verdict: "Doodle excels at one thing: group polling. But as a full scheduling platform, it falls short — no booking pages on the free plan, no AI, no automations, and ads everywhere. letsmeet.link gives you polls AND a complete scheduling platform with AI, for 86% less.",
+  },
+  "savvycal-vs-letsmeet": {
+    leftName: "SavvyCal",
+    rightName: "letsmeet.link",
+    title: "SavvyCal vs letsmeet.link — Full Comparison (2026)",
+    description: "SavvyCal offers premium UX at premium prices. See how letsmeet.link compares with AI scheduling and 92% lower pricing.",
+    categories: [
+      {
+        name: "Pricing",
+        features: [
+          { name: "Free plan", left: "1 link", right: "3 event types", winner: "right" },
+          { name: "Pro/Basic price", left: "$12/mo", right: "$1/mo", winner: "right" },
+          { name: "Team price", left: "$20/mo/seat", right: "$5/mo/seat", winner: "right" },
+          { name: "Remove branding", left: "$12/mo", right: "$1/mo", winner: "right" },
+        ],
+      },
+      {
+        name: "AI & Automation",
+        features: [
+          { name: "AI chat scheduling", left: false, right: true, winner: "right" },
+          { name: "MCP for AI agents", left: false, right: true, winner: "right" },
+          { name: "Workflow automations", left: false, right: true, winner: "right" },
+          { name: "Email sequences", left: false, right: true, winner: "right" },
+        ],
+      },
+      {
+        name: "Core Features",
+        features: [
+          { name: "Google Calendar sync", left: true, right: true, winner: "tie" },
+          { name: "Calendar overlay for recipients", left: true, right: false, winner: "left" },
+          { name: "Meeting polls", left: true, right: true, winner: "tie" },
+          { name: "Custom booking questions", left: true, right: true, winner: "tie" },
+          { name: "Team scheduling", left: "$20/mo", right: true, winner: "right" },
+          { name: "Routing forms", left: false, right: true, winner: "right" },
+          { name: "Crypto payments", left: false, right: true, winner: "right" },
+        ],
+      },
+      {
+        name: "User Experience",
+        features: [
+          { name: "Recipient calendar overlay", left: true, right: false, winner: "left" },
+          { name: "Custom branding", left: "$12/mo", right: "$1/mo", winner: "right" },
+          { name: "Mobile responsive", left: true, right: true, winner: "tie" },
+          { name: "Time to first booking", left: "3 min", right: "2 min", winner: "right" },
+        ],
+      },
+    ],
+    verdict: "SavvyCal has the nicest UX in scheduling — their calendar overlay is unique. But at $12-20/mo with no AI features, it's hard to justify the premium. letsmeet.link offers AI chat, MCP integration, and a full feature set at 92% less. Unless you need calendar overlay specifically, letsmeet.link is the better value.",
+  },
 };

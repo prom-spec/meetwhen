@@ -170,6 +170,19 @@ export default function AboutPage() {
                 Try letsmeet.link for free →
               </Link>
             </div>
+
+            {/* Internal links for SEO */}
+            <div className="mt-8 pt-6 border-t border-gray-100">
+              <h3 className="text-sm font-medium text-gray-500 mb-3">Explore more</h3>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/alternatives/calendly" className="text-sm text-[#0066FF] hover:underline">Calendly Alternative →</Link>
+                <Link href="/blog" className="text-sm text-[#0066FF] hover:underline">Blog →</Link>
+                <Link href="/use-cases/freelancers" className="text-sm text-[#0066FF] hover:underline">For Freelancers →</Link>
+                <Link href="/use-cases/consultants" className="text-sm text-[#0066FF] hover:underline">For Consultants →</Link>
+                <Link href="/tools/meeting-cost-calculator" className="text-sm text-[#0066FF] hover:underline">Meeting Cost Calculator →</Link>
+                <Link href="/pricing" className="text-sm text-[#0066FF] hover:underline">Pricing →</Link>
+              </div>
+            </div>
           </div>
         </article>
       </main>
