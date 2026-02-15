@@ -1,8 +1,7 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from "next/server"
 import { authenticateApiKey } from "@/lib/api-auth"
 import prisma from "@/lib/prisma"
-import * as dateFns from "date-fns"
+import { addMinutes } from "date-fns"
 import { triggerWebhook } from "@/lib/webhooks"
 import { z } from "zod"
 import { apiLogger } from "@/lib/logger"
@@ -28,7 +27,7 @@ export async function GET(req: NextRequest) {
   const bookings = await prisma.booking.findMany({
     where: {
       hostId: user.id,
-      ...(status ? { status: status as any } : {}),
+      ...(status ? { status: status as "CONFIRMED" | "CANCELLED" | "COMPLETED" | "NO_SHOW" } : {}),
     },
     include: {
       eventType: { select: { id: true, title: true, duration: true, slug: true } },
@@ -59,7 +58,7 @@ export async function POST(req: NextRequest) {
   if (!eventType) return NextResponse.json({ error: "Event type not found" }, { status: 404 })
 
   const startTime = new Date(startTimeStr)
-  const endTime = dateFns.addMinutes(startTime, eventType.duration)
+  const endTime = addMinutes(startTime, eventType.duration)
 
   // Conflict check
   const conflict = await prisma.booking.findFirst({

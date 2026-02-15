@@ -147,7 +147,7 @@ export default function BookingCalendar({
 
       if (res.ok) {
         const booking = await res.json()
-        router.push(`/booking/${booking.id}`)
+        router.push(`/booking/${booking.id}`).catch(() => {})
       } else {
         const data = await res.json()
         setError(data.error || "Failed to create booking")

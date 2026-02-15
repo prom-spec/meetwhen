@@ -58,17 +58,23 @@ async function callQA(
   aiToken: string,
   messages: Array<{ role: string; content: string }>
 ): Promise<string> {
-  const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${QA_MODEL}`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${aiToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ messages }),
-    }
-  )
+  let response: Response
+  try {
+    response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${QA_MODEL}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${aiToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ messages }),
+      }
+    )
+  } catch (e) {
+    apiLogger.error("Cloudflare AI fetch error:", String(e))
+    throw new Error("AI service unavailable")
+  }
 
   const data = await response.json()
   if (!response.ok) {

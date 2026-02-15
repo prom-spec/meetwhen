@@ -96,9 +96,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Step 1: Get current user from Calendly
-    const meResp = await fetch(`${CALENDLY_API}/users/me`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    })
+    let meResp: Response
+    try {
+      meResp = await fetch(`${CALENDLY_API}/users/me`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      })
+    } catch (e) {
+      logger.error("Calendly API network error", { error: String(e) })
+      return NextResponse.json({ error: "Failed to connect to Calendly" }, { status: 502 })
+    }
 
     if (!meResp.ok) {
       const errText = await meResp.text()

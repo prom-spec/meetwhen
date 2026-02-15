@@ -335,7 +335,7 @@ export default function BookingPage() {
 
   const handleBackToSlots = useCallback(() => setShowForm(false), [])
 
-  const handleBackToEvents = useCallback(() => router.push(`/${username}`), [router, username])
+  const handleBackToEvents = useCallback(() => { router.push(`/${username}`).catch(() => {}) }, [router, username])
 
   // Calendar helpers — memoized
   const getDaysInMonth = (date: Date) => {
