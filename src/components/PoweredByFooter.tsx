@@ -33,7 +33,7 @@ export default function PoweredByFooter({
         </Link>
         <span>⚡</span>
         <Link
-          href="https://letsmeet.link/?ref=powered-by"
+          href="https://letsmeet.link/?utm_source=powered-by&utm_medium=booking-page&utm_campaign=viral-loop"
           className="font-medium text-[#0066FF] hover:text-[#0052cc] transition-colors"
         >
           Get your free booking page
