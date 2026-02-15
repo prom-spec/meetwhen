@@ -4,7 +4,16 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { useCases } from "./data";
 import MobileNav from "@/components/MobileNav";
+import InteractiveDemo from "@/components/InteractiveDemo";
 import { Check, ArrowRight, AlertCircle } from "lucide-react";
+
+const useCaseDemoConfig: Record<string, { variant: "booking" | "ai-chat" | "comparison" | "calculator" | "team"; persona?: string }> = {
+  freelancers: { variant: "booking", persona: "Discovery Call" },
+  consultants: { variant: "ai-chat", persona: "a consulting session" },
+  coaches: { variant: "booking", persona: "Coaching Session" },
+  sales: { variant: "team" },
+  "ai-agents": { variant: "ai-chat", persona: "an API-scheduled meeting" },
+};
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -112,6 +121,20 @@ export default async function UseCasePage({ params }: Props) {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Interactive Demo */}
+        <div className="mb-16">
+          <h2 className="text-2xl font-bold text-[#1a1a2e] mb-2 text-center">
+            Try it yourself
+          </h2>
+          <p className="text-gray-500 text-sm text-center mb-4">
+            See how {uc.name.toLowerCase()} use letsmeet.link to schedule faster
+          </p>
+          <InteractiveDemo
+            variant={useCaseDemoConfig[slug]?.variant || "booking"}
+            persona={useCaseDemoConfig[slug]?.persona}
+          />
         </div>
 
         {/* Pricing nudge */}

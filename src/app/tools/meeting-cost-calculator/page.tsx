@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import MobileNav from "@/components/MobileNav";
+import InteractiveDemo from "@/components/InteractiveDemo";
 
 export default function MeetingCostCalculator() {
   const [attendees, setAttendees] = useState(5);
@@ -137,6 +138,17 @@ export default function MeetingCostCalculator() {
               Based on {attendees} people × ${hourlyRate}/hr × {duration}min × {meetingsPerWeek}/week × 52 weeks
             </p>
           </div>
+        </div>
+
+        {/* Interactive Demo */}
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
+            Stop the scheduling waste
+          </h2>
+          <p className="text-gray-500 text-sm text-center mb-4">
+            See how fast booking can be with letsmeet.link
+          </p>
+          <InteractiveDemo variant="booking" persona="Team Sync" compact />
         </div>
 
         {/* SEO Content */}
