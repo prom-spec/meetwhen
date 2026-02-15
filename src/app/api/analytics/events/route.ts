@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { apiLogger } from "@/lib/logger"
 
 export async function GET() {
   try {
@@ -70,7 +71,7 @@ export async function GET() {
       events: eventsWithStats,
     })
   } catch (error) {
-    console.error("Error fetching event analytics:", error)
+    apiLogger.error("Error fetching event analytics:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

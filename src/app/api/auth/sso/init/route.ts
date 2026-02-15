@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { SAML } from "@node-saml/node-saml"
+import { apiLogger } from "@/lib/logger"
 
 // POST /api/auth/sso/init — initiate SSO login
 export async function POST(request: NextRequest) {
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ redirectUrl: loginUrl })
   } catch (error) {
-    console.error("SSO init error:", error)
+    apiLogger.error("SSO init error:", error)
     return NextResponse.json({ error: "Failed to initiate SSO" }, { status: 500 })
   }
 }

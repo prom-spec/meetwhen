@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
+import { apiLogger } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
   const username = request.nextUrl.searchParams.get("username")

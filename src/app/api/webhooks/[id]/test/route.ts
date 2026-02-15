@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { sendTestWebhook } from "@/lib/webhooks"
+import { apiLogger } from "@/lib/logger"
 
 // POST /api/webhooks/[id]/test - Send a test webhook
 export async function POST(
@@ -37,7 +38,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: result.error }, { status: 200 })
     }
   } catch (error) {
-    console.error("Error sending test webhook:", error)
+    apiLogger.error("Error sending test webhook:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

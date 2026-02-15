@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import crypto from "crypto"
+import { apiLogger } from "@/lib/logger"
 
 interface RouteParams { params: Promise<{ id: string }> }
 

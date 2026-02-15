@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { hashApiKey, isValidApiKeyFormat } from "@/lib/api-keys"
 import { mcpRateLimiter, getClientIp } from "@/lib/rate-limit"
+import { apiLogger } from "@/lib/logger"
 
 // Base URL for generating booking links
 const BASE_URL = process.env.NEXTAUTH_URL || "https://letsmeet.link"
@@ -681,7 +682,7 @@ export async function POST(req: NextRequest) {
       id,
     })
   } catch (error) {
-    console.error("MCP error:", error)
+    apiLogger.error("MCP error:", error)
     return jsonRpc({
       jsonrpc: "2.0",
       error: { code: -32603, message: "Internal error" },

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { getDefaultWorkDays, getWorkDaysLabel, getCountryFromTimezone } from "@/lib/holidays"
+import { apiLogger } from "@/lib/logger"
 
 // GET /api/availability/defaults — returns default work days for user's timezone
 export async function GET(request: NextRequest) {
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ workDays, label, country, timezone: tz })
   } catch (error) {
-    console.error("Error fetching defaults:", error)
+    apiLogger.error("Error fetching defaults:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

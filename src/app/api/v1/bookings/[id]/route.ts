@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { authenticateApiKey } from "@/lib/api-auth"
 import prisma from "@/lib/prisma"
 import { triggerWebhook } from "@/lib/webhooks"
+import { apiLogger } from "@/lib/logger"
 
 interface RouteParams { params: Promise<{ id: string }> }
 

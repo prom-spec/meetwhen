@@ -49,7 +49,7 @@ export default async function UserProfilePage({ params }: PageProps) {
       <header className="py-4 px-4">
         <div className="max-w-2xl mx-auto">
           {user.brandLogo ? (
-            <img src={user.brandLogo} alt="Logo" className="h-6 object-contain opacity-60" />
+            <img src={user.brandLogo} alt="Brand logo" className="h-6 object-contain opacity-60" />
           ) : (
             <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
               <Image

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { apiLogger } from "@/lib/logger"
 
 // GET /api/settings/linked-accounts — list all linked accounts for current user
 export async function GET() {
@@ -40,7 +41,7 @@ export async function GET() {
 
     return NextResponse.json({ accounts: result })
   } catch (error) {
-    console.error("Error fetching linked accounts:", error)
+    apiLogger.error("Error fetching linked accounts:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -93,7 +94,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error removing linked account:", error)
+    apiLogger.error("Error removing linked account:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

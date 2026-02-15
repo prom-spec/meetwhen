@@ -9,6 +9,7 @@ import {
   formatActionResult,
   formatMissingParamPrompt,
 } from "@/lib/chat-intent"
+import { apiLogger } from "@/lib/logger"
 
 const QA_SYSTEM_PROMPT = `You are letsmeet.link's AI Scheduler — a friendly scheduling assistant.
 You help users understand the platform's features. Keep answers SHORT (1-2 sentences max).
@@ -71,7 +72,7 @@ async function callQA(
 
   const data = await response.json()
   if (!response.ok) {
-    console.error("Cloudflare AI error:", JSON.stringify(data))
+    apiLogger.error("Cloudflare AI error:", JSON.stringify(data))
     throw new Error("AI service error")
   }
   return data.result?.response || "I'm not sure how to answer that. Could you rephrase?"
@@ -170,7 +171,7 @@ export async function POST(request: NextRequest) {
       remainingMessages: rateLimit.remaining,
     })
   } catch (error) {
-    console.error("Chat API error:", error)
+    apiLogger.error("Chat API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

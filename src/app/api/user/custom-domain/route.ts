@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { z } from "zod"
 import dns from "dns/promises"
+import { apiLogger } from "@/lib/logger"
 
 const schema = z.object({
   domain: z.string().min(1).max(253).regex(

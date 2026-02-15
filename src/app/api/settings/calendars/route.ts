@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { listAllUserCalendars } from "@/lib/calendar"
+import { apiLogger } from "@/lib/logger"
 
 export async function GET() {
   try {
@@ -13,7 +14,7 @@ export async function GET() {
     const result = await listAllUserCalendars(session.user.id)
     return NextResponse.json(result)
   } catch (error: unknown) {
-    console.error("Error fetching calendars:", error)
+    apiLogger.error("Error fetching calendars:", error)
     const message = error instanceof Error ? error.message : ""
     if (message.includes("invalid_grant") || message.includes("Token has been expired") || message.includes("refresh token")) {
       return NextResponse.json({ 

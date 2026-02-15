@@ -2,6 +2,7 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { authenticateSCIM, scimError } from "@/lib/scim-auth"
+import { apiLogger } from "@/lib/logger"
 
 function formatTeamGroup(group: { id: string; name: string; members?: { userId: string }[] }) {
   return {

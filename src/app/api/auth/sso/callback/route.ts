@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { SAML } from "@node-saml/node-saml"
+import { apiLogger } from "@/lib/logger"
 // POST /api/auth/sso/callback — handle SAML assertion response
 export async function POST(request: NextRequest) {
   try {
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
 
     return response
   } catch (error) {
-    console.error("SSO callback error:", error)
+    apiLogger.error("SSO callback error:", error)
     return NextResponse.redirect(new URL("/login?error=SSOFailed", request.url))
   }
 }

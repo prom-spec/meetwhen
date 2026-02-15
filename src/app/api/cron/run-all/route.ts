@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { apiLogger } from "@/lib/logger"
 
 export const dynamic = "force-dynamic"
 

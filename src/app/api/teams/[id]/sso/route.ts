@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { apiLogger } from "@/lib/logger"
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ ssoConfig })
   } catch (error) {
-    console.error("Failed to get SSO config:", error)
+    apiLogger.error("Failed to get SSO config:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -101,7 +102,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ ssoConfig })
   } catch (error) {
-    console.error("Failed to update SSO config:", error)
+    apiLogger.error("Failed to update SSO config:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

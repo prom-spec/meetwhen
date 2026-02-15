@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma"
 import { ensureDefaultWorkflows } from "@/lib/workflows"
 import { logAudit } from "@/lib/audit"
 import { z } from "zod"
+import { apiLogger } from "@/lib/logger"
 
 const createWorkflowSchema = z.object({
   name: z.string().min(1).max(200),

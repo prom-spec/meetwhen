@@ -711,6 +711,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ...bookingRest, host: hostRest }, { status: 201 })
   } catch (error) {
     bookingLogger.error("Error creating booking", error, { requestId })
-    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 })
+    return NextResponse.json({ error: "Unable to create your booking. Please try again." }, { status: 500 })
   }
 }

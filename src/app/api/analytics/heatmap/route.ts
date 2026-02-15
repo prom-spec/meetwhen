@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { getHours, getDay } from "date-fns"
+import { apiLogger } from "@/lib/logger"
 
 export async function GET() {
   try {
@@ -78,7 +79,7 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error("Error fetching heatmap:", error)
+    apiLogger.error("Error fetching heatmap:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

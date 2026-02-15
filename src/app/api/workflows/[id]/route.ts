@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
 import { z } from "zod"
+import { apiLogger } from "@/lib/logger"
 
 interface RouteParams {
   params: Promise<{ id: string }>

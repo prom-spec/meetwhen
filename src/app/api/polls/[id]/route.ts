@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { z } from "zod"
+import { apiLogger } from "@/lib/logger"
 
 const updatePollSchema = z.object({
   status: z.enum(["open", "closed", "booked"]).optional(),
@@ -50,7 +51,7 @@ export async function GET(
 
     return NextResponse.json(poll)
   } catch (error) {
-    console.error("Get poll error:", error)
+    apiLogger.error("Get poll error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -93,7 +94,7 @@ export async function PATCH(
 
     return NextResponse.json(updated)
   } catch (error) {
-    console.error("Update poll error:", error)
+    apiLogger.error("Update poll error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { apiLogger } from "@/lib/logger"
 
 export const dynamic = "force-dynamic"
 

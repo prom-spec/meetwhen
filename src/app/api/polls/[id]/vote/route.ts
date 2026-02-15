@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { z } from "zod"
 import { triggerWebhook } from "@/lib/webhooks"
+import { apiLogger } from "@/lib/logger"
 
 const voteSchema = z.object({
   voterName: z.string().min(1).max(100).trim(),
@@ -87,7 +88,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, votes: results })
   } catch (error) {
-    console.error("Vote error:", error)
+    apiLogger.error("Vote error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

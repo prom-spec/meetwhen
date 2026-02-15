@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { startOfWeek, startOfMonth, subDays } from "date-fns"
+import { apiLogger } from "@/lib/logger"
 
 export async function GET() {
   try {
@@ -124,7 +125,7 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error("Error fetching analytics summary:", error)
+    apiLogger.error("Error fetching analytics summary:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { z } from "zod"
+import { apiLogger } from "@/lib/logger"
 
 const createContactSchema = z.object({
   email: z.string().email().max(320),

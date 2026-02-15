@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { getPublicHolidays, getCountryFromTimezone } from "@/lib/holidays"
+import { apiLogger } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error toggling holidays:", error)
+    apiLogger.error("Error toggling holidays:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

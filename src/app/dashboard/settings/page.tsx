@@ -1417,7 +1417,7 @@ function DeleteAccountSection() {
         setError(data.error || "Failed to delete account")
       }
     } catch {
-      setError("Something went wrong. Please try again.")
+      setError("Unable to save settings. Please try again.")
     } finally {
       setDeleting(false)
     }

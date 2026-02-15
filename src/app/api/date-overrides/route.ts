@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { z } from "zod"
+import { apiLogger } from "@/lib/logger"
 
 const timeRegex = /^\d{2}:\d{2}$/
 
@@ -34,7 +35,7 @@ export async function GET() {
 
     return NextResponse.json(overrides)
   } catch (error) {
-    console.error("Error fetching date overrides:", error)
+    apiLogger.error("Error fetching date overrides:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(override)
   } catch (error) {
-    console.error("Error saving date override:", error)
+    apiLogger.error("Error saving date override:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -122,7 +123,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error deleting date override:", error)
+    apiLogger.error("Error deleting date override:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { randomBytes } from "crypto"
 import dns from "dns/promises"
+import { apiLogger } from "@/lib/logger"
 
 // GET - List domain claims + accounts on verified domains
 export async function GET() {

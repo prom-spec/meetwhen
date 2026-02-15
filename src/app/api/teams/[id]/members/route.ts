@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { apiLogger } from "@/lib/logger"
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(members)
   } catch (error) {
-    console.error("Error fetching team members:", error)
+    apiLogger.error("Error fetching team members:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(member, { status: 201 })
   } catch (error) {
-    console.error("Error adding team member:", error)
+    apiLogger.error("Error adding team member:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -176,7 +177,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(member)
   } catch (error) {
-    console.error("Error updating team member:", error)
+    apiLogger.error("Error updating team member:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -226,7 +227,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error removing team member:", error)
+    apiLogger.error("Error removing team member:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

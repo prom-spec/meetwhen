@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import * as dateFns from "date-fns"
 import prisma from "@/lib/prisma"
 import { getFreeBusyTimes } from "@/lib/calendar"
+import { apiLogger } from "@/lib/logger"
 
 export async function GET(
   request: NextRequest,
@@ -111,7 +112,7 @@ export async function GET(
       hostTimezone: user.timezone,
     })
   } catch (error) {
-    console.error("Error fetching slots", error)
+    apiLogger.error("Error fetching slots", error)
     return NextResponse.json({ error: "Unable to load available times. Please try again." }, { status: 500 })
   }
 }

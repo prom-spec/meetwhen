@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { sendBookingReminder } from "@/lib/email"
+import { apiLogger } from "@/lib/logger"
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get("authorization")

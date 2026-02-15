@@ -5,6 +5,7 @@ import {
   scimError,
   formatUserResource,
 } from "@/lib/scim-auth";
+import { apiLogger } from "@/lib/logger"
 
 type RouteContext = { params: Promise<{ id: string }> };
 

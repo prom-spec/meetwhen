@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
 import { logValidationError, logError } from "@/lib/error-log"
 import { z } from "zod"
+import { apiLogger } from "@/lib/logger"
 
 // Transform empty strings to null/undefined for optional fields
 const optionalNullableInt = (min: number, max?: number) => {
@@ -73,7 +74,7 @@ export async function GET(
 
     return NextResponse.json(eventType)
   } catch (error) {
-    console.error("Error fetching event type:", error)
+    apiLogger.error("Error fetching event type:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -175,7 +176,7 @@ export async function PATCH(
 
     return NextResponse.json(eventType)
   } catch (error) {
-    console.error("Error updating event type:", error)
+    apiLogger.error("Error updating event type:", error)
     logError({ source: "api/event-types/update", message: error instanceof Error ? error.message : "Unknown error", statusCode: 500, requestPath: `/api/event-types/${id}` })
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
@@ -212,7 +213,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error deleting event type:", error)
+    apiLogger.error("Error deleting event type:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

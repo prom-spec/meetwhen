@@ -78,7 +78,7 @@ export function handleFormError(
     return errorData.error
   }
 
-  return errorData.message || errorData.error || "Something went wrong. Please check your input and try again."
+  return errorData.message || errorData.error || "Unable to process your request. Please check your input and try again."
 }
 
 /**

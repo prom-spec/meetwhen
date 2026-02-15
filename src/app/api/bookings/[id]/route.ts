@@ -9,6 +9,7 @@ import { triggerWebhook } from "@/lib/webhooks"
 import { executeWorkflow } from "@/lib/workflows"
 import { verifyBookingToken } from "@/lib/booking-tokens"
 import { logAudit } from "@/lib/audit"
+import { apiLogger } from "@/lib/logger"
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(booking)
   } catch (error) {
-    console.error("Error fetching booking:", error)
+    apiLogger.error("Error fetching booking:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -134,7 +135,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         try {
           await deleteCalendarEvent(accessToken, gEventId)
         } catch (err) {
-          console.error("Failed to delete calendar event:", gEventId, err)
+          apiLogger.error("Failed to delete calendar event:", gEventId, err)
         }
       }
     }
@@ -163,7 +164,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     // Trigger workflow automations
     executeWorkflow("BOOKING_CANCELLED", booking.id).catch((err) =>
-      console.error("Workflow execution failed:", err)
+      apiLogger.error("Workflow execution failed:", err)
     )
 
     // Trigger webhook for booking.cancelled event
@@ -190,7 +191,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       cancelledBy,
       cancelledSeries: cancelSeries,
       cancelledCount: bookingsToCancelIds.length,
-    }).catch((err) => console.error("Webhook trigger failed:", err))
+    }).catch((err) => apiLogger.error("Webhook trigger failed:", err))
 
     logAudit(booking.hostId, "booking.cancelled", "booking", id, { cancelledBy, cancelSeries, cancelledCount: bookingsToCancelIds.length })
 
@@ -200,7 +201,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       cancelledCount: bookingsToCancelIds.length,
     })
   } catch (error) {
-    console.error("Error cancelling booking:", error)
+    apiLogger.error("Error cancelling booking:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -357,7 +358,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     // Trigger workflow automations
     executeWorkflow("BOOKING_RESCHEDULED", updatedBooking.id).catch((err) =>
-      console.error("Workflow execution failed:", err)
+      apiLogger.error("Workflow execution failed:", err)
     )
 
     // Trigger webhook for booking.rescheduled event
@@ -386,13 +387,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         endTime: oldEndTime.toISOString(),
       },
       rescheduledBy,
-    }).catch((err) => console.error("Webhook trigger failed:", err))
+    }).catch((err) => apiLogger.error("Webhook trigger failed:", err))
 
     logAudit(booking.hostId, "booking.rescheduled", "booking", id, { rescheduledBy, oldStartTime: oldStartTime.toISOString(), newStartTime: newStartTime.toISOString() })
 
     return NextResponse.json(updatedBooking)
   } catch (error) {
-    console.error("Error rescheduling booking:", error)
+    apiLogger.error("Error rescheduling booking:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

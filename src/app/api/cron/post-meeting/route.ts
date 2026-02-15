@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { sendPostMeetingFollowup } from "@/lib/email"
+import { apiLogger } from "@/lib/logger"
 
 export async function POST(request: Request) {
   // Simple auth via secret header (for cron job security)

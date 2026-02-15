@@ -153,7 +153,7 @@ export default function BookingCalendar({
         setError(data.error || "Failed to create booking")
       }
     } catch {
-      setError("Something went wrong. Please try again.")
+      setError("Unable to complete your booking. Please check your connection and try again.")
     } finally {
       setIsSubmitting(false)
     }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { apiLogger } from "@/lib/logger"
 
 // GET /api/webhooks/[id]/deliveries - Get delivery history for a webhook
 export async function GET(
@@ -53,7 +54,7 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error("Error fetching deliveries:", error)
+    apiLogger.error("Error fetching deliveries:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

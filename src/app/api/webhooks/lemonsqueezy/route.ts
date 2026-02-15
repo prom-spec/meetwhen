@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
 import prisma from "@/lib/prisma"
+import { apiLogger } from "@/lib/logger"
 
 const WEBHOOK_SECRET = process.env.LEMONSQUEEZY_WEBHOOK_SECRET || ""
 
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
   const signature = req.headers.get("x-signature") || ""
 
   if (!verifySignature(rawBody, signature)) {
-    console.error("[LemonSqueezy] Invalid webhook signature")
+    apiLogger.error("[LemonSqueezy] Invalid webhook signature")
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
   }
 
@@ -138,7 +139,7 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     // Return 500 for transient DB errors so Lemon Squeezy retries
-    console.error(`[LemonSqueezy] DB error:`, err)
+    apiLogger.error(`[LemonSqueezy] DB error:`, err)
     return NextResponse.json({ error: "Internal error" }, { status: 500 })
   }
 

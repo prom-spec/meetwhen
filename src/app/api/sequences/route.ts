@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { apiLogger } from "@/lib/logger"
 
 const sequenceSchema = z.object({
   name: z.string().min(1).max(200),
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
     })
     return NextResponse.json(sequence, { status: 201 })
   } catch (error) {
-    console.error("Create sequence error:", error)
+    apiLogger.error("Create sequence error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

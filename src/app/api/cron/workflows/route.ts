@@ -4,6 +4,7 @@ import {
   processBeforeMeetingTriggers,
   processAfterMeetingTriggers,
 } from "@/lib/workflows"
+import { apiLogger } from "@/lib/logger"
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get("authorization")

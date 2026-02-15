@@ -67,7 +67,7 @@ export default function NewPollPage() {
       const poll = await res.json()
       router.push(`/dashboard/polls/${poll.id}`)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong")
+      setError(err instanceof Error ? err.message : "Unable to create poll. Please try again.")
     } finally {
       setSubmitting(false)
     }

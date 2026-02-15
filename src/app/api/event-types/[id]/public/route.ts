@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
+import { apiLogger } from "@/lib/logger"
 
 export async function GET(
   request: NextRequest,
@@ -48,7 +49,7 @@ export async function GET(
       hostTimezone: eventType.user.timezone,
     })
   } catch (error) {
-    console.error("Error fetching event type:", error)
+    apiLogger.error("Error fetching event type:", error)
     return NextResponse.json({ error: "Failed to fetch event type" }, { status: 500 })
   }
 }

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { z } from "zod"
+import { apiLogger } from "@/lib/logger"
 
 const createPollSchema = z.object({
   title: z.string().min(1).max(200).trim(),
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(poll, { status: 201 })
   } catch (error) {
-    console.error("Create poll error:", error)
+    apiLogger.error("Create poll error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -74,7 +75,7 @@ export async function GET() {
 
     return NextResponse.json(polls)
   } catch (error) {
-    console.error("List polls error:", error)
+    apiLogger.error("List polls error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

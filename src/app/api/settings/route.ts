@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
 import { z } from "zod"
+import { apiLogger } from "@/lib/logger"
 
 const updateSettingsSchema = z.object({
   name: z.string().min(1).max(200).trim().optional(),
@@ -77,7 +78,7 @@ export async function GET() {
       hasCalendarScope,
     })
   } catch (error) {
-    console.error("Error fetching settings:", error)
+    apiLogger.error("Error fetching settings:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -169,7 +170,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json(user)
   } catch (error) {
-    console.error("Error updating settings:", error)
+    apiLogger.error("Error updating settings:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

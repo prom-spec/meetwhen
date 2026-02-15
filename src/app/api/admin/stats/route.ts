@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiLogger } from "@/lib/logger"
 
 function unauthorized() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -286,7 +287,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Admin stats error:", error);
+    apiLogger.error("Admin stats error:", error);
     return NextResponse.json({ error: "Internal server error", details: String(error) }, { status: 500 });
   }
 }

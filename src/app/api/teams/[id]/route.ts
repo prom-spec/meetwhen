@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
+import { apiLogger } from "@/lib/logger"
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(team)
   } catch (error) {
-    console.error("Error fetching team:", error)
+    apiLogger.error("Error fetching team:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -125,7 +126,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(team)
   } catch (error) {
-    console.error("Error updating team:", error)
+    apiLogger.error("Error updating team:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -159,7 +160,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error deleting team:", error)
+    apiLogger.error("Error deleting team:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { randomBytes } from "crypto";
+import { apiLogger } from "@/lib/logger"
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);

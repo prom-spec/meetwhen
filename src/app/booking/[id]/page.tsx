@@ -70,7 +70,7 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
       <header className="py-4 px-4">
         <div className="max-w-md mx-auto">
           {booking.host.brandLogo ? (
-            <img src={booking.host.brandLogo} alt="Logo" className="h-6 object-contain opacity-60" />
+            <img src={booking.host.brandLogo} alt="Brand logo" className="h-6 object-contain opacity-60" />
           ) : (
             <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
               <Image

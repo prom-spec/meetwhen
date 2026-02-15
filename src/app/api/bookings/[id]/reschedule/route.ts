@@ -5,6 +5,7 @@ import * as dateFns from "date-fns"
 import prisma from "@/lib/prisma"
 import { getFreeBusyTimes } from "@/lib/calendar"
 import { verifyBookingToken } from "@/lib/booking-tokens"
+import { apiLogger } from "@/lib/logger"
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -158,7 +159,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error("Error fetching reschedule slots:", error)
+    apiLogger.error("Error fetching reschedule slots:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

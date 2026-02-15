@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { sendRescheduleRequestEmail } from "@/lib/email"
 import { generateBookingToken } from "@/lib/booking-tokens"
+import { apiLogger } from "@/lib/logger"
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true, message: "Reschedule request sent" })
   } catch (error) {
-    console.error("Error requesting reschedule:", error)
+    apiLogger.error("Error requesting reschedule:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

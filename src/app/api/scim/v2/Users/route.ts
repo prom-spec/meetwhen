@@ -6,6 +6,7 @@ import {
   scimListResponse,
   formatUserResource,
 } from "@/lib/scim-auth";
+import { apiLogger } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
   const auth = await authenticateSCIM(request);

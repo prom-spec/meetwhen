@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { WEBHOOK_EVENTS, isPrivateUrl } from "@/lib/webhooks"
+import { apiLogger } from "@/lib/logger"
 
 // GET /api/webhooks/[id] - Get a single webhook
 export async function GET(
@@ -39,7 +40,7 @@ export async function GET(
 
     return NextResponse.json(webhook)
   } catch (error) {
-    console.error("Error fetching webhook:", error)
+    apiLogger.error("Error fetching webhook:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -132,7 +133,7 @@ export async function PATCH(
 
     return NextResponse.json(webhook)
   } catch (error) {
-    console.error("Error updating webhook:", error)
+    apiLogger.error("Error updating webhook:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -168,7 +169,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error deleting webhook:", error)
+    apiLogger.error("Error deleting webhook:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

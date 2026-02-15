@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { generateApiKey, maskApiKey } from "@/lib/api-keys"
+import { apiLogger } from "@/lib/logger"
 
 // GET - List user's API keys
 export async function GET() {

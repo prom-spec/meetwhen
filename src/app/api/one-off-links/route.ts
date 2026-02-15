@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { z } from "zod"
 import crypto from "crypto"
+import { apiLogger } from "@/lib/logger"
 
 const createSchema = z.object({
   title: z.string().min(1).max(200).trim(),

@@ -49,10 +49,10 @@ export default function PublicRoutingFormPage({ params }: { params: Promise<{ id
         body: JSON.stringify({ answers }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error || "Something went wrong"); setSubmitting(false); return }
+      if (!res.ok) { setError(data.error || "Unable to submit form. Please try again."); setSubmitting(false); return }
       window.location.href = data.redirectUrl
     } catch {
-      setError("Something went wrong")
+      setError("Unable to submit form. Please check your connection and try again.")
       setSubmitting(false)
     }
   }

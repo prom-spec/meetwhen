@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { format, subDays, subMonths, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"
+import { apiLogger } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
   try {
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
       data,
     })
   } catch (error) {
-    console.error("Error fetching booking trends:", error)
+    apiLogger.error("Error fetching booking trends:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

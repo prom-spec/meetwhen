@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { cookies } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import crypto from "crypto"
+import { apiLogger } from "@/lib/logger"
 
 // POST /api/settings/link-account — initiate account linking flow
 // Creates a server-side linking token, sets an opaque cookie, then redirects to Google OAuth
@@ -49,7 +50,7 @@ export async function POST() {
       redirectUrl: "/api/auth/signin/google?callbackUrl=/dashboard/settings",
     })
   } catch (error) {
-    console.error("Error initiating account link:", error)
+    apiLogger.error("Error initiating account link:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

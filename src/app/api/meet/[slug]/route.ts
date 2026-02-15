@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { z } from "zod"
 import { triggerWebhook } from "@/lib/webhooks"
+import { apiLogger } from "@/lib/logger"
 
 export async function GET(
   _req: NextRequest,

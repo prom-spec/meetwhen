@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { analyticsRateLimiter, getClientIp } from "@/lib/rate-limit"
+import { apiLogger } from "@/lib/logger"
 
 export async function POST(request: NextRequest) {
   // Rate limit: 60 requests per IP per minute
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
       throw dbError
     }
   } catch (error) {
-    console.error("Error tracking analytics:", error)
+    apiLogger.error("Error tracking analytics:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

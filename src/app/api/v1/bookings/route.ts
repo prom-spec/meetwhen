@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma"
 import * as dateFns from "date-fns"
 import { triggerWebhook } from "@/lib/webhooks"
 import { z } from "zod"
+import { apiLogger } from "@/lib/logger"
 
 const createBookingSchema = z.object({
   eventTypeId: z.string(),

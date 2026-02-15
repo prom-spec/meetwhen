@@ -422,7 +422,7 @@ export default function BookingPage() {
         <header className="py-4 px-4 border-b border-gray-100 bg-white">
           <div className="max-w-4xl mx-auto">
             {branding.brandLogo ? (
-              <img src={branding.brandLogo} alt="Logo" className="h-6 object-contain opacity-60" />
+              <img src={branding.brandLogo} alt="Brand logo" className="h-6 object-contain opacity-60" />
             ) : (
               <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
                 <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
