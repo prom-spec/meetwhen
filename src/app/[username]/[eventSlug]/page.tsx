@@ -4,9 +4,13 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Clock, MapPin, CheckCircle, Globe, Search, Loader2, Repeat } from "lucide-react"
+import { ChevronLeft, ChevronRight, Globe, Search } from "lucide-react"
 import PoweredByFooter from "@/components/PoweredByFooter"
 import { useToast } from "@/components/ToastProvider"
+import BookingConfirmation from "./BookingConfirmation"
+import EventInfo from "./EventInfo"
+import TimeSlotList from "./TimeSlotList"
+import BookingForm from "./BookingForm"
 
 interface ScreeningQuestion {
   id: string
@@ -389,87 +393,26 @@ export default function BookingPage() {
 
   if (isBooked && eventType && selectedDate && selectedTime) {
     return (
-      <div className={`min-h-screen flex flex-col ${isEmbed ? '!min-h-0' : ''}`} style={{ backgroundColor: effectiveBg || '#f9fafb' }}>
-        {!isEmbed && (
-          <header className="py-4 px-4">
-            <div className="max-w-md mx-auto">
-              {branding.brandLogo ? (
-                <img src={branding.brandLogo} alt="Logo" className="h-6 object-contain opacity-60" />
-              ) : (
-                <Link href="/" className="inline-flex opacity-60 hover:opacity-100 transition-opacity">
-                  <Image src="/logo-full.svg" alt="letsmeet.link" width={100} height={24} />
-                </Link>
-              )}
-            </div>
-          </header>
-        )}
-
-        <main className={`flex-1 flex items-center justify-center ${isEmbed ? 'p-2' : 'p-4'}`}>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-md w-full text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-[#1a1a2e] mb-2">Booking Confirmed!</h1>
-            {eventType.redirectUrl ? (
-              <p className="text-gray-600 mb-6">
-                Redirecting in {redirectCountdown}s...
-              </p>
-            ) : (
-            <p className="text-gray-600 mb-6">
-              Your {eventType.title} with {username} has been scheduled.
-            </p>
-            )}
-            <div className="bg-gray-50 rounded-lg p-4 text-left mb-6">
-              <p className="font-semibold text-[#1a1a2e]">{eventType.title}</p>
-              <p className="text-sm text-gray-500 mt-1">
-                {selectedDate.toLocaleDateString("en-US", {
-                  weekday: "long", month: "long", day: "numeric", year: "numeric",
-                })}
-              </p>
-              <p className="text-sm text-gray-500">{selectedTime} ({guestTimezone})</p>
-            </div>
-            <p className="text-sm text-gray-500 mb-6">
-              A confirmation email has been sent to {formData.email}
-            </p>
-            {/* Custom confirmation links */}
-            {eventType.confirmationLinks && (() => {
-              try {
-                const links: {label: string; url: string}[] = JSON.parse(eventType.confirmationLinks)
-                if (links.length === 0) return null
-                return (
-                  <div className="mb-4 space-y-2">
-                    {links.map((link, i) => (
-                      <a
-                        key={i}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block w-full py-2.5 px-4 text-center text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                      >
-                        {link.label} →
-                      </a>
-                    ))}
-                  </div>
-                )
-              } catch { return null }
-            })()}
-            {bookingId && (
-              <Link
-                href={`/booking/${bookingId}`}
-                className="inline-flex items-center justify-center w-full py-3 px-4 text-white rounded-lg font-medium transition-colors"
-                style={{ backgroundColor: effectiveAccent }}
-              >
-                View Booking Details
-              </Link>
-            )}
-          </div>
-        </main>
-
-        {branding.orgBrandFooter && (
-          <div className="text-center text-xs text-gray-400 py-2">{branding.orgBrandFooter}</div>
-        )}
-        {!isEmbed && <PoweredByFooter hidden={branding.hidePoweredBy} userPlan={branding.plan} />}
-      </div>
+      <BookingConfirmation
+        eventTitle={eventType.title}
+        username={username as string}
+        hostName={hostName}
+        selectedDate={selectedDate}
+        selectedTime={selectedTime}
+        guestTimezone={guestTimezone}
+        guestEmail={formData.email}
+        bookingId={bookingId}
+        redirectUrl={eventType.redirectUrl || null}
+        redirectCountdown={redirectCountdown}
+        confirmationLinks={eventType.confirmationLinks || null}
+        accentColor={effectiveAccent}
+        effectiveBg={effectiveBg}
+        isEmbed={isEmbed}
+        brandLogo={branding.brandLogo}
+        hidePoweredBy={branding.hidePoweredBy}
+        orgBrandFooter={branding.orgBrandFooter}
+        userPlan={branding.plan}
+      />
     )
   }
 
@@ -494,47 +437,26 @@ export default function BookingPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="md:flex">
               {/* Left side - Event info */}
-              <div className="md:w-1/3 p-6 border-b md:border-b-0 md:border-r border-gray-200 bg-gray-50">
-                <button
-                  onClick={() => router.push(`/${username}`)}
-                  className="text-sm mb-4 font-medium"
-                  style={{ color: effectiveAccent }}
-                >
-                  ← Back
-                </button>
-                {eventType ? (
-                  <>
-                    {hostName && (
-                      <p className="text-sm text-gray-500 mb-1">{hostName}</p>
-                    )}
-                    <h1 className="text-xl font-bold text-[#1a1a2e]">{eventType.title}</h1>
-                    <div className="flex items-center gap-2 mt-3 text-gray-500">
-                      <Clock className="w-4 h-4" style={{ color: effectiveAccent }} />
-                      <span>{eventType.duration} min</span>
-                    </div>
-                    {eventType.location && (
-                      <div className="flex items-center gap-2 mt-2 text-gray-500">
-                        <MapPin className="w-4 h-4" style={{ color: effectiveAccent }} />
-                        <span>{eventType.location}</span>
-                      </div>
-                    )}
-                    {eventType.description && (
-                      <p className="mt-4 text-gray-600 text-sm">{eventType.description}</p>
-                    )}
-                    {eventType.cancellationPolicy && (
-                      <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                        <p className="text-xs font-medium text-amber-800 mb-1">Cancellation Policy</p>
-                        <p className="text-xs text-amber-700">{eventType.cancellationPolicy}</p>
-                      </div>
-                    )}
-                  </>
-                ) : (
+              {eventType ? (
+                <EventInfo
+                  hostName={hostName}
+                  title={eventType.title}
+                  duration={eventType.duration}
+                  location={eventType.location}
+                  description={eventType.description}
+                  cancellationPolicy={eventType.cancellationPolicy || null}
+                  accentColor={effectiveAccent}
+                  username={username as string}
+                  onBack={() => router.push(`/${username}`)}
+                />
+              ) : (
+                <div className="md:w-1/3 p-6 border-b md:border-b-0 md:border-r border-gray-200 bg-gray-50">
                   <div className="animate-pulse">
-                    <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-6 bg-gray-200 rounded w-3/4 mb-2" />
+                    <div className="h-4 bg-gray-200 rounded w-1/2" />
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Right side - Calendar and slots */}
               <div className="md:w-2/3 p-6">
@@ -668,307 +590,49 @@ export default function BookingPage() {
 
                     {/* Time slots */}
                     {selectedDate && (
-                      <div className="md:w-44">
-                        <h3 className="font-medium mb-3 text-sm text-[#1a1a2e]">
-                          {selectedDate.toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </h3>
-                        <div className="max-h-64 overflow-y-auto space-y-2">
-                          {isLoading ? (
-                            <div className="flex items-center justify-center py-4">
-                              <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-                            </div>
-                          ) : slots.length === 0 ? (
-                            <div className="text-sm text-gray-500 py-4 text-center">
-                              <p>No times available on this day.</p>
-                              <p className="mt-1 text-gray-400">Try another date.</p>
-                            </div>
-                          ) : (
-                            slots.map((slot) => (
-                              <button
-                                key={slot}
-                                onClick={() => {
-                                  setSelectedTime(slot)
-                                  setShowForm(true)
-                                  if (eventType?.id && !hasTrackedSlot.current) {
-                                    hasTrackedSlot.current = true
-                                    trackEvent(eventType.id, "slot_selected")
-                                  }
-                                }}
-                                className={`
-                                  w-full py-2.5 px-3 text-sm border rounded-lg font-medium transition-colors focus:ring-2 focus:ring-[#0066FF] focus:ring-offset-2
-                                  ${
-                                    selectedTime === slot
-                                      ? "border-[#0066FF] bg-blue-50 text-[#0066FF]"
-                                      : "border-gray-200 hover:border-[#0066FF] hover:text-[#0066FF]"
-                                  }
-                                `}
-                              >
-                                {slot}
-                                {spotsLeft[slot] !== undefined && eventType?.maxAttendees && eventType.maxAttendees > 1 && (
-                                  <span className="block text-xs font-normal text-gray-400 mt-0.5">
-                                    {spotsLeft[slot]} spot{spotsLeft[slot] !== 1 ? "s" : ""} left
-                                  </span>
-                                )}
-                              </button>
-                            ))
-                          )}
-                        </div>
-                      </div>
+                      <TimeSlotList
+                        selectedDate={selectedDate}
+                        slots={slots}
+                        selectedTime={selectedTime}
+                        isLoading={isLoading}
+                        spotsLeft={spotsLeft}
+                        maxAttendees={eventType?.maxAttendees}
+                        onSelectSlot={(slot) => {
+                          setSelectedTime(slot)
+                          setShowForm(true)
+                          if (eventType?.id && !hasTrackedSlot.current) {
+                            hasTrackedSlot.current = true
+                            trackEvent(eventType.id, "slot_selected")
+                          }
+                        }}
+                      />
                     )}
                   </div>
                 ) : (
                   /* Booking Form */
-                  <div>
-                    <button
-                      onClick={() => setShowForm(false)}
-                      className="text-sm mb-4 font-medium"
-                      style={{ color: effectiveAccent }}
-                    >
-                      ← Change time
-                    </button>
-                    <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                      <p className="font-semibold text-[#1a1a2e]">{eventType?.title}</p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {selectedDate?.toLocaleDateString("en-US", {
-                          weekday: "long",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                        {" at "}{selectedTime}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">{guestTimezone.replace(/_/g, " ")}</p>
-                    </div>
-                    <form onSubmit={handleBook} className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Your name *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066FF] focus:border-transparent transition-shadow"
-                          placeholder="John Smith"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Email address *
-                        </label>
-                        <input
-                          type="email"
-                          required
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066FF] focus:border-transparent transition-shadow"
-                          placeholder="john@example.com"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Additional notes <span className="text-gray-400 font-normal">(optional)</span>
-                        </label>
-                        <textarea
-                          value={formData.notes}
-                          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                          rows={3}
-                          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066FF] focus:border-transparent transition-shadow resize-none"
-                          placeholder="Share anything that will help prepare for the meeting..."
-                        />
-                      </div>
-                      {/* Screening Questions */}
-                      {eventType?.screeningQuestions && (() => {
-                        const questions: ScreeningQuestion[] = (() => { try { return JSON.parse(eventType.screeningQuestions!) } catch { return [] } })()
-                        if (questions.length === 0) return null
-                        return (
-                          <div className="border-t border-gray-100 pt-4">
-                            <p className="text-sm font-medium text-gray-700 mb-3">Screening Questions</p>
-                            {questions.map((q) => (
-                              <div key={q.id} className="mb-3">
-                                <label className="block text-sm text-gray-700 mb-1">
-                                  {q.label} {q.required && <span className="text-red-500">*</span>}
-                                </label>
-                                {q.type === "text" && (
-                                  <input
-                                    type="text"
-                                    required={q.required}
-                                    value={screeningAnswers[q.id] || ""}
-                                    onChange={(e) => setScreeningAnswers({ ...screeningAnswers, [q.id]: e.target.value })}
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066FF] focus:border-transparent"
-                                  />
-                                )}
-                                {q.type === "select" && q.options && (
-                                  <select
-                                    required={q.required}
-                                    value={screeningAnswers[q.id] || ""}
-                                    onChange={(e) => setScreeningAnswers({ ...screeningAnswers, [q.id]: e.target.value })}
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066FF] focus:border-transparent bg-white"
-                                  >
-                                    <option value="">Select...</option>
-                                    {q.options.map((opt) => (
-                                      <option key={opt} value={opt}>{opt}</option>
-                                    ))}
-                                  </select>
-                                )}
-                                {q.type === "checkbox" && (
-                                  <label className="flex items-center gap-2">
-                                    <input
-                                      type="checkbox"
-                                      required={q.required}
-                                      checked={screeningAnswers[q.id] === "true"}
-                                      onChange={(e) => setScreeningAnswers({ ...screeningAnswers, [q.id]: e.target.checked ? "true" : "false" })}
-                                      className="rounded border-gray-300 text-[#0066FF] focus:ring-[#0066FF]"
-                                    />
-                                    <span className="text-sm text-gray-600">Yes</span>
-                                  </label>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )
-                      })()}
-
-                      {/* Book on behalf of someone else */}
-                      <div className="border-t border-gray-100 pt-4">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={bookForOther}
-                            onChange={(e) => setBookForOther(e.target.checked)}
-                            className="rounded border-gray-300 text-[#0066FF] focus:ring-[#0066FF]"
-                          />
-                          <span className="text-sm text-gray-700">Book for someone else</span>
-                        </label>
-                        {bookForOther && (
-                          <div className="mt-3 space-y-3 pl-6">
-                            <div>
-                              <label className="block text-sm text-gray-600 mb-1">Your name (booker) *</label>
-                              <input
-                                type="text"
-                                required
-                                value={bookerName}
-                                onChange={(e) => setBookerName(e.target.value)}
-                                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066FF] focus:border-transparent"
-                                placeholder="Your name"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm text-gray-600 mb-1">Your email (booker) *</label>
-                              <input
-                                type="email"
-                                required
-                                value={bookerEmail}
-                                onChange={(e) => setBookerEmail(e.target.value)}
-                                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066FF] focus:border-transparent"
-                                placeholder="you@example.com"
-                              />
-                            </div>
-                            <p className="text-xs text-gray-400">
-                              Both you and the attendee above will receive confirmation emails.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Recurrence option */}
-                      {eventType?.allowRecurring && eventType.recurrenceOptions && (() => {
-                        const options: string[] = (() => { try { return JSON.parse(eventType.recurrenceOptions!) } catch { return [] } })()
-                        if (options.length === 0) return null
-                        const labels: Record<string, string> = {
-                          weekly_4: "Weekly × 4 (1 month)",
-                          weekly_8: "Weekly × 8 (2 months)",
-                          biweekly_4: "Biweekly × 4 (2 months)",
-                          monthly_3: "Monthly × 3 (3 months)",
-                        }
-                        return (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              <Repeat className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />
-                              Recurring
-                            </label>
-                            <select
-                              value={formData.recurrenceRule}
-                              onChange={(e) => setFormData({ ...formData, recurrenceRule: e.target.value })}
-                              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066FF] focus:border-transparent transition-shadow bg-white"
-                            >
-                              <option value="">One-time meeting</option>
-                              {options.map((opt: string) => (
-                                <option key={opt} value={opt}>{labels[opt] || opt}</option>
-                              ))}
-                            </select>
-                            {formData.recurrenceRule && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                This will book multiple meetings on the same day/time
-                              </p>
-                            )}
-                          </div>
-                        )
-                      })()}
-                      {/* Screening Questions */}
-                      {eventType?.screeningQuestions && (() => {
-                        const questions: ScreeningQuestion[] = (() => { try { return JSON.parse(eventType.screeningQuestions!) } catch { return [] } })()
-                        if (questions.length === 0) return null
-                        return (
-                          <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <p className="text-sm font-medium text-gray-700">Screening Questions</p>
-                            {questions.map((q) => (
-                              <div key={q.id}>
-                                <label className="block text-sm text-gray-700 mb-1">
-                                  {q.label} {q.required && <span className="text-red-500">*</span>}
-                                </label>
-                                {q.type === "text" && (
-                                  <input
-                                    type="text"
-                                    required={q.required}
-                                    value={(screeningAnswers[q.id] as string) || ""}
-                                    onChange={(e) => setScreeningAnswers({ ...screeningAnswers, [q.id]: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#0066FF] focus:border-transparent"
-                                  />
-                                )}
-                                {q.type === "select" && q.options && (
-                                  <select
-                                    required={q.required}
-                                    value={(screeningAnswers[q.id] as string) || ""}
-                                    onChange={(e) => setScreeningAnswers({ ...screeningAnswers, [q.id]: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#0066FF] focus:border-transparent bg-white"
-                                  >
-                                    <option value="">Select...</option>
-                                    {q.options.map((opt) => (
-                                      <option key={opt} value={opt}>{opt}</option>
-                                    ))}
-                                  </select>
-                                )}
-                                {q.type === "checkbox" && (
-                                  <label className="flex items-center gap-2 text-sm text-gray-600">
-                                    <input
-                                      type="checkbox"
-                                      checked={!!screeningAnswers[q.id]}
-                                      onChange={(e) => setScreeningAnswers({ ...screeningAnswers, [q.id]: e.target.checked ? "yes" : "" })}
-                                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                    />
-                                    Yes
-                                  </label>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )
-                      })()}
-                      <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="w-full py-3 text-white font-medium rounded-lg disabled:opacity-50 transition-colors"
-                        style={{ backgroundColor: effectiveAccent }}
-                      >
-                        {isLoading ? "Booking..." : formData.recurrenceRule ? "Confirm Recurring Booking" : "Confirm Booking"}
-                      </button>
-                    </form>
-                  </div>
+                  <BookingForm
+                    eventTitle={eventType?.title || ""}
+                    selectedDate={selectedDate!}
+                    selectedTime={selectedTime!}
+                    guestTimezone={guestTimezone}
+                    accentColor={effectiveAccent}
+                    isLoading={isLoading}
+                    formData={formData}
+                    onFormChange={setFormData}
+                    screeningAnswers={screeningAnswers}
+                    onScreeningChange={setScreeningAnswers}
+                    screeningQuestions={eventType?.screeningQuestions || null}
+                    bookForOther={bookForOther}
+                    onBookForOtherChange={setBookForOther}
+                    bookerName={bookerName}
+                    onBookerNameChange={setBookerName}
+                    bookerEmail={bookerEmail}
+                    onBookerEmailChange={setBookerEmail}
+                    allowRecurring={eventType?.allowRecurring || false}
+                    recurrenceOptions={eventType?.recurrenceOptions || null}
+                    onSubmit={handleBook}
+                    onBack={() => setShowForm(false)}
+                  />
                 )}
               </div>
             </div>
