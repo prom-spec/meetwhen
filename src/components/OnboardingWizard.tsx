@@ -133,7 +133,7 @@ export default function OnboardingWizard({ username }: { username?: string | nul
       {/* Progress bar */}
       <div className="h-1 bg-gray-100">
         <div
-          className="h-full bg-blue-600 transition-all duration-500"
+          className="h-full bg-[#0066FF] transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -144,7 +144,7 @@ export default function OnboardingWizard({ username }: { username?: string | nul
           return (
             <div key={step.id} className={`flex items-start gap-4 ${done ? "opacity-60" : ""}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                done ? "bg-green-100 text-green-600" : "bg-blue-50 text-blue-600"
+                done ? "bg-green-100 text-green-600" : "bg-blue-50 text-[#0066FF]"
               }`}>
                 {done ? <Check className="w-4 h-4" /> : step.icon}
               </div>
@@ -159,7 +159,7 @@ export default function OnboardingWizard({ username }: { username?: string | nul
                 {step.id === "share" && username && !done && (
                   <button
                     onClick={handleCopy}
-                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700"
+                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#0066FF] hover:text-[#0052cc]"
                   >
                     <Copy className="w-3 h-3" />
                     {copied ? "Copied!" : "Copy link"}
@@ -169,7 +169,7 @@ export default function OnboardingWizard({ username }: { username?: string | nul
               {step.href && !done && (
                 <Link
                   href={step.href}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700 whitespace-nowrap"
+                  className="text-sm font-medium text-[#0066FF] hover:text-[#0052cc] whitespace-nowrap"
                 >
                   Set up →
                 </Link>

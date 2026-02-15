@@ -481,6 +481,56 @@ export const authOptions: NextAuthOptions = {
         })
         
         authLogger.info("Generated username for new user", { visitorId: user.id, username })
+
+        // Send welcome email
+        if (user.email) {
+          try {
+            const { Resend } = await import("resend")
+            const resend = new Resend(process.env.RESEND_API_KEY)
+            const fromEmail = process.env.EMAIL_FROM || "letsmeet.link <onboarding@resend.dev>"
+            await resend.emails.send({
+              from: fromEmail,
+              to: user.email,
+              subject: "Welcome to letsmeet.link — your free scheduling is ready",
+              html: `
+                <div style="font-family: system-ui, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 16px;">
+                  <div style="text-align: center; margin-bottom: 24px;">
+                    <h1 style="font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 0;">Welcome to letsmeet.link 🎉</h1>
+                  </div>
+                  <p style="font-size: 16px; color: #374151; line-height: 1.6;">
+                    You're all set! Your free booking page is live at:
+                  </p>
+                  <div style="background: #EFF6FF; border-radius: 8px; padding: 16px; text-align: center; margin: 16px 0;">
+                    <a href="https://www.letsmeet.link/${username}" style="color: #0066FF; font-weight: 600; font-size: 18px; text-decoration: none;">
+                      letsmeet.link/${username}
+                    </a>
+                  </div>
+                  <p style="font-size: 14px; color: #6B7280; line-height: 1.6;">Here's how to get the most out of it:</p>
+                  <ol style="font-size: 14px; color: #374151; line-height: 1.8; padding-left: 20px;">
+                    <li><a href="https://www.letsmeet.link/dashboard/settings" style="color: #0066FF;">Connect your Google Calendar</a> for real-time availability</li>
+                    <li><a href="https://www.letsmeet.link/dashboard/availability" style="color: #0066FF;">Set your working hours</a></li>
+                    <li><a href="https://www.letsmeet.link/dashboard/event-types/new" style="color: #0066FF;">Create your first event type</a> (e.g., 30-min meeting)</li>
+                    <li>Share your booking link!</li>
+                  </ol>
+                  <p style="font-size: 14px; color: #6B7280; line-height: 1.6; margin-top: 16px;">
+                    <strong>Pro tip:</strong> Every booking page has an AI chat assistant built in. Your visitors can schedule through conversation — no competitor offers this.
+                  </p>
+                  <div style="text-align: center; margin-top: 24px;">
+                    <a href="https://www.letsmeet.link/dashboard" style="display: inline-block; padding: 12px 24px; background: #0066FF; color: white; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+                      Go to your dashboard →
+                    </a>
+                  </div>
+                  <p style="font-size: 12px; color: #9CA3AF; text-align: center; margin-top: 32px;">
+                    Questions? Just reply to this email. — The letsmeet.link team
+                  </p>
+                </div>
+              `,
+            })
+            authLogger.info("Welcome email sent", { visitorId: user.id, email: user.email, username })
+          } catch (emailErr) {
+            authLogger.error("Failed to send welcome email", emailErr, { visitorId: user.id })
+          }
+        }
       } catch (error) {
         authLogger.error("Failed to generate username", error, { visitorId: user.id })
       }

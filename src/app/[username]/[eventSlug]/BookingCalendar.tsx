@@ -272,7 +272,7 @@ export default function BookingCalendar({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 px-4 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="w-full py-3 px-4 bg-[#0066FF] text-white rounded-md font-medium hover:bg-[#0052cc] disabled:opacity-50"
           >
             {isSubmitting ? "Scheduling..." : "Schedule Event"}
           </button>
@@ -360,7 +360,7 @@ export default function BookingCalendar({
                     ? "text-red-400 cursor-not-allowed"
                     : "text-gray-400 cursor-not-allowed" 
                   : isSelected
-                    ? "bg-blue-600 text-white"
+                    ? "bg-[#0066FF] text-white"
                     : "hover:bg-gray-100 text-gray-900"
                 }
               `}
@@ -401,7 +401,7 @@ export default function BookingCalendar({
                     setSelectedSlot(slot)
                     setShowForm(true)
                   }}
-                  className="py-2 px-3 text-sm border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 focus:ring-2 focus:ring-[#0066FF] focus:ring-offset-2"
+                  className="py-2 px-3 text-sm border border-[#0066FF] text-[#0066FF] rounded-md hover:bg-blue-50 focus:ring-2 focus:ring-[#0066FF] focus:ring-offset-2"
                 >
                   {slot}
                 </button>
