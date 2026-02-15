@@ -103,6 +103,68 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Quick Demo Section */}
+        <section className="py-16 border-t border-gray-100">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-[#1a1a2e]">See it in action</h2>
+            <p className="mt-2 text-gray-600 text-sm">Your booking page + AI chat assistant, ready in 2 minutes</p>
+          </div>
+          <div className="max-w-3xl mx-auto grid md:grid-cols-2 gap-6">
+            {/* Booking page mockup */}
+            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-[#0066FF] rounded-full flex items-center justify-center text-white text-xs font-bold">JD</div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Jane Doe</p>
+                  <p className="text-xs text-gray-500">30 min consultation</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-7 gap-1 mb-4">
+                {['M','T','W','T','F','S','S'].map((d,i) => (
+                  <div key={i} className="text-center text-xs text-gray-400 font-medium">{d}</div>
+                ))}
+                {Array.from({length: 7}, (_, i) => (
+                  <div key={i} className={`text-center text-xs py-1.5 rounded ${i === 2 ? 'bg-[#0066FF] text-white font-bold' : i > 4 ? 'text-gray-300' : 'text-gray-700 hover:bg-blue-50'}`}>
+                    {i + 17}
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-1.5">
+                {['9:00 AM', '10:30 AM', '2:00 PM'].map((t) => (
+                  <div key={t} className={`text-xs py-2 px-3 rounded-lg border ${t === '10:30 AM' ? 'border-[#0066FF] bg-blue-50 text-[#0066FF] font-medium' : 'border-gray-200 text-gray-600'}`}>
+                    {t}
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* AI chat mockup */}
+            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-6 h-6 bg-[#0066FF] rounded-lg flex items-center justify-center">
+                  <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                </div>
+                <p className="text-sm font-semibold text-gray-900">AI Chat Assistant</p>
+              </div>
+              <div className="space-y-3">
+                <div className="bg-white rounded-lg p-3 text-xs text-gray-700 shadow-sm">
+                  Hi! I&apos;d like to book a consultation with Jane.
+                </div>
+                <div className="bg-[#0066FF] rounded-lg p-3 text-xs text-white ml-6">
+                  Sure! Jane has openings on Wed 19th at 9:00 AM, 10:30 AM, and 2:00 PM. Which works best?
+                </div>
+                <div className="bg-white rounded-lg p-3 text-xs text-gray-700 shadow-sm">
+                  10:30 AM please!
+                </div>
+                <div className="bg-[#0066FF] rounded-lg p-3 text-xs text-white ml-6">
+                  ✅ Booked! Wed Feb 19, 10:30 AM. Confirmation sent to your email.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Features Section */}
         <section id="features" className="py-20 border-t border-gray-100">
           <div className="text-center mb-16">

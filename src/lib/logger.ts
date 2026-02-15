@@ -38,6 +38,19 @@ export function createLogger(category: string) {
         ? { ...context, error: error.message, stack: error.stack }
         : { ...context, error: String(error) }
       console.error(formatMessage("ERROR", category, message, errorContext))
+      
+      // Also persist to ErrorLog table (fire-and-forget)
+      try {
+        import("@/lib/error-log").then(({ logError }) => {
+          logError({
+            source: category.toLowerCase(),
+            message: `${message}: ${error instanceof Error ? error.message : String(error || "")}`.slice(0, 1000),
+            details: JSON.stringify(errorContext),
+            userId: context?.visitorId as string || context?.userId as string || undefined,
+            requestPath: context?.requestPath as string || undefined,
+          }).catch(() => {})
+        }).catch(() => {})
+      } catch { /* never break the caller */ }
     },
   }
 }

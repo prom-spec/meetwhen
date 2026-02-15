@@ -38,7 +38,7 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     analytics: true,       // Basic analytics in free to show value
     embedCustomization: false,
     sequences: false,
-    contacts: false,
+    contacts: true,       // Contacts drive stickiness + data lock-in
     teams: false,
     sso: false,
     scim: false,
