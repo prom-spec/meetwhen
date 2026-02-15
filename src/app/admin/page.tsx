@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { getAllExperiments } from "@/lib/ab-testing";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -333,6 +334,42 @@ export default function AdminDashboard() {
               ])}
             />
           </Card>
+        </div>
+
+        {/* A/B Tests */}
+        <h2 className="text-lg font-semibold mb-4 text-zinc-300">A/B Tests</h2>
+        <div className="mb-8 grid gap-4 md:grid-cols-2">
+          {getAllExperiments().map((exp) => (
+            <Card key={exp.id} title={exp.name}>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className={`inline-block w-2 h-2 rounded-full ${exp.active ? "bg-green-500" : "bg-zinc-600"}`} />
+                  <span className="text-xs text-zinc-400">{exp.active ? "Active" : "Inactive"} · Started {exp.startedAt}</span>
+                </div>
+                {exp.description && <p className="text-xs text-zinc-500">{exp.description}</p>}
+                <div className="text-xs text-zinc-400 font-mono">ID: {exp.id}</div>
+                <div className="mt-2 space-y-1">
+                  {exp.variants.map((v) => (
+                    <div key={v.id} className="flex items-center gap-2 text-xs">
+                      <span className="w-20 text-zinc-300 font-medium">{v.id}</span>
+                      <div className="flex-1 h-4 bg-zinc-800 rounded overflow-hidden">
+                        <div
+                          style={{ width: `${(v.weight / exp.variants.reduce((s, vv) => s + vv.weight, 0)) * 100}%` }}
+                          className="h-full bg-blue-600 rounded"
+                        />
+                      </div>
+                      <span className="text-zinc-500 w-10 text-right">
+                        {Math.round((v.weight / exp.variants.reduce((s, vv) => s + vv.weight, 0)) * 100)}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-zinc-600 mt-1">
+                  Track in GA4: event &quot;ab_test_assignment&quot; / &quot;ab_test_conversion&quot; with experiment_id=&quot;{exp.id}&quot;
+                </p>
+              </div>
+            </Card>
+          ))}
         </div>
 
         {/* Audit Log */}

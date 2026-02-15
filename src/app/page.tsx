@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import MobileNav from "@/components/MobileNav";
+import { HomepageHero } from "@/components/HomepageHero";
 
 export default function Home() {
   return (
@@ -60,26 +61,7 @@ export default function Home() {
       {/* Hero Section */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="pt-10 pb-16 text-center lg:pt-16">
-          {/* Badge */}
-          <div className="flex justify-center mb-6">
-            <span className="inline-flex items-center gap-2 bg-blue-50 text-[#0066FF] text-sm font-medium px-4 py-2 rounded-full">
-              <span className="inline-block w-2 h-2 bg-[#0066FF] rounded-full animate-pulse" />
-              Built for AI agents
-            </span>
-          </div>
-
-          {/* Headline — PAS: agitate the pain, present the solution */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#1a1a2e] tracking-tight">
-            Stop paying $10/mo
-            <br />
-            <span className="text-[#0066FF]">for scheduling</span>
-          </h1>
-          
-          {/* Tagline */}
-          <p className="mt-6 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
-            The free Calendly alternative with AI chat and MCP integration. 
-            3 event types free. Pro for $1/mo. Built for humans and AI agents.
-          </p>
+          <HomepageHero />
 
           {/* CTA Buttons */}
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
