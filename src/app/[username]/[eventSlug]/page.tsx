@@ -2,15 +2,24 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
+import dynamic from "next/dynamic"
 import Image from "next/image"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight, Globe, Search } from "lucide-react"
 import PoweredByFooter from "@/components/PoweredByFooter"
 import { useToast } from "@/components/ToastProvider"
-import BookingConfirmation from "./BookingConfirmation"
 import EventInfo from "./EventInfo"
 import TimeSlotList from "./TimeSlotList"
 import BookingForm from "./BookingForm"
+
+// Lazy load BookingConfirmation — only shown after successful booking
+const BookingConfirmation = dynamic(() => import("./BookingConfirmation"), {
+  loading: () => (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-pulse text-gray-400">Loading confirmation...</div>
+    </div>
+  ),
+})
 
 interface ScreeningQuestion {
   id: string
@@ -314,7 +323,21 @@ export default function BookingPage() {
     }
   }
 
-  // Calendar helpers
+  // Stable callbacks for child components
+  const handleSelectSlot = useCallback((slot: string) => {
+    setSelectedTime(slot)
+    setShowForm(true)
+    if (eventType?.id && !hasTrackedSlot.current) {
+      hasTrackedSlot.current = true
+      trackEvent(eventType.id, "slot_selected")
+    }
+  }, [eventType?.id])
+
+  const handleBackToSlots = useCallback(() => setShowForm(false), [])
+
+  const handleBackToEvents = useCallback(() => router.push(`/${username}`), [router, username])
+
+  // Calendar helpers — memoized
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear()
     const month = date.getMonth()
@@ -325,35 +348,39 @@ export default function BookingPage() {
     return { daysInMonth, startingDay }
   }
 
-  const { daysInMonth, startingDay } = getDaysInMonth(currentMonth)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const { daysInMonth, startingDay } = useMemo(() => getDaysInMonth(currentMonth), [currentMonth])
 
-  const monthNames = [
+  const todayDate = useMemo(() => {
+    const t = new Date()
+    t.setHours(0, 0, 0, 0)
+    return t
+  }, [])
+
+  const monthNames = useMemo(() => [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
-  ]
+  ], [])
 
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  const dayNames = useMemo(() => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], [])
 
-  const isDateDisabled = (day: number) => {
+  const isDateDisabled = useCallback((day: number) => {
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
-    return date < today
-  }
+    return date < todayDate
+  }, [currentMonth, todayDate])
 
-  const isDateSelected = (day: number) => {
+  const isDateSelected = useCallback((day: number) => {
     if (!selectedDate) return false
     return (
       selectedDate.getDate() === day &&
       selectedDate.getMonth() === currentMonth.getMonth() &&
       selectedDate.getFullYear() === currentMonth.getFullYear()
     )
-  }
+  }, [selectedDate, currentMonth])
 
-  const hasAvailability = (day: number) => {
+  const hasAvailability = useCallback((day: number) => {
     const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
     return availableDates.has(dateStr)
-  }
+  }, [currentMonth, availableDates])
 
   // Redirect to custom URL after booking if configured
   const [redirectCountdown, setRedirectCountdown] = useState(3)
@@ -447,7 +474,7 @@ export default function BookingPage() {
                   cancellationPolicy={eventType.cancellationPolicy || null}
                   accentColor={effectiveAccent}
                   username={username as string}
-                  onBack={() => router.push(`/${username}`)}
+                  onBack={handleBackToEvents}
                 />
               ) : (
                 <div className="md:w-1/3 p-6 border-b md:border-b-0 md:border-r border-gray-200 bg-gray-50">
@@ -597,14 +624,7 @@ export default function BookingPage() {
                         isLoading={isLoading}
                         spotsLeft={spotsLeft}
                         maxAttendees={eventType?.maxAttendees}
-                        onSelectSlot={(slot) => {
-                          setSelectedTime(slot)
-                          setShowForm(true)
-                          if (eventType?.id && !hasTrackedSlot.current) {
-                            hasTrackedSlot.current = true
-                            trackEvent(eventType.id, "slot_selected")
-                          }
-                        }}
+                        onSelectSlot={handleSelectSlot}
                       />
                     )}
                   </div>
@@ -631,7 +651,7 @@ export default function BookingPage() {
                     allowRecurring={eventType?.allowRecurring || false}
                     recurrenceOptions={eventType?.recurrenceOptions || null}
                     onSubmit={handleBook}
-                    onBack={() => setShowForm(false)}
+                    onBack={handleBackToSlots}
                   />
                 )}
               </div>

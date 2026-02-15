@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from "react"
 import { Repeat } from "lucide-react"
 
 interface ScreeningQuestion {
@@ -46,7 +47,7 @@ const RECURRENCE_LABELS: Record<string, string> = {
   monthly_3: "Monthly × 3 (3 months)",
 }
 
-export default function BookingForm({
+export default memo(function BookingForm({
   eventTitle,
   selectedDate,
   selectedTime,
@@ -261,4 +262,4 @@ export default function BookingForm({
       </form>
     </div>
   )
-}
+})

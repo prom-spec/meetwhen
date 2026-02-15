@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from "react"
 import { Loader2 } from "lucide-react"
 
 interface TimeSlotListProps {
@@ -12,7 +13,7 @@ interface TimeSlotListProps {
   onSelectSlot: (slot: string) => void
 }
 
-export default function TimeSlotList({
+export default memo(function TimeSlotList({
   selectedDate,
   slots,
   selectedTime,
@@ -66,4 +67,4 @@ export default function TimeSlotList({
       </div>
     </div>
   )
-}
+})

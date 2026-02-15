@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from "react"
 import { Clock, MapPin } from "lucide-react"
 
 interface EventInfoProps {
@@ -14,7 +15,7 @@ interface EventInfoProps {
   onBack: () => void
 }
 
-export default function EventInfo({
+export default memo(function EventInfo({
   hostName,
   title,
   duration,
@@ -54,4 +55,4 @@ export default function EventInfo({
       )}
     </div>
   )
-}
+})

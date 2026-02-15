@@ -4,6 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { competitors } from "./data";
 import MobileNav from "@/components/MobileNav";
+import InteractiveDemo from "@/components/InteractiveDemo";
 import { Check, X, ArrowRight } from "lucide-react";
 
 interface Props {
@@ -146,6 +147,17 @@ export default async function AlternativePage({ params }: Props) {
               ))}
             </ul>
           </div>
+        </div>
+
+        {/* Interactive Demo */}
+        <div className="mb-16">
+          <h2 className="text-2xl font-bold text-[#1a1a2e] mb-2 text-center">
+            See the difference yourself
+          </h2>
+          <p className="text-gray-500 text-sm text-center mb-6">
+            Compare the old way with {comp.name} vs booking with letsmeet.link
+          </p>
+          <InteractiveDemo variant="comparison" competitor={comp.name} />
         </div>
 
         {/* CTA */}

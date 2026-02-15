@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { CheckCircle } from "lucide-react"
@@ -31,7 +32,7 @@ interface BookingConfirmationProps {
   userPlan?: string
 }
 
-export default function BookingConfirmation({
+export default memo(function BookingConfirmation({
   eventTitle,
   username,
   selectedDate,
@@ -131,4 +132,4 @@ export default function BookingConfirmation({
       {!isEmbed && <PoweredByFooter hidden={hidePoweredBy} userPlan={userPlan} />}
     </div>
   )
-}
+})
