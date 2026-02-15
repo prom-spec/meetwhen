@@ -64,6 +64,20 @@ export default function RootLayout({
         <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
       )}
       <body className={`${inter.variable} font-sans antialiased`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "letsmeet.link",
+              url: "https://www.letsmeet.link",
+              logo: "https://www.letsmeet.link/logo-full.svg",
+              description: "AI-first scheduling platform. Free Calendly alternative with AI chat and MCP integration.",
+              sameAs: ["https://x.com/promptetheusbot"],
+            }),
+          }}
+        />
         <Providers>
           {children}
           <InstallPrompt />

@@ -68,17 +68,17 @@ export default function Home() {
             </span>
           </div>
 
-          {/* Headline */}
+          {/* Headline — PAS: agitate the pain, present the solution */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#1a1a2e] tracking-tight">
-            The scheduling platform
+            Stop paying $10/mo
             <br />
-            <span className="text-[#0066FF]">built for AI</span>
+            <span className="text-[#0066FF]">for scheduling</span>
           </h1>
           
           {/* Tagline */}
           <p className="mt-6 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
-            AI chat built in. MCP integration ready. Any AI agent can manage your calendar, 
-            book meetings, and handle scheduling — so you don&apos;t have to.
+            The free Calendly alternative with AI chat and MCP integration. 
+            3 event types free. Pro for $1/mo. Built for humans and AI agents.
           </p>
 
           {/* CTA Buttons */}
@@ -87,19 +87,19 @@ export default function Home() {
               href="/login"
               className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 text-base font-medium text-white bg-[#0066FF] hover:bg-[#0052cc] rounded-lg transition-colors shadow-sm"
             >
-              Schedule with AI — free
+              Start scheduling free →
             </Link>
             <Link
-              href="/mcp"
+              href="/compare/calendly-vs-letsmeet"
               className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 text-base font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors"
             >
-              Connect your AI agent
+              Compare with Calendly
             </Link>
           </div>
 
           {/* Trust Badge */}
           <p className="mt-6 text-sm text-gray-500">
-            Works with Claude, ChatGPT, OpenClaw, and any MCP-compatible AI • Free forever
+            No credit card required • Works with Google Calendar • AI chat &amp; MCP built in
           </p>
         </div>
 
@@ -223,6 +223,83 @@ export default function Home() {
         </section>
       </main>
 
+      {/* Social Proof */}
+      <section className="border-t border-gray-100 py-16 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-6">Why people switch to letsmeet.link</p>
+          <div className="grid sm:grid-cols-3 gap-8">
+            <div>
+              <p className="text-3xl font-bold text-[#0066FF]">90%</p>
+              <p className="text-sm text-gray-600 mt-1">cheaper than Calendly</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-[#0066FF]">3x</p>
+              <p className="text-sm text-gray-600 mt-1">more free event types</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-[#0066FF]">2 min</p>
+              <p className="text-sm text-gray-600 mt-1">setup time</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section with Schema */}
+      <section className="py-20">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-[#1a1a2e] text-center mb-12">Frequently asked questions</h2>
+          <div className="space-y-6">
+            {[
+              { q: "Is letsmeet.link really free?", a: "Yes. The free plan includes 3 event types, AI chat scheduling, Google Calendar sync, meeting polls, email reminders, and more. No credit card required, no trial period — free forever." },
+              { q: "How does letsmeet.link compare to Calendly?", a: "letsmeet.link offers 3 free event types (vs Calendly's 1), built-in AI chat scheduling, MCP integration for AI agents, and a Pro plan at $1/mo (vs Calendly's $10/mo). You get more features for 90% less." },
+              { q: "What is MCP integration?", a: "MCP (Model Context Protocol) is a standard that lets AI agents interact with external tools. With letsmeet.link's MCP support, any compatible AI agent (Claude, ChatGPT, OpenClaw) can manage your calendar, book meetings, and handle scheduling automatically." },
+              { q: "Can I migrate from Calendly?", a: "Yes, switching takes about 2 minutes. Sign up, set your availability, create your event types, and share your new link. Your existing Calendly bookings are unaffected." },
+              { q: "What calendars do you support?", a: "Currently Google Calendar with real-time sync. Outlook/Microsoft Calendar support is coming soon." },
+              { q: "Is my data secure?", a: "Absolutely. We use industry-standard encryption, secure OAuth for Google Calendar access, and never store your calendar data beyond what's needed for scheduling. See our privacy policy for details." },
+            ].map((faq, i) => (
+              <details key={i} className="group border border-gray-200 rounded-lg">
+                <summary className="flex items-center justify-between p-5 cursor-pointer text-[#1a1a2e] font-medium">
+                  {faq.q}
+                  <span className="text-gray-400 group-open:rotate-45 transition-transform text-xl">+</span>
+                </summary>
+                <p className="px-5 pb-5 text-gray-600 text-sm leading-relaxed">{faq.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: [
+                { "@type": "Question", name: "Is letsmeet.link really free?", acceptedAnswer: { "@type": "Answer", text: "Yes. The free plan includes 3 event types, AI chat scheduling, Google Calendar sync, meeting polls, email reminders, and more. No credit card required, no trial period — free forever." } },
+                { "@type": "Question", name: "How does letsmeet.link compare to Calendly?", acceptedAnswer: { "@type": "Answer", text: "letsmeet.link offers 3 free event types (vs Calendly's 1), built-in AI chat scheduling, MCP integration for AI agents, and a Pro plan at $1/mo (vs Calendly's $10/mo). You get more features for 90% less." } },
+                { "@type": "Question", name: "What is MCP integration?", acceptedAnswer: { "@type": "Answer", text: "MCP (Model Context Protocol) is a standard that lets AI agents interact with external tools. With letsmeet.link's MCP support, any compatible AI agent can manage your calendar, book meetings, and handle scheduling automatically." } },
+                { "@type": "Question", name: "Can I migrate from Calendly?", acceptedAnswer: { "@type": "Answer", text: "Yes, switching takes about 2 minutes. Sign up, set your availability, create your event types, and share your new link." } },
+                { "@type": "Question", name: "What calendars do you support?", acceptedAnswer: { "@type": "Answer", text: "Currently Google Calendar with real-time sync. Outlook/Microsoft Calendar support is coming soon." } },
+                { "@type": "Question", name: "Is my data secure?", acceptedAnswer: { "@type": "Answer", text: "Absolutely. We use industry-standard encryption, secure OAuth for Google Calendar access, and never store your calendar data beyond what's needed for scheduling." } },
+              ],
+            }),
+          }}
+        />
+      </section>
+
+      {/* Bottom CTA */}
+      <section className="bg-[#1a1a2e] py-16">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">Ready to schedule smarter?</h2>
+          <p className="text-gray-400 mb-8">Join the next generation of scheduling. Free forever, or Pro for $1/mo.</p>
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center px-8 py-3 text-base font-medium text-white bg-[#0066FF] hover:bg-[#0052cc] rounded-lg transition-colors"
+          >
+            Start scheduling free →
+          </Link>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-gray-100 py-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -238,12 +315,18 @@ export default function Home() {
                 © {new Date().getFullYear()} letsmeet.link. All rights reserved.
               </span>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-6">
               <Link href="/mcp" className="text-sm text-gray-500 hover:text-gray-700">
                 MCP Guide
               </Link>
               <Link href="/pricing" className="text-sm text-gray-500 hover:text-gray-700">
                 Pricing
+              </Link>
+              <Link href="/blog" className="text-sm text-gray-500 hover:text-gray-700">
+                Blog
+              </Link>
+              <Link href="/alternatives/calendly" className="text-sm text-gray-500 hover:text-gray-700">
+                Calendly Alternative
               </Link>
               <Link href="/about" className="text-sm text-gray-500 hover:text-gray-700">
                 About
