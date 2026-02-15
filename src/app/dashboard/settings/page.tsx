@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar, Check, X, RefreshCw, Settings, User, Globe, Webhook, ChevronRight, Key, Copy, Trash2, Plus, Bot, Link2, Unlink, Palette, ScrollText } from "lucide-react"
+import { Calendar, Check, X, RefreshCw, Settings, User, Globe, Webhook, ChevronRight, Key, Copy, Trash2, Plus, Bot, Link2, Unlink, Palette, ScrollText, Upload } from "lucide-react"
 import Link from "next/link"
 import ConfirmDialog from "@/components/ConfirmDialog"
 
@@ -1367,6 +1367,25 @@ mcporter add letsmeet --type http \\
               </>
             )}
           </button>
+        </div>
+
+        {/* Import Section */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+            <Upload className="w-5 h-5" />
+            Import
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">Migrate your event types from another scheduling platform.</p>
+          <Link
+            href="/dashboard/settings/import"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Import from Calendly
+            <ChevronRight className="w-4 h-4" />
+          </Link>
         </div>
 
         {/* Danger Zone - Delete Account */}
