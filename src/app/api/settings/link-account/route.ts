@@ -15,6 +15,13 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Plan gating: multiple accounts require Pro
+    const { getPlanFromUser, canAccess } = await import("@/lib/plans")
+    const planUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } })
+    if (!canAccess(getPlanFromUser(planUser || {}), "multipleAccounts")) {
+      return NextResponse.json({ error: "Linking multiple accounts requires a Pro plan. Upgrade at /dashboard/billing" }, { status: 403 })
+    }
+
     // Clean up expired tokens for this user
     await prisma.linkingToken.deleteMany({
       where: {

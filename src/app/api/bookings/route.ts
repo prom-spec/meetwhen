@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
             email: true,
             timezone: true,
             calendarSyncEnabled: true,
+            plan: true,
           },
         },
         team: {
@@ -136,6 +137,14 @@ export async function POST(request: NextRequest) {
     if (!eventType || !eventType.isActive) {
       bookingLogger.warn("Event type not found or inactive", { requestId, eventTypeId })
       return NextResponse.json({ error: "Event type not found or inactive" }, { status: 404 })
+    }
+
+    // Plan-gate book-on-behalf: check host's plan
+    if (bookedByName || bookedByEmail) {
+      const { getPlanFromUser, canAccess } = await import("@/lib/plans")
+      if (!canAccess(getPlanFromUser(eventType.user), "bookOnBehalf")) {
+        return NextResponse.json({ error: "Book on behalf requires a Pro plan" }, { status: 403 })
+      }
     }
 
     // Parse start time (supports both ISO string or date+time)

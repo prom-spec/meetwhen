@@ -135,6 +135,15 @@ export async function PATCH(
       }
     }
 
+    // Plan-gate PRO-only event type features
+    if (rawBody.cancellationPolicy !== undefined && rawBody.cancellationPolicy) {
+      const { getPlanFromUser, canAccess } = await import("@/lib/plans")
+      const planUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } })
+      if (!canAccess(getPlanFromUser(planUser || {}), "cancellationPolicy")) {
+        return NextResponse.json({ error: "Cancellation policy requires a Pro plan. Upgrade at /dashboard/billing" }, { status: 403 })
+      }
+    }
+
     // Build update data, only including fields that were provided
     const updateData: Record<string, unknown> = {}
     if (title !== undefined) updateData.title = title

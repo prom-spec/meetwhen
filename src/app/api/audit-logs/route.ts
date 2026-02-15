@@ -12,6 +12,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Plan gating: audit logs require Enterprise plan
+    const { getPlanFromUser, canAccess } = await import("@/lib/plans")
+    const planUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } })
+    if (!canAccess(getPlanFromUser(planUser || {}), "auditLogs")) {
+      return NextResponse.json({ error: "Audit logs require an Enterprise plan. Upgrade at /dashboard/billing" }, { status: 403 })
+    }
+
     const { searchParams } = new URL(request.url)
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10))
     const entityType = searchParams.get("entityType") || undefined

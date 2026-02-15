@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     apiLogger.info("Creating event type", { visitorId: session.user.id })
 
     // Plan gating: check event type limit
-    const { getPlanFromUser, getNumericLimit } = await import("@/lib/plans")
+    const { getPlanFromUser, getNumericLimit, canAccess } = await import("@/lib/plans")
     const currentUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } })
     const userPlan = getPlanFromUser(currentUser || {})
     const maxAllowed = getNumericLimit(userPlan, "maxEventTypes")
@@ -109,6 +109,11 @@ export async function POST(request: NextRequest) {
       customQuestions, screeningQuestions, price, currency, cancellationPolicy, confirmationLinks,
       isAdminManaged, assignedToId, availableStartTime, availableEndTime
     } = parsed.data
+
+    // Plan-gate PRO-only event type features
+    if (cancellationPolicy && !canAccess(userPlan, "cancellationPolicy")) {
+      return NextResponse.json({ error: "Cancellation policy requires a Pro plan. Upgrade at /dashboard/billing" }, { status: 403 })
+    }
 
     // If teamId is provided, verify user is a team member with appropriate permissions
     if (teamId) {

@@ -17,6 +17,13 @@ export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+  // Plan gating
+  const { getPlanFromUser, canAccess } = await import("@/lib/plans")
+  const planUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } })
+  if (!canAccess(getPlanFromUser(planUser || {}), "sequences")) {
+    return NextResponse.json({ error: "Sequences require a Pro plan. Upgrade at /dashboard/billing" }, { status: 403 })
+  }
+
   const sequences = await prisma.emailSequence.findMany({
     where: { userId: session.user.id },
     orderBy: { createdAt: "desc" },
@@ -27,6 +34,13 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  // Plan gating
+  const { getPlanFromUser, canAccess } = await import("@/lib/plans")
+  const planUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } })
+  if (!canAccess(getPlanFromUser(planUser || {}), "sequences")) {
+    return NextResponse.json({ error: "Sequences require a Pro plan. Upgrade at /dashboard/billing" }, { status: 403 })
+  }
 
   try {
     const body = await req.json()

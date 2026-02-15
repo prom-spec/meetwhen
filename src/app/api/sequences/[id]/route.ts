@@ -8,6 +8,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+  // Plan gating
+  const { getPlanFromUser, canAccess } = await import("@/lib/plans")
+  const planUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } })
+  if (!canAccess(getPlanFromUser(planUser || {}), "sequences")) {
+    return NextResponse.json({ error: "Sequences require a Pro plan. Upgrade at /dashboard/billing" }, { status: 403 })
+  }
+
   const { id } = await params
   const existing = await prisma.emailSequence.findFirst({ where: { id, userId: session.user.id } })
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
@@ -30,6 +37,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  // Plan gating
+  const { getPlanFromUser, canAccess } = await import("@/lib/plans")
+  const planUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } })
+  if (!canAccess(getPlanFromUser(planUser || {}), "sequences")) {
+    return NextResponse.json({ error: "Sequences require a Pro plan. Upgrade at /dashboard/billing" }, { status: 403 })
+  }
 
   const { id } = await params
   const existing = await prisma.emailSequence.findFirst({ where: { id, userId: session.user.id } })
