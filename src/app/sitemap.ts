@@ -34,11 +34,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "calendly-free-plan-isnt-free",
     "ai-powered-scheduling-setup",
     "true-cost-calendly-vs-letsmeet",
+    "mcp-ai-agent-booking",
+    "5-scheduling-features-you-dont-need",
   ].map((slug) => ({
     url: `${BASE_URL}/blog/${slug}`,
     changeFrequency: "monthly" as const,
     priority: 0.7,
   }));
+
+  const tools = [
+    { url: `${BASE_URL}/tools/meeting-cost-calculator`, changeFrequency: "monthly" as const, priority: 0.7 },
+  ];
 
   return [
     ...staticPages,
@@ -47,6 +53,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...comparisons,
     ...useCases,
     ...blogPosts,
+    ...tools,
   ].map((page) => ({
     ...page,
     lastModified: new Date(),

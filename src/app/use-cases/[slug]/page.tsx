@@ -149,6 +149,8 @@ export default async function UseCasePage({ params }: Props) {
                 </Link>
               ))}
             <Link href="/alternatives/calendly" className="text-sm text-[#0066FF] hover:underline">Calendly alternative →</Link>
+            <Link href="/blog/5-scheduling-features-you-dont-need" className="text-sm text-[#0066FF] hover:underline">Features you don't need →</Link>
+            <Link href="/tools/meeting-cost-calculator" className="text-sm text-[#0066FF] hover:underline">Meeting cost calculator →</Link>
             <Link href="/pricing" className="text-sm text-[#0066FF] hover:underline">View pricing →</Link>
           </div>
         </div>

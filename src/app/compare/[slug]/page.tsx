@@ -172,6 +172,8 @@ export default async function ComparePage({ params }: Props) {
                 </Link>
               ))}
             <Link href="/alternatives/calendly" className="text-sm text-[#0066FF] hover:underline">Calendly alternatives →</Link>
+            <Link href="/blog/true-cost-calendly-vs-letsmeet" className="text-sm text-[#0066FF] hover:underline">True cost of Calendly →</Link>
+            <Link href="/tools/meeting-cost-calculator" className="text-sm text-[#0066FF] hover:underline">Meeting cost calculator →</Link>
             <Link href="/blog" className="text-sm text-[#0066FF] hover:underline">Read our blog →</Link>
           </div>
         </div>

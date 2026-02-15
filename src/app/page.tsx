@@ -328,6 +328,9 @@ export default function Home() {
               <Link href="/alternatives/calendly" className="text-sm text-gray-500 hover:text-gray-700">
                 Calendly Alternative
               </Link>
+              <Link href="/tools/meeting-cost-calculator" className="text-sm text-gray-500 hover:text-gray-700">
+                Meeting Cost Calculator
+              </Link>
               <Link href="/about" className="text-sm text-gray-500 hover:text-gray-700">
                 About
               </Link>

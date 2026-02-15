@@ -32,4 +32,20 @@ export const posts: BlogPost[] = [
     readTime: "6 min read",
     keywords: ["calendly pricing", "calendly cost", "scheduling tool pricing", "calendly vs letsmeet"],
   },
+  {
+    slug: "mcp-ai-agent-booking",
+    title: "MCP: Let Your AI Agent Book Meetings for You",
+    description: "How to connect any AI agent to your calendar using MCP. Step-by-step guide to fully automated scheduling with letsmeet.link.",
+    date: "2026-02-15",
+    readTime: "5 min read",
+    keywords: ["mcp", "ai agent", "ai booking", "automated scheduling", "model context protocol", "ai calendar"],
+  },
+  {
+    slug: "5-scheduling-features-you-dont-need",
+    title: "5 Scheduling Features You're Paying For But Don't Need",
+    description: "Round-robin, routing forms, Salesforce integration — do you actually use them? Here's what you really need (and what's free).",
+    date: "2026-02-15",
+    readTime: "4 min read",
+    keywords: ["scheduling features", "calendly features", "scheduling tool comparison", "scheduling bloat"],
+  },
 ];

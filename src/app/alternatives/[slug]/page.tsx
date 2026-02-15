@@ -179,6 +179,8 @@ export default async function AlternativePage({ params }: Props) {
                   {c.name} alternative →
                 </Link>
               ))}
+            <Link href="/compare/calendly-vs-letsmeet" className="text-sm text-[#0066FF] hover:underline">Calendly vs letsmeet.link →</Link>
+            <Link href="/tools/meeting-cost-calculator" className="text-sm text-[#0066FF] hover:underline">Meeting cost calculator →</Link>
             <Link href="/pricing" className="text-sm text-[#0066FF] hover:underline">View pricing →</Link>
             <Link href="/blog" className="text-sm text-[#0066FF] hover:underline">Read our blog →</Link>
           </div>

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { posts } from "../data";
 import MobileNav from "@/components/MobileNav";
 import { ArrowLeft } from "lucide-react";
-import { CalendlyFreeArticle, AiSchedulingArticle, TrueCostArticle } from "./articles";
+import { CalendlyFreeArticle, AiSchedulingArticle, TrueCostArticle, McpAgentBookingArticle, FeaturesYouDontNeedArticle } from "./articles";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -15,6 +15,8 @@ const articleComponents: Record<string, () => React.JSX.Element> = {
   "calendly-free-plan-isnt-free": CalendlyFreeArticle,
   "ai-powered-scheduling-setup": AiSchedulingArticle,
   "true-cost-calendly-vs-letsmeet": TrueCostArticle,
+  "mcp-ai-agent-booking": McpAgentBookingArticle,
+  "5-scheduling-features-you-dont-need": FeaturesYouDontNeedArticle,
 };
 
 export async function generateStaticParams() {
